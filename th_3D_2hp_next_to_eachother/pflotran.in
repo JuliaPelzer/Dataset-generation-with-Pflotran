@@ -87,20 +87,21 @@ REGION north
   FACE NORTH
 /
 
-REGION heatpump_inject1
-  COORDINATE 200.d0 170.d0 20.d0
-/
 
 REGION heatpump_extract1
   COORDINATE 200.d0 100.d0 20.d0
 /
 
-REGION heatpump_inject2
-  COORDINATE 300.d0 100.d0 20.d0
+REGION heatpump_inject1
+  COORDINATE 200.d0 170.d0 20.d0
 /
 
 REGION heatpump_extract2
-  COORDINATE 300.d0 170.d0 20.d0
+  COORDINATE 250.d0 100.d0 20.d0
+/
+
+REGION heatpump_inject2
+  COORDINATE 250.d0 170.d0 20.d0
 /
 #=========================== flow conditions ==================================
 FLOW_CONDITION initial
