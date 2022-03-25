@@ -1,4 +1,4 @@
-#Description: 1D flow in a 3D square plus 6 heatpumps
+#Description: 1D flow in a 3D cube plus 6 heatpumps
 SIMULATION
   SIMULATION_TYPE SUBSURFACE
   PROCESS_MODELS
@@ -40,6 +40,20 @@ MATERIAL_PROPERTY gravel
   CHARACTERISTIC_CURVES cc1
 END
 
+MATERIAL_PROPERTY solid
+  ID 2
+  POROSITY 0
+  TORTUOSITY 0.5d0
+  ROCK_DENSITY 2.8d3
+  SPECIFIC_HEAT 4.1d3 ! [J/K]
+  THERMAL_CONDUCTIVITY_DRY 0.5
+  THERMAL_CONDUCTIVITY_WET 0.5
+  LONGITUDINAL_DISPERSIVITY 3.1536d0
+  PERMEABILITY
+    PERM_ISO 1.d-9
+  /
+  CHARACTERISTIC_CURVES cc1
+END
 #=========================== characteristic curves ============================
 CHARACTERISTIC_CURVES cc1
   SATURATION_FUNCTION VAN_GENUCHTEN
@@ -129,6 +143,19 @@ REGION heatpump_extract6
 REGION heatpump_inject6
   COORDINATE 400.d0 270.d0 15.d0
 /
+
+REGION solid_hp_ex_1
+  COORDINATES
+    100.d0 100.d0 15.d0
+    100.d0 100.d0 30.d0
+  /
+/
+REGION solid_hp_inj_1
+  COORDINATES
+    100.d0 170.d0 15.d0
+    100.d0 170.d0 30.d0
+  /
+/
 #=========================== flow conditions ==================================
 FLOW_CONDITION initial
   TYPE
@@ -137,7 +164,7 @@ FLOW_CONDITION initial
   /
   DATUM 50.d0 0.d0 30.d0
   GRADIENT
-    PRESSURE 0. -0.0003 0.  
+    PRESSURE 0. -0.0003 0  
   /
   LIQUID_PRESSURE 101325.d0
   TEMPERATURE 10.6d0 ! [C]
@@ -225,10 +252,29 @@ SOURCE_SINK heatpump_inject5
   REGION heatpump_inject5
 /
 
+SOURCE_SINK heatpump_extract6
+  FLOW_CONDITION extraction
+  REGION heatpump_extract6
+/
+SOURCE_SINK heatpump_inject6
+  FLOW_CONDITION injection
+  REGION heatpump_inject6
+/
+
 #=========================== stratigraphy couplers ============================
 STRATA
   REGION all
   MATERIAL gravel
+END
+
+STRATA
+  REGION solid_hp_ex_1
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_1
+  MATERIAL solid
 END
 
 #=========================== output options ===================================
