@@ -156,6 +156,71 @@ REGION solid_hp_inj_1
     100.d0 170.d0 30.d0
   /
 /
+
+REGION solid_hp_ex_2
+  COORDINATES
+    100.d0 200.d0 15.d0
+    100.d0 200.d0 30.d0
+  /
+/
+REGION solid_hp_inj_2
+  COORDINATES
+    100.d0 270.d0 15.d0
+    100.d0 270.d0 30.d0
+  /
+/
+
+REGION solid_hp_ex_3
+  COORDINATES
+    100.d0 500.d0 15.d0
+    100.d0 500.d0 30.d0
+  /
+/
+REGION solid_hp_inj_3
+  COORDINATES
+    100.d0 570.d0 15.d0
+    100.d0 570.d0 30.d0
+  /
+/
+
+REGION solid_hp_ex_4
+  COORDINATES
+    300.d0 600.d0 15.d0
+    300.d0 600.d0 30.d0
+  /
+/
+REGION solid_hp_inj_4
+  COORDINATES
+    300.d0 670.d0 15.d0
+    300.d0 670.d0 30.d0
+  /
+/
+
+REGION solid_hp_ex_5
+  COORDINATES
+    330.d0 600.d0 15.d0
+    330.d0 600.d0 30.d0
+  /
+/
+REGION solid_hp_inj_5
+  COORDINATES
+    330.d0 670.d0 15.d0
+    330.d0 670.d0 30.d0
+  /
+/
+
+REGION solid_hp_ex_6
+  COORDINATES
+    400.d0 200.d0 15.d0
+    400.d0 200.d0 30.d0
+  /
+/
+REGION solid_hp_inj_6
+  COORDINATES
+    400.d0 270.d0 15.d0
+    400.d0 270.d0 30.d0
+  /
+/
 #=========================== flow conditions ==================================
 FLOW_CONDITION initial
   TYPE
@@ -274,6 +339,56 @@ END
 
 STRATA
   REGION solid_hp_inj_1
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_2
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_2
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_3
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_3
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_4
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_4
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_5
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_5
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_6
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_6
   MATERIAL solid
 END
 

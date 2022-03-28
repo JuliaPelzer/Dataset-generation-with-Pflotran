@@ -40,6 +40,20 @@ MATERIAL_PROPERTY gravel
   CHARACTERISTIC_CURVES cc1
 END
 
+MATERIAL_PROPERTY solid
+  ID 2
+  POROSITY 0
+  TORTUOSITY 0.5d0
+  ROCK_DENSITY 2.8d3
+  SPECIFIC_HEAT 4.1d3 ! [J/K]
+  THERMAL_CONDUCTIVITY_DRY 0.5
+  THERMAL_CONDUCTIVITY_WET 0.5
+  LONGITUDINAL_DISPERSIVITY 3.1536d0
+  PERMEABILITY
+    PERM_ISO 1.d-9
+  /
+  CHARACTERISTIC_CURVES cc1
+END
 #=========================== characteristic curves ============================
 CHARACTERISTIC_CURVES cc1
   SATURATION_FUNCTION VAN_GENUCHTEN
@@ -101,6 +115,32 @@ REGION heatpump_extract2
 
 REGION heatpump_inject2
   COORDINATE 250.d0 320.d0 15.d0
+/
+
+REGION solid_hp_ex_1
+  COORDINATES
+    250.d0 100.d0 15.d0
+    2590d0 100.d0 30.d0
+  /
+/
+REGION solid_hp_inj_1
+  COORDINATES
+    250.d0 170.d0 15.d0
+    250.d0 170.d0 30.d0
+  /
+/
+
+REGION solid_hp_ex_2
+  COORDINATES
+    250.d0 250.d0 15.d0
+    250.d0 250.d0 30.d0
+  /
+/
+REGION solid_hp_inj_2
+  COORDINATES
+    250.d0 320.d0 15.d0
+    250.d0 320.d0 30.d0
+  /
 /
 #=========================== flow conditions ==================================
 FLOW_CONDITION initial
@@ -183,6 +223,26 @@ SOURCE_SINK heatpump_inject2
 STRATA
   REGION all
   MATERIAL gravel
+END
+
+STRATA
+  REGION solid_hp_ex_1
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_1
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_2
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_inj_2
+  MATERIAL solid
 END
 
 #=========================== output options ===================================
