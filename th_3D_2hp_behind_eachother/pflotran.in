@@ -31,8 +31,8 @@ MATERIAL_PROPERTY gravel
   TORTUOSITY 0.5d0
   ROCK_DENSITY 2.8d3
   SPECIFIC_HEAT 4.1d3 ! [J/K]
-  THERMAL_CONDUCTIVITY_DRY 0.5
-  THERMAL_CONDUCTIVITY_WET 0.5
+  THERMAL_CONDUCTIVITY_DRY 0.7
+  THERMAL_CONDUCTIVITY_WET 0.7 #0.5 or 0.7  for both
   LONGITUDINAL_DISPERSIVITY 3.1536d0
   PERMEABILITY
     PERM_ISO 1.d-9
@@ -46,11 +46,11 @@ MATERIAL_PROPERTY solid
   TORTUOSITY 0.5d0
   ROCK_DENSITY 2.8d3
   SPECIFIC_HEAT 4.1d3 ! [J/K]
-  THERMAL_CONDUCTIVITY_DRY 0.5
-  THERMAL_CONDUCTIVITY_WET 0.5
+  THERMAL_CONDUCTIVITY_DRY 0.51 #High-Density Polyethylene (HDPE)
+  THERMAL_CONDUCTIVITY_WET 0.51
   LONGITUDINAL_DISPERSIVITY 3.1536d0
   PERMEABILITY
-    PERM_ISO 1.d-9
+    PERM_ISO 1.d-30
   /
   CHARACTERISTIC_CURVES cc1
 END
@@ -70,10 +70,10 @@ END
 #=========================== discretization ===================================
 GRID
   TYPE structured
-  NXYZ 100 200 10
+  NXYZ 50 325 40
   BOUNDS
     0.d0 0.d0 0.d0
-    500.d0 1000.d0 30.d0
+    100.d0 650.d0 80.d0
   /
 END
 
@@ -81,65 +81,65 @@ END
 REGION all
   COORDINATES
     0.d0 0.d0 0.d0
-    501.d0 1001.d0 31.d0
+    101.d0 651.d0 81.d0
   /
 /
 
 REGION south
   COORDINATES
     0.d0 0.d0 0.d0
-    500.d0 0.d0 30.d0
+    100.d0 0.d0 80.d0
   /
   FACE SOUTH
 /
 
 REGION north
   COORDINATES
-    0.d0 1000.d0 0.d0
-    500.d0 1000.d0 30.d0
+    0.d0 650.d0 0.d0
+    100.d0 650.d0 80.d0
   /
   FACE NORTH
 /
 
 REGION heatpump_extract1
-  COORDINATE 250.d0 100.d0 15.d0
+  COORDINATE 50.d0 100.d0 50.d0
 /
 
 REGION heatpump_inject1
-  COORDINATE 250.d0 170.d0 15.d0
+  COORDINATE 50.d0 120.d0 50.d0
 /
 
 REGION heatpump_extract2
-  COORDINATE 250.d0 250.d0 15.d0
+  COORDINATE 50.d0 250.d0 50.d0
 /
 
 REGION heatpump_inject2
-  COORDINATE 250.d0 320.d0 15.d0
+  COORDINATE 50.d0 270.d0 50.d0
 /
 
 REGION solid_hp_ex_1
   COORDINATES
-    250.d0 100.d0 15.d0
-    2590d0 100.d0 30.d0
+    50.d0 100.d0 50.d0
+    50.d0 100.d0 80.d0
   /
 /
 REGION solid_hp_inj_1
   COORDINATES
-    250.d0 170.d0 15.d0
-    250.d0 170.d0 30.d0
+    50.d0 120.d0 50.d0
+    50.d0 120.d0 80.d0
   /
 /
 
 REGION solid_hp_ex_2
   COORDINATES
-    250.d0 250.d0 15.d0
-    250.d0 250.d0 30.d0
+    50.d0 250.d0 50.d0
+    50.d0 250.d0 80.d0
   /
 /
 REGION solid_hp_inj_2
   COORDINATES
-    250.d0 320.d0 15.d0
-    250.d0 320.d0 30.d0
+    50.d0 270.d0 50.d0
+    50.d0 270.d0 80.d0
   /
 /
 #=========================== flow conditions ==================================
@@ -148,7 +148,7 @@ FLOW_CONDITION initial
     LIQUID_PRESSURE HYDROSTATIC
     TEMPERATURE DIRICHLET
   /
-  DATUM 50.d0 0.d0 30.d0
+  DATUM 50.d0 0.d0 80.d0
   GRADIENT
     PRESSURE 0. -0.0003 0.  
   /
@@ -251,7 +251,7 @@ OUTPUT
     PERIODIC TIME 30. d
     FORMAT VTK
     VARIABLES
-      LIQUID_PRESSURE
+      #LIQUID_PRESSURE
       TEMPERATURE
     /
   /

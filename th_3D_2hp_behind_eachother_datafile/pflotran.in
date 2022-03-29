@@ -1,4 +1,4 @@
-#Description: 1D flow in a 3D cube plus 6 heatpumps
+#Description: 1D flow in a 3D square plus one heatpump
 SIMULATION
   SIMULATION_TYPE SUBSURFACE
   PROCESS_MODELS
@@ -12,7 +12,7 @@ SUBSURFACE
 
 #=========================== times ============================================
 TIME
-  FINAL_TIME 7.d0 y
+  FINAL_TIME 5.d0 y
   INITIAL_TIMESTEP_SIZE 0.1 y
   MAXIMUM_TIMESTEP_SIZE 0.5 y
 /
@@ -32,7 +32,7 @@ MATERIAL_PROPERTY gravel
   ROCK_DENSITY 2.8d3
   SPECIFIC_HEAT 4.1d3 ! [J/K]
   THERMAL_CONDUCTIVITY_DRY 0.7
-  THERMAL_CONDUCTIVITY_WET 0.7
+  THERMAL_CONDUCTIVITY_WET 0.7 #0.5 or 0.7  for both
   LONGITUDINAL_DISPERSIVITY 3.1536d0
   PERMEABILITY
     PERM_ISO 1.d-9
@@ -46,11 +46,11 @@ MATERIAL_PROPERTY solid
   TORTUOSITY 0.5d0
   ROCK_DENSITY 2.8d3
   SPECIFIC_HEAT 4.1d3 ! [J/K]
-  THERMAL_CONDUCTIVITY_DRY 0.51 #High-Density Polyethylene (HDPE)
-  THERMAL_CONDUCTIVITY_WET 0.51
+  THERMAL_CONDUCTIVITY_DRY 0.5 #High-Density Polyethylene (HDPE)
+  THERMAL_CONDUCTIVITY_WET 0.5
   LONGITUDINAL_DISPERSIVITY 3.1536d0
   PERMEABILITY
-    PERM_ISO 1.d-30
+    PERM_ISO 1.d-20
   /
   CHARACTERISTIC_CURVES cc1
 END
@@ -70,10 +70,10 @@ END
 #=========================== discretization ===================================
 GRID
   TYPE structured
-  NXYZ 500 1000 80
+  NXYZ 100 200 40
   BOUNDS
     0.d0 0.d0 0.d0
-    500.d0 1000.d0 80.d0
+    100.d0 1000.d0 80.d0
   /
 END
 
@@ -81,14 +81,14 @@ END
 REGION all
   COORDINATES
     0.d0 0.d0 0.d0
-    501.d0 1001.d0 81.d0
+    101.d0 1001.d0 81.d0
   /
 /
 
 REGION south
   COORDINATES
     0.d0 0.d0 0.d0
-    500.d0 0.d0 80.d0
+    100.d0 0.d0 80.d0
   /
   FACE SOUTH
 /
@@ -96,129 +96,50 @@ REGION south
 REGION north
   COORDINATES
     0.d0 1000.d0 0.d0
-    500.d0 1000.d0 80.d0
+    100.d0 1000.d0 80.d0
   /
   FACE NORTH
 /
 
-
 REGION heatpump_extract1
-  COORDINATE 100.d0 100.d0 50.d0
+  COORDINATE 50.d0 100.d0 50.d0
 /
+
 REGION heatpump_inject1
-  COORDINATE 100.d0 120.d0 50.d0
+  COORDINATE 50.d0 120.d0 50.d0
 /
 
 REGION heatpump_extract2
-  COORDINATE 100.d0 200.d0 50.d0
+  COORDINATE 50.d0 250.d0 50.d0
 /
+
 REGION heatpump_inject2
-  COORDINATE 100.d0 220.d0 50.d0
-/
-
-REGION heatpump_extract3
-  COORDINATE 100.d0 500.d0 50.d0
-/
-REGION heatpump_inject3
-  COORDINATE 100.d0 520.d0 50.d0
-/
-
-REGION heatpump_extract4
-  COORDINATE 300.d0 600.d0 50.d0
-/
-REGION heatpump_inject4
-  COORDINATE 300.d0 620.d0 50.d0
-/
-
-REGION heatpump_extract5
-  COORDINATE 330.d0 600.d0 50.d0
-/
-REGION heatpump_inject5
-  COORDINATE 330.d0 620.d0 50.d0
-/
-
-REGION heatpump_extract6
-  COORDINATE 400.d0 200.d0 50.d0
-/
-REGION heatpump_inject6
-  COORDINATE 400.d0 220.d0 50.d0
+  COORDINATE 50.d0 270.d0 50.d0
 /
 
 REGION solid_hp_ex_1
   COORDINATES
-    100.d0 100.d0 50.d0
-    100.d0 100.d0 80.d0
+    50.d0 100.d0 50.d0
+    50.d0 100.d0 80.d0
   /
 /
 REGION solid_hp_inj_1
   COORDINATES
-    100.d0 120.d0 50.d0
-    100.d0 120.d0 80.d0
+    50.d0 120.d0 50.d0
+    50.d0 120.d0 80.d0
   /
 /
 
 REGION solid_hp_ex_2
   COORDINATES
-    100.d0 200.d0 50.d0
-    100.d0 200.d0 80.d0
+    50.d0 250.d0 50.d0
+    50.d0 250.d0 80.d0
   /
 /
 REGION solid_hp_inj_2
   COORDINATES
-    100.d0 220.d0 50.d0
-    100.d0 220.d0 80.d0
-  /
-/
-
-REGION solid_hp_ex_3
-  COORDINATES
-    100.d0 500.d0 50.d0
-    100.d0 500.d0 80.d0
-  /
-/
-REGION solid_hp_inj_3
-  COORDINATES
-    100.d0 520.d0 50.d0
-    100.d0 520.d0 80.d0
-  /
-/
-
-REGION solid_hp_ex_4
-  COORDINATES
-    300.d0 600.d0 50.d0
-    300.d0 600.d0 80.d0
-  /
-/
-REGION solid_hp_inj_4
-  COORDINATES
-    300.d0 620.d0 50.d0
-    300.d0 620.d0 80.d0
-  /
-/
-
-REGION solid_hp_ex_5
-  COORDINATES
-    330.d0 600.d0 50.d0
-    330.d0 600.d0 80.d0
-  /
-/
-REGION solid_hp_inj_5
-  COORDINATES
-    330.d0 620.d0 50.d0
-    330.d0 620.d0 80.d0
-  /
-/
-
-REGION solid_hp_ex_6
-  COORDINATES
-    400.d0 200.d0 50.d0
-    400.d0 200.d0 80.d0
-  /
-/
-REGION solid_hp_inj_6
-  COORDINATES
-    400.d0 220.d0 50.d0
-    400.d0 220.d0 80.d0
+    50.d0 270.d0 50.d0
+    50.d0 270.d0 80.d0
   /
 /
 #=========================== flow conditions ==================================
@@ -227,9 +148,9 @@ FLOW_CONDITION initial
     LIQUID_PRESSURE HYDROSTATIC
     TEMPERATURE DIRICHLET
   /
-  DATUM 50.d0 0.d0 30.d0
+  DATUM 50.d0 0.d0 80.d0
   GRADIENT
-    PRESSURE 0. -0.0003 0  
+    PRESSURE 0. -0.0003 0.  
   /
   LIQUID_PRESSURE 101325.d0
   TEMPERATURE 10.6d0 ! [C]
@@ -237,20 +158,28 @@ FLOW_CONDITION initial
 
 FLOW_CONDITION extraction
   TYPE
-    RATE SCALED_MASS_RATE VOLUME
+    RATE SCALED_VOLUMETRIC_RATE VOLUME
     TEMPERATURE DIRICHLET
   /
-  RATE -0.5
-  TEMPERATURE -10.6d0
+  # RATE FILE transient_rate_ext.txt #later time-dependent
+  RATE -43.2 m^3/day
+  TEMPERATURE -10.6d0 #FILE temp_ext.txt
 /
 
 FLOW_CONDITION injection
   TYPE
-    RATE SCALED_MASS_RATE VOLUME
+    RATE SCALED_VOLUMETRIC_RATE VOLUME
     TEMPERATURE DIRICHLET
   /
-  RATE 0.5
-  TEMPERATURE 15.6d0
+  RATE 43.2 m^3/day
+  TEMPERATURE 15.6d0 #temp_inj.txt
+/
+
+#=========================== condition couplers ===============================
+# initial condition
+INITIAL_CONDITION
+  FLOW_CONDITION initial
+  REGION all
 /
 
 #=========================== condition couplers ===============================
@@ -276,6 +205,7 @@ SOURCE_SINK heatpump_extract1
   FLOW_CONDITION extraction
   REGION heatpump_extract1
 /
+
 SOURCE_SINK heatpump_inject1
   FLOW_CONDITION injection
   REGION heatpump_inject1
@@ -285,47 +215,11 @@ SOURCE_SINK heatpump_extract2
   FLOW_CONDITION extraction
   REGION heatpump_extract2
 /
+
 SOURCE_SINK heatpump_inject2
   FLOW_CONDITION injection
   REGION heatpump_inject2
 /
-
-SOURCE_SINK heatpump_extract3
-  FLOW_CONDITION extraction
-  REGION heatpump_extract3
-/
-SOURCE_SINK heatpump_inject3
-  FLOW_CONDITION injection
-  REGION heatpump_inject3
-/
-
-SOURCE_SINK heatpump_extract4
-  FLOW_CONDITION extraction
-  REGION heatpump_extract4
-/
-SOURCE_SINK heatpump_inject4
-  FLOW_CONDITION injection
-  REGION heatpump_inject4
-/
-
-SOURCE_SINK heatpump_extract5
-  FLOW_CONDITION extraction
-  REGION heatpump_extract5
-/
-SOURCE_SINK heatpump_inject5
-  FLOW_CONDITION injection
-  REGION heatpump_inject5
-/
-
-SOURCE_SINK heatpump_extract6
-  FLOW_CONDITION extraction
-  REGION heatpump_extract6
-/
-SOURCE_SINK heatpump_inject6
-  FLOW_CONDITION injection
-  REGION heatpump_inject6
-/
-
 #=========================== stratigraphy couplers ============================
 STRATA
   REGION all
@@ -352,53 +246,13 @@ STRATA
   MATERIAL solid
 END
 
-STRATA
-  REGION solid_hp_ex_3
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_inj_3
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_ex_4
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_inj_4
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_ex_5
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_inj_5
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_ex_6
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_inj_6
-  MATERIAL solid
-END
-
 #=========================== output options ===================================
 OUTPUT
   SNAPSHOT_FILE
     PERIODIC TIME 30. d
     FORMAT VTK
     VARIABLES
-      LIQUID_PRESSURE
+      #LIQUID_PRESSURE
       TEMPERATURE
     /
   /
