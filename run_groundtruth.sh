@@ -1,4 +1,5 @@
-## run script by "bash name/of/script" , always start from same directory as pflotran.in file
+## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script)" 
+## always start from same directory as pflotran.in file
 
 echo ...starting PFLOTRAN simulation at $(date) from $(pwd)
 
