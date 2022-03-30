@@ -1,0 +1,249 @@
+#Description: 1D flow in a 3D square plus one heatpump
+SIMULATION
+  SIMULATION_TYPE SUBSURFACE
+  PROCESS_MODELS
+    SUBSURFACE_FLOW flow
+      MODE TH
+    /
+  /
+END
+
+SUBSURFACE
+
+#=========================== times ============================================
+TIME
+  FINAL_TIME 5.d0 y
+  INITIAL_TIMESTEP_SIZE 0.1 y
+  MAXIMUM_TIMESTEP_SIZE 0.5 y
+/
+
+REFERENCE_PRESSURE 101325. #???
+
+#=========================== fluid properties =================================
+FLUID_PROPERTY
+  DIFFUSION_COEFFICIENT 1.d-9 #fixed
+END
+
+#=========================== material properties ==============================
+MATERIAL_PROPERTY gravel
+  ID 1
+  POROSITY 0.25d0
+  TORTUOSITY 0.5d0
+  ROCK_DENSITY 2.8d3
+  SPECIFIC_HEAT 4.1d3 ! [J/K]
+  THERMAL_CONDUCTIVITY_DRY 0.7
+  THERMAL_CONDUCTIVITY_WET 0.7
+  LONGITUDINAL_DISPERSIVITY 3.1536d0
+  PERMEABILITY
+    PERM_ISO 1.d-9
+  /
+  CHARACTERISTIC_CURVES cc1
+END
+
+MATERIAL_PROPERTY solid
+  ID 2
+  POROSITY 0
+  TORTUOSITY 0.5d0
+  ROCK_DENSITY 2.8d3
+  SPECIFIC_HEAT 4.1d3 ! [J/K]
+  THERMAL_CONDUCTIVITY_DRY 0.51 #High-Density Polyethylene (HDPE)
+  THERMAL_CONDUCTIVITY_WET 0.51
+  LONGITUDINAL_DISPERSIVITY 3.1536d0
+  PERMEABILITY
+    PERM_ISO 1.d-20
+  /
+  CHARACTERISTIC_CURVES cc1
+END
+#=========================== characteristic curves ============================
+CHARACTERISTIC_CURVES cc1
+  SATURATION_FUNCTION VAN_GENUCHTEN
+    ALPHA  1.d-4
+    M 0.5d0
+    LIQUID_RESIDUAL_SATURATION 0.1d0
+  /
+  PERMEABILITY_FUNCTION MUALEM_VG_LIQ
+    M 0.5d0
+    LIQUID_RESIDUAL_SATURATION 0.1d0
+  /
+END
+
+#=========================== discretization ===================================
+GRID
+  TYPE structured
+  NXYZ 50 300 40
+  BOUNDS
+    0.d0 0.d0 0.d0
+    100.d0 600.d0 80.d0
+  /
+END
+
+#=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    101.d0 601.d0 81.d0
+  /
+/
+
+REGION south
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 0.d0 80.d0
+  /
+  FACE SOUTH
+/
+
+REGION north
+  COORDINATES
+    0.d0 600.d0 0.d0
+    100.d0 600.d0 80.d0
+  /
+  FACE NORTH
+/
+
+REGION heatpump_extract1
+  COORDINATE 50.d0 100.d0 50.d0
+/
+REGION heatpump_inject1
+  COORDINATE 50.d0 120.d0 50.d0
+/
+
+REGION heatpump_extract2
+  COORDINATE 50.d0 200.d0 50.d0
+/
+REGION heatpump_inject2
+  COORDINATE 50.d0 220.d0 50.d0
+/
+
+REGION solid_hp_ex_1
+  COORDINATES
+    50.d0 100.d0 50.d0
+    50.d0 100.d0 80.d0
+  /
+/
+REGION solid_hp_inj_1
+  COORDINATES
+    50.d0 120.d0 50.d0
+    50.d0 120.d0 80.d0
+  /
+/
+
+REGION solid_hp_ex_2
+  COORDINATES
+    50.d0 200.d0 50.d0
+    50.d0 200.d0 80.d0
+  /
+/
+REGION solid_hp_inj_2
+  COORDINATES
+    50.d0 220.d0 50.d0
+    50.d0 220.d0 80.d0
+  /
+/
+#=========================== flow conditions ==================================
+FLOW_CONDITION initial
+  TYPE
+    LIQUID_PRESSURE HYDROSTATIC
+    TEMPERATURE DIRICHLET
+  /
+  DATUM 50.d0 0.d0 80.d0
+  GRADIENT
+    PRESSURE 0. -0.0003 0.  
+  /
+  LIQUID_PRESSURE 101325.d0
+  TEMPERATURE 10.6d0 ! [C]
+/
+
+FLOW_CONDITION extraction
+  TYPE
+    RATE SCALED_VOLUMETRIC_RATE VOLUME #SCALED_MASS_RATE VOLUME
+    TEMPERATURE DIRICHLET
+  /
+  # RATE FILE transient_rate_ext.txt #later time-dependent
+  RATE -43.2 m^3/day #RATE -0.5
+  TEMPERATURE -10.6d0 #FILE temp_ext.txt
+/
+
+FLOW_CONDITION injection
+  TYPE
+    RATE SCALED_VOLUMETRIC_RATE VOLUME #SCALED_MASS_RATE VOLUME
+    TEMPERATURE DIRICHLET
+  /
+  RATE 43.2 m^3/day #RATE 0.5
+  TEMPERATURE 15.6d0 #temp_inj.txt
+/
+
+#=========================== condition couplers ===============================
+# initial condition
+INITIAL_CONDITION
+  FLOW_CONDITION initial
+  REGION all
+/
+
+# boundary conditions
+BOUNDARY_CONDITION
+  FLOW_CONDITION initial
+  REGION north
+/
+
+BOUNDARY_CONDITION
+  FLOW_CONDITION initial
+  REGION south
+/
+
+# heatpump source/sink
+SOURCE_SINK heatpump_extract1
+  FLOW_CONDITION extraction
+  REGION heatpump_extract1
+/
+SOURCE_SINK heatpump_inject1
+  FLOW_CONDITION injection
+  REGION heatpump_inject1
+/
+
+SOURCE_SINK heatpump_extract2
+  FLOW_CONDITION extraction
+  REGION heatpump_extract2
+/
+SOURCE_SINK heatpump_inject2
+  FLOW_CONDITION injection
+  REGION heatpump_inject2
+/
+#=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL gravel
+END
+
+STRATA
+  REGION solid_hp_ex_1
+  MATERIAL solid
+END
+STRATA
+  REGION solid_hp_inj_1
+  MATERIAL solid
+END
+
+STRATA
+  REGION solid_hp_ex_2
+  MATERIAL solid
+END
+STRATA
+  REGION solid_hp_inj_2
+  MATERIAL solid
+END
+
+#=========================== output options ===================================
+OUTPUT
+  SNAPSHOT_FILE
+    PERIODIC TIME 0.1 y
+    FORMAT VTK
+    VARIABLES
+      #LIQUID_PRESSURE
+      TEMPERATURE
+    /
+  /
+  VELOCITY_AT_CENTER
+/
+
+END_SUBSURFACE
