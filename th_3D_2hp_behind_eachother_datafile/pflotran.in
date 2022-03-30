@@ -32,7 +32,7 @@ MATERIAL_PROPERTY gravel
   ROCK_DENSITY 2.8d3
   SPECIFIC_HEAT 4.1d3 ! [J/K]
   THERMAL_CONDUCTIVITY_DRY 0.7
-  THERMAL_CONDUCTIVITY_WET 0.7 #0.5 or 0.7  for both
+  THERMAL_CONDUCTIVITY_WET 0.7
   LONGITUDINAL_DISPERSIVITY 3.1536d0
   PERMEABILITY
     PERM_ISO 1.d-9
@@ -46,8 +46,8 @@ MATERIAL_PROPERTY solid
   TORTUOSITY 0.5d0
   ROCK_DENSITY 2.8d3
   SPECIFIC_HEAT 4.1d3 ! [J/K]
-  THERMAL_CONDUCTIVITY_DRY 0.5 #High-Density Polyethylene (HDPE)
-  THERMAL_CONDUCTIVITY_WET 0.5
+  THERMAL_CONDUCTIVITY_DRY 0.51 #High-Density Polyethylene (HDPE)
+  THERMAL_CONDUCTIVITY_WET 0.51
   LONGITUDINAL_DISPERSIVITY 3.1536d0
   PERMEABILITY
     PERM_ISO 1.d-20
@@ -70,10 +70,10 @@ END
 #=========================== discretization ===================================
 GRID
   TYPE structured
-  NXYZ 100 200 40
+  NXYZ 50 300 40
   BOUNDS
     0.d0 0.d0 0.d0
-    100.d0 1000.d0 80.d0
+    100.d0 600.d0 80.d0
   /
 END
 
@@ -81,7 +81,7 @@ END
 REGION all
   COORDINATES
     0.d0 0.d0 0.d0
-    101.d0 1001.d0 81.d0
+    101.d0 601.d0 81.d0
   /
 /
 
@@ -95,8 +95,8 @@ REGION south
 
 REGION north
   COORDINATES
-    0.d0 1000.d0 0.d0
-    100.d0 1000.d0 80.d0
+    0.d0 600.d0 0.d0
+    100.d0 600.d0 80.d0
   /
   FACE NORTH
 /
@@ -104,17 +104,15 @@ REGION north
 REGION heatpump_extract1
   COORDINATE 50.d0 100.d0 50.d0
 /
-
 REGION heatpump_inject1
   COORDINATE 50.d0 120.d0 50.d0
 /
 
 REGION heatpump_extract2
-  COORDINATE 50.d0 250.d0 50.d0
+  COORDINATE 50.d0 200.d0 50.d0
 /
-
 REGION heatpump_inject2
-  COORDINATE 50.d0 270.d0 50.d0
+  COORDINATE 50.d0 220.d0 50.d0
 /
 
 REGION solid_hp_ex_1
@@ -132,14 +130,14 @@ REGION solid_hp_inj_1
 
 REGION solid_hp_ex_2
   COORDINATES
-    50.d0 250.d0 50.d0
-    50.d0 250.d0 80.d0
+    50.d0 200.d0 50.d0
+    50.d0 200.d0 80.d0
   /
 /
 REGION solid_hp_inj_2
   COORDINATES
-    50.d0 270.d0 50.d0
-    50.d0 270.d0 80.d0
+    50.d0 220.d0 50.d0
+    50.d0 220.d0 80.d0
   /
 /
 #=========================== flow conditions ==================================
@@ -182,13 +180,6 @@ INITIAL_CONDITION
   REGION all
 /
 
-#=========================== condition couplers ===============================
-# initial condition
-INITIAL_CONDITION
-  FLOW_CONDITION initial
-  REGION all
-/
-
 # boundary conditions
 BOUNDARY_CONDITION
   FLOW_CONDITION initial
@@ -205,7 +196,6 @@ SOURCE_SINK heatpump_extract1
   FLOW_CONDITION extraction
   REGION heatpump_extract1
 /
-
 SOURCE_SINK heatpump_inject1
   FLOW_CONDITION injection
   REGION heatpump_inject1
@@ -215,7 +205,6 @@ SOURCE_SINK heatpump_extract2
   FLOW_CONDITION extraction
   REGION heatpump_extract2
 /
-
 SOURCE_SINK heatpump_inject2
   FLOW_CONDITION injection
   REGION heatpump_inject2
@@ -230,7 +219,6 @@ STRATA
   REGION solid_hp_ex_1
   MATERIAL solid
 END
-
 STRATA
   REGION solid_hp_inj_1
   MATERIAL solid
@@ -240,7 +228,6 @@ STRATA
   REGION solid_hp_ex_2
   MATERIAL solid
 END
-
 STRATA
   REGION solid_hp_inj_2
   MATERIAL solid
@@ -249,7 +236,7 @@ END
 #=========================== output options ===================================
 OUTPUT
   SNAPSHOT_FILE
-    PERIODIC TIME 30. d
+    PERIODIC TIME 0.1 y
     FORMAT VTK
     VARIABLES
       #LIQUID_PRESSURE
