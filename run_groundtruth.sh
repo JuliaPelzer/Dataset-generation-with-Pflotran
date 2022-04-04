@@ -14,10 +14,31 @@ then
     echo $OUTPUT_DIR folder is created
 fi
 
+#command line arguments
+args=("$@")
+CLA_DEBUG=${args[0]} # expects true or false
+CLA_VISUALIZATION=${args[1]} # expects true or false
+
 # calculate python stuff
 python3 python_write_datasets/hp_calculations.py
 
-# start pflotran simulation
-mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX #-screen_output off
-
+# pflotran simulation
+if [ "$CLA_DEBUG" = "debug" ];
+then
+    echo does debug
+    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX
+else
+    echo does no debug
+    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX -screen_output off
+fi
 echo ...finished PFLOTRAN simulation at $(date)
+
+# visualization (video with paraview)
+if [ "$CLA_VISUALIZATION" = "vis" ];
+then
+    pvpython test_video/test_paraview_automatisierung_videogeneration.py
+    pvpython test_video/test_paraview_automatisierung_screenshotgeneration.py
+    echo ...finished paraview visualization at $(date)
+else
+    echo ...no visualization performed and saved
+fi
