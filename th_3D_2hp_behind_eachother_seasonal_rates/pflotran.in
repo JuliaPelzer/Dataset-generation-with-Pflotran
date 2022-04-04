@@ -1,4 +1,4 @@
-#Description: 1D flow in a 3D square plus one heatpump
+#Description: 1D flow in a 3D area plus two heatpumps, volumetric rates of heat pumps in external datafile .txt
 SIMULATION
   SIMULATION_TYPE SUBSURFACE
   PROCESS_MODELS
@@ -17,30 +17,30 @@ TIME
   MAXIMUM_TIMESTEP_SIZE 0.5 y
 /
 
-REFERENCE_PRESSURE 101325. #???
+REFERENCE_PRESSURE 101325. #[Pa]
 
 #=========================== fluid properties =================================
 FLUID_PROPERTY
-  DIFFUSION_COEFFICIENT 1.d-9 #fixed
+  DIFFUSION_COEFFICIENT 1.d-9 #fixed [m^2/s]
 END
 
 #=========================== material properties ==============================
 MATERIAL_PROPERTY gravel
   ID 1
-  POROSITY 0.25d0
-  TORTUOSITY 0.5d0
-  ROCK_DENSITY 2.8d3
-  SPECIFIC_HEAT 4.1d3 ! [J/K]
-  THERMAL_CONDUCTIVITY_DRY 0.7
-  THERMAL_CONDUCTIVITY_WET 0.7
-  LONGITUDINAL_DISPERSIVITY 3.1536d0
-  PERMEABILITY
-    PERM_ISO 1.d-9
+  POROSITY 0.25d0                     #[-]
+  TORTUOSITY 0.5d0                    #[-]
+  ROCK_DENSITY 2.8d3                  #[kg/m^3] #checked
+  SPECIFIC_HEAT 4.1d3                 #[J/(kg*K)?] #checked
+  THERMAL_CONDUCTIVITY_DRY 0.7        #[W/(K*m)] #checked
+  THERMAL_CONDUCTIVITY_WET 1.0
+  LONGITUDINAL_DISPERSIVITY 3.1536d0  #[m]
+  PERMEABILITY                        #[m^2] #checked
+    PERM_ISO 1.d-9 
   /
   CHARACTERISTIC_CURVES cc1
 END
 
-MATERIAL_PROPERTY solid
+MATERIAL_PROPERTY pipe #High-Density Polyethylene (HDPE)
   ID 2
   POROSITY 0
   TORTUOSITY 0.5d0
@@ -115,26 +115,26 @@ REGION heatpump_inject2
   COORDINATE 50.d0 220.d0 50.d0
 /
 
-REGION solid_hp_ex_1
+REGION pipe_hp_ex_1
   COORDINATES
     50.d0 100.d0 50.d0
     50.d0 100.d0 80.d0
   /
 /
-REGION solid_hp_inj_1
+REGION pipe_hp_inj_1
   COORDINATES
     50.d0 120.d0 50.d0
     50.d0 120.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_2
+REGION pipe_hp_ex_2
   COORDINATES
     50.d0 200.d0 50.d0
     50.d0 200.d0 80.d0
   /
 /
-REGION solid_hp_inj_2
+REGION pipe_hp_inj_2
   COORDINATES
     50.d0 220.d0 50.d0
     50.d0 220.d0 80.d0
@@ -159,7 +159,6 @@ FLOW_CONDITION extraction
     RATE SCALED_VOLUMETRIC_RATE VOLUME
     TEMPERATURE DIRICHLET
   /
-  # RATE FILE transient_rate_ext.txt #later time-dependent
   # RATE -43.2 m^3/day
   RATE LIST
     TIME_UNITS y
@@ -188,7 +187,7 @@ FLOW_CONDITION extraction
     4.82 -43.2
     5.   -43.2
   /
-  TEMPERATURE -10.6d0 #FILE temp_ext.txt
+  TEMPERATURE -10.6d0
 /
 
 FLOW_CONDITION injection
@@ -224,7 +223,7 @@ FLOW_CONDITION injection
     4.82 43.2
     5.   43.2
   /
-  TEMPERATURE 15.6d0 #temp_inj.txt
+  TEMPERATURE 15.6d0
 /
 
 #=========================== condition couplers ===============================
@@ -270,21 +269,21 @@ STRATA
 END
 
 STRATA
-  REGION solid_hp_ex_1
-  MATERIAL solid
+  REGION pipe_hp_ex_1
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_1
-  MATERIAL solid
+  REGION pipe_hp_inj_1
+  MATERIAL pipe
 END
 
 STRATA
-  REGION solid_hp_ex_2
-  MATERIAL solid
+  REGION pipe_hp_ex_2
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_2
-  MATERIAL solid
+  REGION pipe_hp_inj_2
+  MATERIAL pipe
 END
 
 #=========================== output options ===================================

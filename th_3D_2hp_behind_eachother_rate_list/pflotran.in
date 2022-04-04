@@ -12,7 +12,7 @@ SUBSURFACE
 
 #=========================== times ============================================
 TIME
-  FINAL_TIME 5.d0 y
+  FINAL_TIME 0.5d0 y
   INITIAL_TIMESTEP_SIZE 0.1 y
   MAXIMUM_TIMESTEP_SIZE 0.5 y
 /
@@ -40,7 +40,7 @@ MATERIAL_PROPERTY gravel
   CHARACTERISTIC_CURVES cc1
 END
 
-MATERIAL_PROPERTY solid
+MATERIAL_PROPERTY pipe
   ID 2
   POROSITY 0
   TORTUOSITY 0.5d0
@@ -115,26 +115,26 @@ REGION heatpump_inject2
   COORDINATE 50.d0 220.d0 50.d0
 /
 
-REGION solid_hp_ex_1
+REGION pipe_hp_ex_1
   COORDINATES
     50.d0 100.d0 50.d0
     50.d0 100.d0 80.d0
   /
 /
-REGION solid_hp_inj_1
+REGION pipe_hp_inj_1
   COORDINATES
     50.d0 120.d0 50.d0
     50.d0 120.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_2
+REGION pipe_hp_ex_2
   COORDINATES
     50.d0 200.d0 50.d0
     50.d0 200.d0 80.d0
   /
 /
-REGION solid_hp_inj_2
+REGION pipe_hp_inj_2
   COORDINATES
     50.d0 220.d0 50.d0
     50.d0 220.d0 80.d0
@@ -230,21 +230,21 @@ STRATA
 END
 
 STRATA
-  REGION solid_hp_ex_1
-  MATERIAL solid
+  REGION pipe_hp_ex_1
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_1
-  MATERIAL solid
+  REGION pipe_hp_inj_1
+  MATERIAL pipe
 END
 
 STRATA
-  REGION solid_hp_ex_2
-  MATERIAL solid
+  REGION pipe_hp_ex_2
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_2
-  MATERIAL solid
+  REGION pipe_hp_inj_2
+  MATERIAL pipe
 END
 
 #=========================== output options ===================================

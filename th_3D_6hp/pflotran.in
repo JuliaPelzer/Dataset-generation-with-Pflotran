@@ -40,7 +40,7 @@ MATERIAL_PROPERTY gravel
   CHARACTERISTIC_CURVES cc1
 END
 
-MATERIAL_PROPERTY solid
+MATERIAL_PROPERTY pipe
   ID 2
   POROSITY 0
   TORTUOSITY 0.5d0
@@ -143,78 +143,78 @@ REGION heatpump_inject6
   COORDINATE 350.d0 220.d0 50.d0
 /
 
-REGION solid_hp_ex_1
+REGION pipe_hp_ex_1
   COORDINATES
     50.d0 100.d0 50.d0
     50.d0 100.d0 80.d0
   /
 /
-REGION solid_hp_inj_1
+REGION pipe_hp_inj_1
   COORDINATES
     50.d0 120.d0 50.d0
     50.d0 120.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_2
+REGION pipe_hp_ex_2
   COORDINATES
     50.d0 200.d0 50.d0
     50.d0 200.d0 80.d0
   /
 /
-REGION solid_hp_inj_2
+REGION pipe_hp_inj_2
   COORDINATES
     50.d0 220.d0 50.d0
     50.d0 220.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_3
+REGION pipe_hp_ex_3
   COORDINATES
     50.d0 500.d0 50.d0
     50.d0 500.d0 80.d0
   /
 /
-REGION solid_hp_inj_3
+REGION pipe_hp_inj_3
   COORDINATES
     50.d0 520.d0 50.d0
     50.d0 520.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_4
+REGION pipe_hp_ex_4
   COORDINATES
     250.d0 600.d0 50.d0
     250.d0 600.d0 80.d0
   /
 /
-REGION solid_hp_inj_4
+REGION pipe_hp_inj_4
   COORDINATES
     250.d0 620.d0 50.d0
     250.d0 620.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_5
+REGION pipe_hp_ex_5
   COORDINATES
     280.d0 600.d0 50.d0
     280.d0 600.d0 80.d0
   /
 /
-REGION solid_hp_inj_5
+REGION pipe_hp_inj_5
   COORDINATES
     280.d0 620.d0 50.d0
     280.d0 620.d0 80.d0
   /
 /
 
-REGION solid_hp_ex_6
+REGION pipe_hp_ex_6
   COORDINATES
     350.d0 200.d0 50.d0
     350.d0 200.d0 80.d0
   /
 /
-REGION solid_hp_inj_6
+REGION pipe_hp_inj_6
   COORDINATES
     350.d0 220.d0 50.d0
     350.d0 220.d0 80.d0
@@ -332,57 +332,57 @@ STRATA
 END
 
 STRATA
-  REGION solid_hp_ex_1
-  MATERIAL solid
+  REGION pipe_hp_ex_1
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_1
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_ex_2
-  MATERIAL solid
-END
-STRATA
-  REGION solid_hp_inj_2
-  MATERIAL solid
+  REGION pipe_hp_inj_1
+  MATERIAL pipe
 END
 
 STRATA
-  REGION solid_hp_ex_3
-  MATERIAL solid
+  REGION pipe_hp_ex_2
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_3
-  MATERIAL solid
-END
-
-STRATA
-  REGION solid_hp_ex_4
-  MATERIAL solid
-END
-STRATA
-  REGION solid_hp_inj_4
-  MATERIAL solid
+  REGION pipe_hp_inj_2
+  MATERIAL pipe
 END
 
 STRATA
-  REGION solid_hp_ex_5
-  MATERIAL solid
+  REGION pipe_hp_ex_3
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_5
-  MATERIAL solid
+  REGION pipe_hp_inj_3
+  MATERIAL pipe
 END
 
 STRATA
-  REGION solid_hp_ex_6
-  MATERIAL solid
+  REGION pipe_hp_ex_4
+  MATERIAL pipe
 END
 STRATA
-  REGION solid_hp_inj_6
-  MATERIAL solid
+  REGION pipe_hp_inj_4
+  MATERIAL pipe
+END
+
+STRATA
+  REGION pipe_hp_ex_5
+  MATERIAL pipe
+END
+STRATA
+  REGION pipe_hp_inj_5
+  MATERIAL pipe
+END
+
+STRATA
+  REGION pipe_hp_ex_6
+  MATERIAL pipe
+END
+STRATA
+  REGION pipe_hp_inj_6
+  MATERIAL pipe
 END
 
 #=========================== output options ===================================
