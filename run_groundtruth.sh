@@ -24,15 +24,15 @@ echo ...starting PFLOTRAN simulation at $(date) from $(pwd)
 #python3 python_write_datasets/hp_calculations.py
 
 # pflotran simulation
-if [ "$CLA_DEBUG" = "debug" ];
-then
-    #echo does debug
-    #mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX
-else
-    #echo does no debug
-    #mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX -screen_output off
-fi
-echo ...finished PFLOTRAN simulation at $(date)
+#if [ "$CLA_DEBUG" = "debug" ];
+#then
+#    #echo does debug
+#    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX
+#else
+#    #echo does no debug
+#    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -pflotran.in -output_prefix $OUTPUT_PREFIX -screen_output off
+#fi
+#echo ...finished PFLOTRAN simulation at $(date)
 
 # visualization (video with paraview)
 if [ "$CLA_VISUALISATION" = "vis" ];
@@ -47,8 +47,8 @@ then
     fi
 
     # run visualisation script(s)
-    pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration_no_streamlines.py
-    #pvpython ../scripts_visualisation/test_paraview_automatisierung_videogeneration.py
+    #pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration_no_streamlines.py
+    pvpython ../scripts_visualisation/test_paraview_automatisierung_videogeneration.py
     #pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration.py
     echo ...finished paraview visualisation at $(date)
 else
