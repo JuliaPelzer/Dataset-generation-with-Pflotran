@@ -1,0 +1,194 @@
+
+#Description: flow in a 3D area plus one heatpump - super super simplified for approach 2 try 1
+SIMULATION
+  SIMULATION_TYPE SUBSURFACE
+  PROCESS_MODELS
+    SUBSURFACE_FLOW flow
+      MODE TH
+    /
+  /
+END
+
+SUBSURFACE
+
+#=========================== times ============================================
+TIME
+  FINAL_TIME 5.0 y
+  INITIAL_TIMESTEP_SIZE 0.1 y
+  MAXIMUM_TIMESTEP_SIZE 0.5 y
+/
+
+REFERENCE_PRESSURE 101325. #[Pa]
+
+#=========================== solver options ===================================
+
+#NEWTON_SOLVER FLOW
+#  ITOL_UPDATE 1.d0     ! Convergences with max change in pressure is 1 Pa.
+#END
+NUMERICAL_METHODS FLOW 
+  NEWTON_SOLVER 
+    ANALYTICAL_JACOBIAN 
+    ITOL_UPDATE 1.d0 
+    RTOL 1.d-3 
+  / 
+  LINEAR_SOLVER 
+    SOLVER ITERATIVE 
+  / 
+END
+
+#=========================== fluid properties =================================
+FLUID_PROPERTY
+  DIFFUSION_COEFFICIENT 1.d-9 #[m^2/s] #checked
+END
+
+#=========================== material properties ==============================
+MATERIAL_PROPERTY gravel
+  ID 1
+  POROSITY 0.25d0                     #[-] #Größenordnung passt
+  TORTUOSITY 0.5d0                    #[-] #Größenordnung passt
+  ROCK_DENSITY 2.8d3                  #[kg/m^3] #checked
+  SPECIFIC_HEAT 4.1d3                 #[J/(kg*K)?] #checked
+  THERMAL_CONDUCTIVITY_DRY 0.7        #[W/(K*m)] #checked
+  THERMAL_CONDUCTIVITY_WET 1.0
+  LONGITUDINAL_DISPERSIVITY 3.1536d0  #[m] # checked
+  PERMEABILITY                        #[m^2] #checked
+    PERM_ISO 1.d-9 
+  /
+  CHARACTERISTIC_CURVES cc1
+END
+
+#=========================== characteristic curves ============================
+CHARACTERISTIC_CURVES cc1
+  SATURATION_FUNCTION VAN_GENUCHTEN
+    ALPHA  1.d-4
+    M 0.5d0
+    LIQUID_RESIDUAL_SATURATION 0.1d0
+  /
+  PERMEABILITY_FUNCTION MUALEM_VG_LIQ
+    M 0.5d0
+    LIQUID_RESIDUAL_SATURATION 0.1d0
+  /
+END
+
+#=========================== discretization ===================================
+GRID
+  TYPE structured
+  NXYZ 10 60 8
+  BOUNDS
+    0.d0 0.d0 0.d0
+    100.d0 600.d0 80.d0
+  /
+END
+
+#=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    101.d0 601.d0 81.d0
+  /
+/
+
+REGION south
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 0.d0 80.d0
+  /
+  FACE SOUTH
+/
+
+REGION north
+  COORDINATES
+    0.d0 600.d0 0.d0
+    100.d0 600.d0 80.d0
+  /
+  FACE NORTH
+/
+
+REGION heatpump_extract1
+  COORDINATE 50.d0 100.d0 50.d0
+/
+REGION heatpump_inject1
+  COORDINATE 50.d0 120.d0 50.d0
+/
+
+#=========================== flow conditions ==================================
+FLOW_CONDITION initial
+  TYPE
+    LIQUID_PRESSURE HYDROSTATIC
+    TEMPERATURE DIRICHLET
+  /
+  DATUM 50.d0 0.d0 80.d0
+  GRADIENT
+    PRESSURE 0 -0.0003 0  
+  /
+  LIQUID_PRESSURE 101325.d0
+  TEMPERATURE 10.6d0 ! [C]
+/
+
+FLOW_CONDITION extraction
+  TYPE
+    RATE SCALED_VOLUMETRIC_RATE VOLUME
+    TEMPERATURE DIRICHLET
+  /
+  RATE -43.2 m^3/day
+  TEMPERATURE -10.6d0
+/
+
+FLOW_CONDITION injection
+  TYPE
+    RATE SCALED_VOLUMETRIC_RATE VOLUME
+    TEMPERATURE DIRICHLET
+  /
+  RATE 43.2 m^3/day
+  TEMPERATURE 15.6d0
+/
+
+#=========================== condition couplers ===============================
+# initial condition
+INITIAL_CONDITION
+  FLOW_CONDITION initial
+  REGION all
+/
+
+# boundary conditions
+BOUNDARY_CONDITION
+  FLOW_CONDITION initial
+  REGION north
+/
+
+BOUNDARY_CONDITION
+  FLOW_CONDITION initial
+  REGION south
+/
+
+# heatpump source/sink
+SOURCE_SINK heatpump_extract1
+  FLOW_CONDITION extraction
+  REGION heatpump_extract1
+/
+SOURCE_SINK heatpump_inject1
+  FLOW_CONDITION injection
+  REGION heatpump_inject1
+/
+
+#=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL gravel
+END
+
+#=========================== output options ===================================
+OUTPUT
+  SNAPSHOT_FILE
+    PERIODIC TIME 0.1 y
+    FORMAT VTK
+    PRINT_COLUMN_IDS
+    VARIABLES
+      LIQUID_PRESSURE
+      TEMPERATURE
+    /
+  /
+  VELOCITY_AT_CENTER
+/
+
+END_SUBSURFACE

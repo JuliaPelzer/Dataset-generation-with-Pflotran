@@ -1,9 +1,11 @@
 from datetime import datetime
 import os
+import sys
 
 # create absolute path
-dir_output = os.path.join(os.getcwd(), 'output/')
-dir_vis = os.path.join(os.getcwd(), 'visualisation/')
+cla_args = sys.argv
+dir_output = os.path.join(os.getcwd(), cla_args[1])
+dir_vis = os.path.join(os.getcwd(), cla_args[2])
 
 # get current time for file names
 now = datetime.now()
@@ -18,7 +20,9 @@ from paraview.simple import *
 paraview.simple._DisableFirstRenderCameraReset()
 
 # create a new 'Legacy VTK Reader'
-pflotranvel0 = LegacyVTKReader(registrationName='pflotran-vel-0*', FileNames=[dir_output+'pflotran-vel-000.vtk', dir_output+'pflotran-vel-001.vtk', dir_output+'pflotran-vel-002.vtk', dir_output+'pflotran-vel-003.vtk', dir_output+'pflotran-vel-004.vtk', dir_output+'pflotran-vel-005.vtk', dir_output+'pflotran-vel-006.vtk', dir_output+'pflotran-vel-007.vtk', dir_output+'pflotran-vel-008.vtk', dir_output+'pflotran-vel-009.vtk', dir_output+'pflotran-vel-010.vtk', dir_output+'pflotran-vel-011.vtk', dir_output+'pflotran-vel-012.vtk', dir_output+'pflotran-vel-013.vtk', dir_output+'pflotran-vel-014.vtk', dir_output+'pflotran-vel-015.vtk', dir_output+'pflotran-vel-016.vtk', dir_output+'pflotran-vel-017.vtk', dir_output+'pflotran-vel-018.vtk', dir_output+'pflotran-vel-019.vtk', dir_output+'pflotran-vel-020.vtk', dir_output+'pflotran-vel-021.vtk', dir_output+'pflotran-vel-022.vtk', dir_output+'pflotran-vel-023.vtk', dir_output+'pflotran-vel-024.vtk', dir_output+'pflotran-vel-025.vtk', dir_output+'pflotran-vel-026.vtk', dir_output+'pflotran-vel-027.vtk', dir_output+'pflotran-vel-028.vtk', dir_output+'pflotran-vel-029.vtk', dir_output+'pflotran-vel-030.vtk', dir_output+'pflotran-vel-031.vtk', dir_output+'pflotran-vel-032.vtk', dir_output+'pflotran-vel-033.vtk', dir_output+'pflotran-vel-034.vtk', dir_output+'pflotran-vel-035.vtk', dir_output+'pflotran-vel-036.vtk', dir_output+'pflotran-vel-037.vtk', dir_output+'pflotran-vel-038.vtk', dir_output+'pflotran-vel-039.vtk', dir_output+'pflotran-vel-040.vtk', dir_output+'pflotran-vel-041.vtk', dir_output+'pflotran-vel-042.vtk', dir_output+'pflotran-vel-043.vtk', dir_output+'pflotran-vel-044.vtk', dir_output+'pflotran-vel-045.vtk', dir_output+'pflotran-vel-046.vtk', dir_output+'pflotran-vel-047.vtk', dir_output+'pflotran-vel-048.vtk', dir_output+'pflotran-vel-049.vtk', dir_output+'pflotran-vel-050.vtk'])
+fileNames=[f"{dir_output}/pflotran-vel-00{number}.vtk" for number in range(0,10)]
+fileNames.extend([f"{dir_output}/pflotran-vel-0{number}.vtk" for number in range(10,51)])
+pflotranvel0 = LegacyVTKReader(registrationName='pflotran-vel-0*', FileNames=fileNames)
 
 # get animation scene
 animationScene1 = GetAnimationScene()
@@ -411,7 +415,7 @@ renderView1.CameraViewUp = [-0.14252356605637787, -0.004273409936834669, 0.98978
 renderView1.CameraParallelScale = 304.13816320408245
 
 # save screenshot
-SaveScreenshot(dir_vis +'streamlines_V_horizontal_cut'+current_time+'.png', renderView1, ImageResolution=[1528, 790])
+SaveScreenshot(dir_vis +'/streamlines_V_horizontal_cut'+current_time+'.png', renderView1, ImageResolution=[1528, 790])
 
 # set active source
 SetActiveSource(cellDatatoPointData1)
@@ -534,7 +538,7 @@ renderView1.CameraViewUp = [-0.5457407216438945, -0.0077824733080826165, 0.83791
 renderView1.CameraParallelScale = 304.13816320408245
 
 # save screenshot
-SaveScreenshot(dir_vis +'V_field_vertical_cut'+current_time+'.png', renderView1, ImageResolution=[1528, 790])
+SaveScreenshot(dir_vis +'/V_field_vertical_cut'+current_time+'.png', renderView1, ImageResolution=[1528, 790])
 
 # create a new 'Stream Tracer'
 streamTracer1 = StreamTracer(registrationName='StreamTracer1', Input=slice1,
@@ -657,7 +661,7 @@ renderView1.CameraViewUp = [0.0, 0.0, 1.0]
 renderView1.CameraParallelScale = 302.8972733547114
 
 # save screenshot
-SaveScreenshot(dir_vis +'streamlines_V_field_vertical_cut'+current_time+'.png', renderView1, ImageResolution=[1528, 790])
+SaveScreenshot(dir_vis +'/streamlines_V_field_vertical_cut'+current_time+'.png', renderView1, ImageResolution=[1528, 790])
 
 #================================================================
 # addendum: following script captures some of the application
