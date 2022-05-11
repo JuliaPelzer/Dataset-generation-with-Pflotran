@@ -71,44 +71,45 @@ renderView1.CameraParallelScale = 425.2077461397823
 # save screenshot
 SaveScreenshot(dir_vis +'/V_field_vertical_cut_last_step'+current_time+'.png', renderView1, ImageResolution=[2852, 1580])
 
-# Properties modified on animationScene1
-animationScene1.AnimationTime = 1.0
+if False:
+    # Properties modified on animationScene1
+    animationScene1.AnimationTime = 1.0
 
-# set scalar coloring
-ColorBy(clip1Display, ('POINTS', 'V', 'Magnitude'))
+    # set scalar coloring
+    ColorBy(clip1Display, ('POINTS', 'V', 'Magnitude'))
 
-# save screenshot
-SaveScreenshot(dir_vis +'/V_field_vertical_cut_first_step'+current_time+'.png', renderView1, ImageResolution=[1424, 790])
+    # save screenshot
+    SaveScreenshot(dir_vis +'/V_field_vertical_cut_first_step'+current_time+'.png', renderView1, ImageResolution=[1424, 790])
 
 
-# set scalar coloring
-ColorBy(clip1Display, ('POINTS', 'V', 'Magnitude'))
+    # set scalar coloring
+    ColorBy(clip1Display, ('POINTS', 'V', 'Magnitude'))
 
-animationScene1.GoToLast()
+    animationScene1.GoToLast()
 
-# set active source
-SetActiveSource(cellDatatoPointData1)
+    # set active source
+    SetActiveSource(cellDatatoPointData1)
 
-# show data in view
-cellDatatoPointData1Display = Show(cellDatatoPointData1, renderView1)#, 'UnstructuredGridRepresentation')
+    # show data in view
+    cellDatatoPointData1Display = Show(cellDatatoPointData1, renderView1)#, 'UnstructuredGridRepresentation')
 
-# set scalar coloring
-ColorBy(cellDatatoPointData1Display, ('POINTS', 'V', 'Magnitude'))
+    # set scalar coloring
+    ColorBy(cellDatatoPointData1Display, ('POINTS', 'V', 'Magnitude'))
 
-## hide data in view
-#Hide(cellDatatoPointData1, renderView1)
+    ## hide data in view
+    #Hide(cellDatatoPointData1, renderView1)
 
-# show color bar/color legend
-cellDatatoPointData1Display.SetScalarBarVisibility(renderView1, True)
+    # show color bar/color legend
+    cellDatatoPointData1Display.SetScalarBarVisibility(renderView1, True)
 
-# rescale color and/or opacity maps used to exactly fit the current data range
-cellDatatoPointData1Display.RescaleTransferFunctionToDataRange(False, True)
+    # rescale color and/or opacity maps used to exactly fit the current data range
+    cellDatatoPointData1Display.RescaleTransferFunctionToDataRange(False, True)
 
-# current camera placement for renderView1
-renderView1.CameraPosition = [43.800494036970036, 240.17476745676086, 496.9532069081173]
-renderView1.CameraFocalPoint = [43.800494036970036, 240.17476745676086, 40.0]
-renderView1.CameraViewUp = [-1.0, 2.220446049250313e-16, 0.0]
-renderView1.CameraParallelScale = 306.75723300355935
+    # current camera placement for renderView1
+    renderView1.CameraPosition = [43.800494036970036, 240.17476745676086, 496.9532069081173]
+    renderView1.CameraFocalPoint = [43.800494036970036, 240.17476745676086, 40.0]
+    renderView1.CameraViewUp = [-1.0, 2.220446049250313e-16, 0.0]
+    renderView1.CameraParallelScale = 306.75723300355935
 
-# save screenshot
-SaveScreenshot(dir_vis +'/V_field_top_view_last_step'+current_time+'.png', renderView1, ImageResolution=[1424, 790])
+    # save screenshot
+    SaveScreenshot(dir_vis +'/V_field_top_view_last_step'+current_time+'.png', renderView1, ImageResolution=[1424, 790])

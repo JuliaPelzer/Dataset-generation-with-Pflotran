@@ -22,8 +22,8 @@ then
 
     # run visualisation script(s)
     pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration_no_streamlines.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
-    pvpython ../scripts_visualisation/test_paraview_automatisierung_videogeneration.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
-    pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
+    #pvpython ../scripts_visualisation/test_paraview_automatisierung_videogeneration.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
+    #pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
     echo finished paraview visualisation at $(date)
 #else
 #    echo no visualisation performed and saved
