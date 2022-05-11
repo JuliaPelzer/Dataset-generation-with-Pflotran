@@ -60,11 +60,11 @@ else
         fi
         
         # LOOP
+        # calc parameters, read them for pressure_y
         python3 script_calc_parameter_variation.py
-        PRESSURE_Y=
         IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_Y=($(cat parameter_values_pressure_y.txt))'
-        i=15
-        #i=0
+        
+        i=0
         len=${#PRESSURE_Y[@]}
 
         while [ $i -lt $len ];
@@ -85,14 +85,11 @@ else
                 echo ...$OUTPUT_DATASET_RUN_DIR folder is created
             fi
 
-            #cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
-            #mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
+            cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
+            mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
             echo finished PFLOTRAN simulation at $(date)
 
-            #cp -ar output/ results/NAME_OF_RUN/
-            
             # call visualisation
-            echo test
             bash ../scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
 
             i=$(( $i + 1 ))
