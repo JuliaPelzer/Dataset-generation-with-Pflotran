@@ -41,7 +41,7 @@ then
     echo finished PFLOTRAN simulation at $(date)
 
     # call visualisation
-    bash ../call_visualisation.sh $CLA_VISUALISATION $OUTPUT_SINGLE_RUN_DIR
+    bash ../scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_SINGLE_RUN_DIR
     fi
 
 else 
@@ -60,9 +60,13 @@ else
         fi
         
         # LOOP
-        PRESSURE_Y=(-0.00003 -0.00004 -0.00005 -0.00006 -0.00007 -0.00008 -0.00009 -0.0001 -0.0002 -0.0003 -0.0004 -0.0005 -0.0006 -0.0007 -0.0008 -0.0009 -0.001 -0.002 -0.003)
-        i=0
+        python3 script_calc_parameter_variation.py
+        PRESSURE_Y=
+        IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_Y=($(cat parameter_values_pressure_y.txt))'
+        i=15
+        #i=0
         len=${#PRESSURE_Y[@]}
+
         while [ $i -lt $len ];
         do
             # calculate python stuff
@@ -81,14 +85,15 @@ else
                 echo ...$OUTPUT_DATASET_RUN_DIR folder is created
             fi
 
-            cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
-            mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
+            #cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
+            #mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
             echo finished PFLOTRAN simulation at $(date)
 
             #cp -ar output/ results/NAME_OF_RUN/
             
             # call visualisation
-            bash ../call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
+            echo test
+            bash ../scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
 
             i=$(( $i + 1 ))
         done
