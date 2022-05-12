@@ -37,6 +37,7 @@ then
         python3 script_dataset_generation.py WARN ${PRESSURE_Y}
         cp pflotran.in $OUTPUT_SINGLE_RUN_DIR/pflotran-SINGLE_RUN.in
         mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_SINGLE_RUN_DIR/pflotran-SINGLE_RUN.in -output_prefix $OUTPUT_SINGLE_RUN_PREFIX -screen_output off
+        cp parameter_values_pressure_y.txt $OUTPUT_SINGLE_RUN_DIR/parameter_values_pressure_y.txt
     
     echo finished PFLOTRAN simulation at $(date)
 
@@ -88,6 +89,7 @@ else
 
             cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
             mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
+            cp parameter_values_pressure_y.txt $OUTPUT_DATASET_DIR/parameter_values_pressure_y.txt
             echo finished PFLOTRAN simulation at $(date)
 
             # call visualisation
@@ -97,4 +99,6 @@ else
             i=$(( $i + 1 ))
         done
     fi
+    rm pflotran.in
+    rm parameter_values_pressure_y.txt
 fi

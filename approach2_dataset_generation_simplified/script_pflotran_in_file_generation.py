@@ -225,7 +225,7 @@ def text_pflotran_input_file():
     SNAPSHOT_FILE
       PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
       #PERIODIC TIME 0.1 y
-      FORMAT HDF5
+      FORMAT HDF5 #VTK
       NO_PRINT_INITIAL
       PRINT_COLUMN_IDS
       VARIABLES
