@@ -114,10 +114,10 @@ def text_pflotran_input_file():
   #=========================== discretization ===================================
   GRID
     TYPE structured
-    NXYZ 10 60 8
+    NXYZ 20 200 16
     BOUNDS
       0.d0 0.d0 0.d0
-      100.d0 600.d0 80.d0
+      100.d0 1000.d0 80.d0
     /
   END
 
@@ -125,7 +125,7 @@ def text_pflotran_input_file():
   REGION all
     COORDINATES
       0.d0 0.d0 0.d0
-      101.d0 601.d0 81.d0
+      101.d0 1001.d0 81.d0
     /
   /
 
@@ -140,7 +140,7 @@ def text_pflotran_input_file():
   REGION north
     COORDINATES
       0.d0 600.d0 0.d0
-      100.d0 600.d0 80.d0
+      100.d0 1000.d0 80.d0
     /
     FACE NORTH
   /
@@ -223,8 +223,10 @@ def text_pflotran_input_file():
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE
-      PERIODIC TIME 0.1 y
-      FORMAT VTK
+      PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
+      #PERIODIC TIME 0.1 y
+      FORMAT HDF5
+      NO_PRINT_INITIAL
       PRINT_COLUMN_IDS
       VARIABLES
         LIQUID_PRESSURE

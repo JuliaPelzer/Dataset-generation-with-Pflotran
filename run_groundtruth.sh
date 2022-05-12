@@ -52,7 +52,7 @@ else
     
     else
         # check whether output folder exists else define
-        OUTPUT_DATASET_DIR="dataset"
+        OUTPUT_DATASET_DIR="dataset_HDF5"
         if [ ! -d $OUTPUT_DATASET_DIR ]
         then
             mkdir $OUTPUT_DATASET_DIR
@@ -61,7 +61,8 @@ else
         
         # LOOP
         # calc parameters, read them for pressure_y
-        python3 script_calc_parameter_variation.py
+        DATASET_POINTS=100
+        python3 script_calc_parameter_variation.py $DATASET_POINTS
         IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_Y=($(cat parameter_values_pressure_y.txt))'
         
         i=0
@@ -70,7 +71,7 @@ else
         while [ $i -lt $len ];
         do
             # calculate python stuff
-            python3 script_dataset_generation.py INFO ${PRESSURE_Y[$i]}
+            python3 script_pflotran_in_file_generation.py INFO ${PRESSURE_Y[$i]}
 
             # call pflotran
             NAME_OF_RUN="RUN_${i}"
@@ -82,7 +83,7 @@ else
             if [ ! -d $OUTPUT_DATASET_RUN_DIR ]
             then
                 mkdir $OUTPUT_DATASET_RUN_DIR
-                echo ...$OUTPUT_DATASET_RUN_DIR folder is created
+                #echo ...$OUTPUT_DATASET_RUN_DIR folder is created
             fi
 
             cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
@@ -90,6 +91,7 @@ else
             echo finished PFLOTRAN simulation at $(date)
 
             # call visualisation
+            # problem with visualisation, if less than 50 pics TODO
             bash ../scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
 
             i=$(( $i + 1 ))

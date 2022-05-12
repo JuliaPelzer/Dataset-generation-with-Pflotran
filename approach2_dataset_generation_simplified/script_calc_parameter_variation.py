@@ -1,13 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 # calc pressure array
 #pressure_array = np.random.uniform(
 #  -0.00005, -0.003, 1
 #)
-
+param_dataset_size = int(sys.argv[1])
+np.random.SeedSequence()
 pressure_array = np.random.normal(
-  loc=-0.0003, scale=0.0001, size=100 # mu, sigma, size
+  loc=-0.0003, scale=0.0001, size=param_dataset_size # mu, sigma, e.g. size=100 
 )
 pressure_array.sort()
 

@@ -19,8 +19,9 @@ from paraview.simple import *
 paraview.simple._DisableFirstRenderCameraReset()
 
 # create a new 'Legacy VTK Reader'
-fileNames=[f"{dir_output}/pflotran-vel-00{number}.vtk" for number in range(0,10)]
-fileNames.extend([f"{dir_output}/pflotran-vel-0{number}.vtk" for number in range(10,51)])
+fileNames=[f"{dir_output}/pflotran-vel-00{number}.vtk" for number in range(0,2)]
+#fileNames=[f"{dir_output}/pflotran-vel-00{number}.vtk" for number in range(0,10)]
+#fileNames.extend([f"{dir_output}/pflotran-vel-0{number}.vtk" for number in range(10,51)])
 pflotranvel0 = LegacyVTKReader(registrationName='pflotran-vel-0*', FileNames=fileNames)
 
 # get animation scene

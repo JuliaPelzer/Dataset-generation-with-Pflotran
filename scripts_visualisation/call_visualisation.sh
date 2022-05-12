@@ -17,11 +17,12 @@ then
     if [ ! -d $VISU_OUTPUT_DIR ]
     then
         mkdir $VISU_OUTPUT_DIR
-        echo ...$VISU_OUTPUT_DIR folder is created
+        #echo ...$VISU_OUTPUT_DIR folder is created
     fi
 
     # run visualisation script(s)
     pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration_no_streamlines.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
+    ## video only if enough pictures are outputted
     #pvpython ../scripts_visualisation/test_paraview_automatisierung_videogeneration.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
     #pvpython ../scripts_visualisation/test_paraview_automatisierung_screenshotgeneration.py $CLA_OUTPUT_DIR $VISU_OUTPUT_DIR
     echo finished paraview visualisation at $(date)

@@ -73,10 +73,10 @@
   #=========================== discretization ===================================
   GRID
     TYPE structured
-    NXYZ 10 60 8
+    NXYZ 20 200 16
     BOUNDS
       0.d0 0.d0 0.d0
-      100.d0 600.d0 80.d0
+      100.d0 1000.d0 80.d0
     /
   END
 
@@ -84,7 +84,7 @@
   REGION all
     COORDINATES
       0.d0 0.d0 0.d0
-      101.d0 601.d0 81.d0
+      101.d0 1001.d0 81.d0
     /
   /
 
@@ -99,7 +99,7 @@
   REGION north
     COORDINATES
       0.d0 600.d0 0.d0
-      100.d0 600.d0 80.d0
+      100.d0 1000.d0 80.d0
     /
     FACE NORTH
   /
@@ -119,7 +119,7 @@
     /
     DATUM 50.d0 0.d0 80.d0
     GRADIENT
-      PRESSURE 0 -0.003 0  
+      PRESSURE 0 -6.483780504923638351e-05 0  
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 ! [C]
@@ -180,8 +180,10 @@
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE
-      PERIODIC TIME 0.1 y
-      FORMAT VTK
+      PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
+      #PERIODIC TIME 0.1 y
+      FORMAT HDF5
+      NO_PRINT_INITIAL
       PRINT_COLUMN_IDS
       VARIABLES
         LIQUID_PRESSURE
