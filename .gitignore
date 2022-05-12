@@ -6,6 +6,7 @@
 # Pflotran output folders
 approach2_dataset_generation_simplified/dataset/
 approach2_dataset_generation_simplified/dataset_HDF5/
+approach2_dataset_generation_simplified/dataset_HDF5_rectangular_domain/
 approach2_dataset_generation_simplified/single_run/
 approach2_dataset_generation_simplified/Vorbilder
 
