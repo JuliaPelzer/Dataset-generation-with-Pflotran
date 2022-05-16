@@ -25,18 +25,16 @@ class Region(object):
         self.nTemps = nTemps
 
     def __str__(self):
-        return("Region object:\n"
-               "  Well_Number = {0}\n"
-               "  Point = {1}\n"
-               "  X1 = {2}\n"
-               "  Y1 = {3}\n"
-               "  Z1 = {4}\n"
-               "  X2 = {5}\n"
-               "  Y2 = {6}\n"
-               "  Z2 = {7}\n"
-               "  n_Temps = {8}"
-               .format(self.id, self.Point, self.X1,
-                       self.Y1, self.Z1, self.X2, self.Y2, self.Z2, self.nTemps))
+        return(f"Region object:\n"
+               f"  Well_Number = {self.id}\n"
+               f"  Point = {self.Point}\n"
+               f"  X1 = {self.X1}\n"
+               f"  Y1 = {self.Y1}\n"
+               f"  Z1 = {self.Z1}\n"
+               f"  X2 = {self.X2}\n"
+               f"  Y2 = {self.Y2}\n"
+               f"  Z2 = {self.Z2}\n"
+               f"  n_Temps = {self.nTemps}")
 
 def text_pflotran_input_file():
   SetwordsFirst = '''
@@ -139,7 +137,7 @@ def text_pflotran_input_file():
 
   REGION north
     COORDINATES
-      0.d0 600.d0 0.d0
+      0.d0 1000.d0 0.d0
       100.d0 1000.d0 80.d0
     /
     FACE NORTH
@@ -182,7 +180,7 @@ def text_pflotran_input_file():
       RATE SCALED_VOLUMETRIC_RATE VOLUME
       TEMPERATURE DIRICHLET
     /
-    RATE 43.2 m^3/day
+    RATE 4.2 m^3/day
     TEMPERATURE 15.6d0
   /
 
@@ -223,10 +221,10 @@ def text_pflotran_input_file():
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE
-      PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
+      #PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
+      TIMES y 5.
       #PERIODIC TIME 0.1 y
       FORMAT HDF5 #VTK
-      NO_PRINT_INITIAL
       PRINT_COLUMN_IDS
       VARIABLES
         LIQUID_PRESSURE
