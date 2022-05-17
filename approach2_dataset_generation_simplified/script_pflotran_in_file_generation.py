@@ -171,7 +171,7 @@ def text_pflotran_input_file():
       RATE SCALED_VOLUMETRIC_RATE VOLUME
       TEMPERATURE DIRICHLET
     /
-    RATE -43.2 m^3/day
+    RATE -4.2 m^3/day
     TEMPERATURE -10.6d0
   /
 
