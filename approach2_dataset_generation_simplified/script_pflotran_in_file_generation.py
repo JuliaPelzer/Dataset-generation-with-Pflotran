@@ -23,5 +23,4 @@ if __name__ == "__main__":
       pressure_text = f"    PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
       with open("pressure_gradient.txt","w") as file:
         file.write(pressure_text)
-        file.close()
       logging.info(f"Pressure Input: {pressure_gradient_x}, {pressure_gradient_y}, {pressure_gradient_z}")
