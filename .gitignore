@@ -1,5 +1,6 @@
 # Pflotran files
 *.vtk
+*.h5
 *.out
 *.txt
 
