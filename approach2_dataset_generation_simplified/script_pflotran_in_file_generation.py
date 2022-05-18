@@ -96,6 +96,36 @@ def text_pflotran_input_file():
     CHARACTERISTIC_CURVES cc1
   END
 
+  MATERIAL_PROPERTY gravel_inj
+    ID 2
+    POROSITY 0.25d0                     
+    TORTUOSITY 0.5d0                    
+    ROCK_DENSITY 2.8d3                  
+    SPECIFIC_HEAT 4.1d3                 
+    THERMAL_CONDUCTIVITY_DRY 0.7        
+    THERMAL_CONDUCTIVITY_WET 1.0
+    LONGITUDINAL_DISPERSIVITY 3.1536d0  
+    PERMEABILITY                        
+      PERM_ISO 1.d-9 
+    /
+    CHARACTERISTIC_CURVES cc1
+  END
+
+  MATERIAL_PROPERTY gravel_ext
+    ID 3
+    POROSITY 0.25d0                     
+    TORTUOSITY 0.5d0                    
+    ROCK_DENSITY 2.8d3                  
+    SPECIFIC_HEAT 4.1d3                 
+    THERMAL_CONDUCTIVITY_DRY 0.7        
+    THERMAL_CONDUCTIVITY_WET 1.0
+    LONGITUDINAL_DISPERSIVITY 3.1536d0  
+    PERMEABILITY                       
+      PERM_ISO 1.d-9 
+    /
+    CHARACTERISTIC_CURVES cc1
+  END
+
   #=========================== characteristic curves ============================
   CHARACTERISTIC_CURVES cc1
     SATURATION_FUNCTION VAN_GENUCHTEN
@@ -112,10 +142,10 @@ def text_pflotran_input_file():
   #=========================== discretization ===================================
   GRID
     TYPE structured
-    NXYZ 20 200 16
+    NXYZ 20 150 16
     BOUNDS
       0.d0 0.d0 0.d0
-      100.d0 1000.d0 80.d0
+      100.d0 750.d0 80.d0
     /
   END
 
@@ -123,7 +153,7 @@ def text_pflotran_input_file():
   REGION all
     COORDINATES
       0.d0 0.d0 0.d0
-      101.d0 1001.d0 81.d0
+      100.d0 750.d0 80.d0
     /
   /
 
@@ -137,8 +167,8 @@ def text_pflotran_input_file():
 
   REGION north
     COORDINATES
-      0.d0 1000.d0 0.d0
-      100.d0 1000.d0 80.d0
+      0.d0 750.d0 0.d0
+      100.d0 750.d0 80.d0
     /
     FACE NORTH
   /
@@ -216,6 +246,16 @@ def text_pflotran_input_file():
   STRATA
     REGION all
     MATERIAL gravel
+  END
+
+  # same but different material for hps to get a map with the hp locations alias Material_ID
+  STRATA
+    REGION heatpump_inject1
+    MATERIAL gravel_inj
+  END
+  STRATA
+    REGION heatpump_extract1
+    MATERIAL gravel_ext
   END
 
   #=========================== output options ===================================
