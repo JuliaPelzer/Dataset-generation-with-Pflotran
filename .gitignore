@@ -5,10 +5,8 @@
 
 # Pflotran output folders
 approach2_dataset_generation_simplified/dataset/
-approach2_dataset_generation_simplified/dataset_HDF5/
-approach2_dataset_generation_simplified/dataset_HDF5_rectangular_domain/
-approach2_dataset_generation_simplified/single_run/
-approach2_dataset_generation_simplified/Vorbilder
+approach2_dataset_generation_simplified/dataset_HDF5_uniformly_distributed_data/
+approach2_dataset_generation_simplified/Vorbilder_and_OLD_stuff/
 
 # Paraview output files
 *.pvsm
@@ -20,7 +18,6 @@ approach2_dataset_generation_simplified/Vorbilder
 *.pdf
 *.svg
 *.ogv
-*.
 
 # test files
 try_python_write_in_pflotran.ipynb
