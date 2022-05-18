@@ -53,7 +53,7 @@ else
     
     else
         # check whether output folder exists else define
-        OUTPUT_DATASET_DIR="dataset_HDF5"
+        OUTPUT_DATASET_DIR="dataset_HDF5_uniformly_distributed_data"
         if [ ! -d $OUTPUT_DATASET_DIR ]
         then
             mkdir $OUTPUT_DATASET_DIR
@@ -69,6 +69,8 @@ else
         i=0
         len=${#PRESSURE_Y[@]}
 
+        cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
+            
         while [ $i -lt $len ];
         do
             # calculate python stuff
@@ -87,9 +89,8 @@ else
                 #echo ...$OUTPUT_DATASET_RUN_DIR folder is created
             fi
 
-            cp pflotran.in $OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in
-            mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_RUN_DIR/pflotran-$NAME_OF_RUN.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
-            cp parameter_values_pressure_y.txt $OUTPUT_DATASET_DIR/parameter_values_pressure_y.txt
+            mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_DIR/pflotran.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
+            cp pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
             echo finished PFLOTRAN simulation at $(date)
 
             # call visualisation
@@ -99,6 +100,7 @@ else
             i=$(( $i + 1 ))
         done
     fi
-    rm pflotran.in
+    cp parameter_values_pressure_y.txt $OUTPUT_DATASET_DIR/parameter_values_pressure_y.txt
     rm parameter_values_pressure_y.txt
+    rm pressure_gradient.txt
 fi
