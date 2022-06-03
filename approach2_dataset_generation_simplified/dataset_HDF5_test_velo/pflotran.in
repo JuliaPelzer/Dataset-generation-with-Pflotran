@@ -160,14 +160,7 @@
       RATE SCALED_VOLUMETRIC_RATE VOLUME
       TEMPERATURE DIRICHLET
     /
-    #RATE -4.2 m^3/day
-    RATE LIST
-      TIME_UNITS d
-      DATA_UNITS m^3/day
-      0.    0.
-      38.   0.
-      72.  -4.2
-    /
+    RATE -4.2 m^3/day
     TEMPERATURE -10.6d0
   /
 
@@ -176,14 +169,7 @@
       RATE SCALED_VOLUMETRIC_RATE VOLUME
       TEMPERATURE DIRICHLET
     /
-    #RATE 4.2 m^3/day
-    RATE LIST
-      TIME_UNITS d
-      DATA_UNITS m^3/day
-      0.    0.
-      38.   0.
-      72.   4.2
-    /
+    RATE 4.2 m^3/day
     TEMPERATURE 15.6d0
   /
 

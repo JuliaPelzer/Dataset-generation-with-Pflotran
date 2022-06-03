@@ -53,7 +53,7 @@ else
     
     else
         # check whether output folder exists else define
-        OUTPUT_DATASET_DIR="dataset_HDF5_uniformly_distributed_data"
+        OUTPUT_DATASET_DIR="dataset_HDF5_testtest" #uniformly_distributed_data_velo"
         if [ ! -d $OUTPUT_DATASET_DIR ]
         then
             mkdir $OUTPUT_DATASET_DIR
@@ -62,7 +62,7 @@ else
         
         # LOOP
         # calc parameters, read them for pressure_y
-        DATASET_POINTS=100
+        DATASET_POINTS=5 #100
         python3 script_calc_parameter_variation.py $DATASET_POINTS
         IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_Y=($(cat parameter_values_pressure_y.txt))'
         
