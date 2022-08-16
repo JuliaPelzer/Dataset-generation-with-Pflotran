@@ -2,6 +2,8 @@
 ## always start from same directory as pflotran.in file
 ## does not expect debug mode + dataset mode ! either debug+single run or dataset and no debugging
 
+#TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
+
 #command line arguments
 args=("$@")
 CLA_DEBUG=${args[0]} # expects "debug" or "no_debug"
