@@ -2,7 +2,7 @@
 builds datasets with definable number of data points, one pflotran.in file, varying pressure gradients in external txt file
 
 ## if you use this script on a new computer
-- remember to copy all (!) required files (see dummy_dataset)
+- remember to copy all (!) required files (see dummy_dataset + .sh run script)
 - set the $PFLOTRAN_DIR (in ~/.zshrc or bashrc or similar)
 
 ## how to run the script
