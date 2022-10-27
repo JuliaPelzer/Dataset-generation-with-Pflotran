@@ -1,4 +1,43 @@
+# vary grad(p)
 
+#pflotran_in_file = open("pflotran.in", "r")
+#content = pflotran_in_file.read()
+#
+#print(content.format)
+
+# version Kyle
+import os
+import matplotlib.pyplot as plt
+import random 
+import logging
+import sys
+
+class Region(object):
+    def __init__(self, id, Point, X1, Y1, Z1, X2, Y2, Z2, nTemps):
+        self.id = id
+        self.Point = Point
+        self.X1 = X1
+        self.Y1 = Y1
+        self.Z1 = Z1
+        self.X2 = X2
+        self.Y2 = Y2
+        self.Z2 = Z2
+        self.nTemps = nTemps
+
+    def __str__(self):
+        return(f"Region object:\n"
+               f"  Well_Number = {self.id}\n"
+               f"  Point = {self.Point}\n"
+               f"  X1 = {self.X1}\n"
+               f"  Y1 = {self.Y1}\n"
+               f"  Z1 = {self.Z1}\n"
+               f"  X2 = {self.X2}\n"
+               f"  Y2 = {self.Y2}\n"
+               f"  Z2 = {self.Z2}\n"
+               f"  n_Temps = {self.nTemps}")
+
+def text_pflotran_input_file():
+  SetwordsFirst = '''
   #Description: flow in a 3D area plus one heatpump - super super simplified for approach 2 try 1
   SIMULATION
     SIMULATION_TYPE SUBSURFACE
@@ -149,7 +188,9 @@
     /
     DATUM 50.d0 0.d0 80.d0
     GRADIENT
-      EXTERNAL_FILE interim_pressure_gradient.txt
+  '''
+
+  SetwordsSecond = '''  
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 ! [C]
@@ -160,14 +201,7 @@
       RATE SCALED_VOLUMETRIC_RATE VOLUME
       TEMPERATURE DIRICHLET
     /
-    #RATE -4.2 m^3/day
-    RATE LIST
-      TIME_UNITS d
-      DATA_UNITS m^3/day
-      0.    0.
-      38.   0.
-      72.  -4.2
-    /
+    RATE -4.2 m^3/day
     TEMPERATURE -10.6d0
   /
 
@@ -176,14 +210,7 @@
       RATE SCALED_VOLUMETRIC_RATE VOLUME
       TEMPERATURE DIRICHLET
     /
-    #RATE 4.2 m^3/day
-    RATE LIST
-      TIME_UNITS d
-      DATA_UNITS m^3/day
-      0.    0.
-      38.   0.
-      72.   4.2
-    /
+    RATE 4.2 m^3/day
     TEMPERATURE 15.6d0
   /
 
@@ -235,7 +262,7 @@
   OUTPUT
     SNAPSHOT_FILE
       #PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
-      TIMES y 0.1 5.
+      TIMES y 5.
       #PERIODIC TIME 0.1 y
       FORMAT HDF5 #VTK
       PRINT_COLUMN_IDS
@@ -248,4 +275,51 @@
   /
 
   END_SUBSURFACE
-  
+  '''
+
+  return SetwordsFirst, SetwordsSecond
+
+if __name__ == "__main__":
+      # predefine stuff
+      SetwordsFirst, SetwordsSecond = text_pflotran_input_file()
+
+      # parameters
+      skip = 1
+
+      # read input parameters
+      cla_args = sys.argv
+
+      # how much output should be printed
+      logging.basicConfig(level = cla_args[1])
+      #logging.info(f"input arguments: {cla_args}")
+
+      # test varying pressure gradient, one heat pump
+      pressure_gradient_x = 0
+      pressure_gradient_y = cla_args[2]
+      pressure_gradient_z = 0
+
+      #logging.info(f"Running Simulation with Inputs: {pressure_gradient_y}")
+      file = open("pflotran.in","w")
+      file.write(SetwordsFirst)
+      file.write("    PRESSURE ")
+      file.write(str(pressure_gradient_x))
+      file.write(" ")
+      file.write(str(pressure_gradient_y))
+      file.write(" ")
+      file.write(str(pressure_gradient_z))
+      file.write(SetwordsSecond)
+      file.close()
+      logging.info(f"Pressure Input: {pressure_gradient_x}, {pressure_gradient_y}, {pressure_gradient_z}")
+      #os.system("pflotran pflotran.in > log.pflotran")
+      #os.system("cp pflotran.in results/pflotran-withFlow-" + str(i) + ".in")
+      #os.system("cp pflotran-004.vtk results/pflotran-withFlow-" + str(i) +".vtk")
+      #os.system("cp pflotran-vel-004.vtk results/pflotran-withFlow-vel-" + str(i) + ".vtk")
+      #with open('results/cell.dat', 'r') as f1, open('results/pflotran-withFlow-'+str(i) +'.vtk', 'r') as f2, open('results/pflotran-withFlow-vel-'+str(i) + '.vtk', 'r') as f3, open('results/pflotran-withFlow-new-'+ str(i) + '.vtk', 'w') as newVTK, open('results/pflotran-withFlow-new-vel-'+ str(i) + '.vtk', 'w') as newVEL:
+      #    #input2 = f.read()
+      #    lines1 = f1.readlines()
+      #    lines2 = f2.readlines()
+      #    lines3 = f3.readlines()
+      #    newVTK.writelines(lines1[:])
+      #    newVTK.writelines(lines2[5:])
+      #    newVEL.writelines(lines1[:])
+      #    newVEL.writelines(lines3[5:])
