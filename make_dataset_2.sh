@@ -23,18 +23,31 @@ fi
 # LOOP
 # calc parameters, read them for pressure_y
 DATASET_POINTS=$CLA_NUMBER_DATAPOINTS #1 #5 #100
-python3 script_calc_parameter_variation.py $DATASET_POINTS
+python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $DATASET_POINTS
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_Y=($(cat parameter_values_pressure_y.txt))'
+
+cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 
 i=0
 len=${#PRESSURE_Y[@]}
 
-cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
-    
+# len_perm = 1
+# # calculate permeability fields
+# python3 ../scripts/scripts_permeability/create_permeability_field.py INFO $len_perm "test" "False"
+
 while [ $i -lt $len ];
 do
-    # calculate python stuff
-    python3 script_pflotran_in_file_generation.py INFO ${PRESSURE_Y[$i]}
+    # calculate pressure files
+    python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE_Y[$i]}
+
+    # j=0
+    # while [ $j -lt $len_perm ];
+    # do
+    #     # copy next permeability field file to pflotran.in folder
+        
+    #     cp ../vary_permeability/perm_field_1.txt $OUTPUT_DATASET_DIR/perm_field_1.txt
+    #     j=$(( $j + 1 ))
+    # done
 
     # call pflotran
     NAME_OF_RUN="RUN_${i}"
@@ -57,16 +70,16 @@ do
         mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_DIR/pflotran.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
     fi
 
-    cp pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
+    cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
     echo finished PFLOTRAN simulation at $(date)
 
     # call visualisation
     # problem with visualisation, if less than 50 pics TODO
-    bash ../scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
+    bash ../scripts/scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
 
     i=$(( $i + 1 ))
 done
 
 cp parameter_values_pressure_y.txt $OUTPUT_DATASET_DIR/parameter_values_pressure_y.txt
 rm parameter_values_pressure_y.txt
-rm pressure_gradient.txt
+rm interim_pressure_gradient.txt

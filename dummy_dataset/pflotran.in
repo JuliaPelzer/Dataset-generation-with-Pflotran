@@ -149,7 +149,7 @@
     /
     DATUM 50.d0 0.d0 80.d0
     GRADIENT
-      EXTERNAL_FILE pressure_gradient.txt
+      EXTERNAL_FILE interim_pressure_gradient.txt
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 ! [C]
