@@ -1,3 +1,4 @@
+from random import random, seed
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -8,9 +9,11 @@ import noise
 from typing import Tuple, Dict, Union
 from dataclasses import dataclass
 from tqdm import tqdm
+import logging
 
 @dataclass
 class Settings:
+    random_bool      :   bool
     ncells      :   np.array    =   np.array([20,150,12])
     size        :   np.array    =   np.array([100,500,30])
     perm_max    :   float       =   6.65*10**-9
@@ -18,6 +21,8 @@ class Settings:
     factor      :   float       =  40
     case        :   str         = "perlin_noise"
     frequency   :   Union[int, Tuple[int, int, int]]    =   (4,9,3)
+    seed_id     :   int         =   0
+    # seed        :   int         =   np.random.seed(seed_id)
 
     def get_keys(self):
         return [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
@@ -78,27 +83,26 @@ def make_perm_grid(settings:Settings, base:float = 0):
 
 def save_perm(filename, ncells, cells):
     n = ncells[0] * ncells[1] * ncells[2]
-    cells_array_flatten = cells.reshape(n, order='F')
-
-    h5file = File(filename,mode='w')
-
     # create integer array for cell ids
     iarray = np.arange(n,dtype='u8')
-    # convert to 1-based
-    iarray[:] += 1
+    iarray[:] += 1 # convert to 1-based
+    cells_array_flatten = cells.reshape(n, order='F')
+
+    h5file = _edit_perm_file(filename,mode='w')
+
     dataset_name = 'Cell Ids'
-    h5dset = h5file.create_dataset(dataset_name, data=iarray)
+    h5file.create_dataset(dataset_name, data=iarray)
+    dataset_name = 'Permeability'
+    h5file.create_dataset(dataset_name, data=cells_array_flatten)
+
+    h5file.close()
 
     # create double array for porosities
     # rarray = np.zeros(n,dtype='f8')
     # rarray[:] = 0.25
     # rarray[4:7] = 0.3
-    dataset_name = 'Permeability'
-    h5dset = h5file.create_dataset(dataset_name, data=cells_array_flatten)
 
-    h5file.close()
-
-# 2d plot of the permeability field
+# 2d plot of a permeability field
 def plot_perm(cells, case="trigonometric"):
     fig, axes = plt.subplots(2, 2, figsize=(10, 6))
     fig.suptitle(f"Permeability field [{case}]")
@@ -114,8 +118,8 @@ def plot_perm(cells, case="trigonometric"):
     fig.tight_layout()
     # plt.colorbar()
     fig.show()
-
-def create_perm_field(number_samples:int, filename_extension:str=None):
+    
+def create_perm_field(number_samples:int, filename_extension:str=None, random_bool:bool=False):
         # ncells:np.ndarray=np.ndarray([20,150,12]), 
         # size:np.ndarray=np.ndarray([100,500,30]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
@@ -124,11 +128,13 @@ def create_perm_field(number_samples:int, filename_extension:str=None):
     # TODO vary frequency
     
     current_dir = os.getcwd()
-    folder = os.path.join(current_dir, "vary_permeability/permeability_fields")
+    folder = os.path.join(current_dir, "permeability_fields")
     if not os.path.exists(folder):
         os.mkdir(folder)
 
-    settings = Settings() #ncells, size, perm_max, perm_min, factor, case, frequency)
+    settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
+    if not settings.random_bool:
+        np.random.seed(settings.seed_id)
     with open(f"{folder}/perm_field_parameters.txt", "w") as f:
         f.write(settings.all_settings_to_str())
 
@@ -139,9 +145,36 @@ def create_perm_field(number_samples:int, filename_extension:str=None):
         cells, _ = make_perm_grid(settings, base)
         filename = f"{folder}/permeability_base_{base}_{filename_extension}.h5"
         save_perm(filename, settings.ncells, cells)
+        plot_perm(cells, case=settings.case)
+    
+    logging.info("Created perm-field")
+    return cells # for pytest
+
+def read_and_plot_perm_field(filename:str="permeability_fields/permeability_base_8325804_test.h5"):
+    # read h5 perm file
+    h5file = _edit_perm_file(filename,mode='r')
+
+    # print header in h5 file
+    if False:
+        logging.info(h5file.keys())
+        logging.info(h5file['Cell Ids'])
+        logging.info(h5file['Cell Ids'][:])
+        logging.info(h5file['Permeability'])
+        logging.info(h5file['Permeability'][:])
+    perm_field_orig = h5file['Permeability'][:]
+    perm_field = perm_field_orig.reshape((12,150,20)).T
+    plot_perm(perm_field, case="perlin_noise")
+
+    h5file.close()
+    return perm_field # for pytest
+
+def _edit_perm_file(filename:str, mode:str="r"):
+    return File(filename, mode=mode)
 
 if __name__=="__main__":
-    create_perm_field(100, "test")
+    logging.basicConfig(level=logging.INFO)
+    create_perm_field(1, "test", random_bool=False)
+    read_and_plot_perm_field("permeability_fields/permeability_base_8325804_test.h5")
 
     # size = np.array([500, 1000, 30])
     # ncells = np.array([75, 150, 12])
