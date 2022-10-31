@@ -15,8 +15,8 @@ import logging
 @dataclass
 class Settings:
     random_bool      :   bool
-    ncells      :   np.array    =   np.array([20,150,12])
-    size        :   np.array    =   np.array([100,500,30])
+    ncells      :   np.array    =   np.array([20,150,16])
+    size        :   np.array    =   np.array([100,750,80])
     perm_max    :   float       =   6.65*10**-9
     perm_min    :   float       =   1.36*10**-12
     factor      :   float       =  40
@@ -121,8 +121,8 @@ def plot_perm(cells, case="trigonometric"):
     fig.show()
     
 def create_perm_field(number_samples:int, filename_extension:str=None, random_bool:bool=False):
-        # ncells:np.ndarray=np.ndarray([20,150,12]), 
-        # size:np.ndarray=np.ndarray([100,500,30]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
+        # ncells:np.ndarray=np.ndarray([20,150,16]), 
+        # size:np.ndarray=np.ndarray([100,750,80]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
     
     # TODO dimensionen? Reihenfolge?
@@ -149,9 +149,9 @@ def create_perm_field(number_samples:int, filename_extension:str=None, random_bo
         plot_perm(cells, case=settings.case)
     
     logging.info("Created perm-field")
-    return cells # for pytest
+    return cells, settings # for pytest
 
-def read_and_plot_perm_field(filename:str="permeability_fields/permeability_base_8325804_test.h5"):
+def read_and_plot_perm_field(settings:Settings, filename:str="permeability_fields/permeability_base_8325804_test.h5"):
     # read h5 perm file
     h5file = _edit_perm_file(filename,mode='r')
 
@@ -163,7 +163,7 @@ def read_and_plot_perm_field(filename:str="permeability_fields/permeability_base
         logging.info(h5file['Permeability'])
         logging.info(h5file['Permeability'][:])
     perm_field_orig = h5file['Permeability'][:]
-    perm_field = perm_field_orig.reshape((12,150,20)).T
+    perm_field = perm_field_orig.reshape((16,150,20)).T # TODO SETTINGSSIZE
     plot_perm(perm_field, case="perlin_noise")
 
     h5file.close()
@@ -182,8 +182,5 @@ if __name__=="__main__":
     random_bool = bool(cla_args[4])
     create_perm_field(number_samples, filename_extension, random_bool)
     
-    
-    # read_and_plot_perm_field("permeability_fields/permeability_base_8325804_test.h5")
-
-    # size = np.array([500, 1000, 30])
-    # ncells = np.array([75, 150, 12])
+    # _, settings = create_perm_field(number_samples, filename_extension, random_bool)
+    # read_and_plot_perm_field(settings, "permeability_fields/permeability_base_8325804_test.h5")
