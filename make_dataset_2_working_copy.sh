@@ -23,7 +23,7 @@ fi
 # LOOP
 # calc parameters, read them for PRESSURE_XY
 MIN_DATASET_POINTS=$CLA_NUMBER_DATAPOINTS #1 #5 #100
-python3 ../scripts/scripts_pressure/script_calc_pressure_variation_working_copy.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR
+python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_XY=($(cat ${OUTPUT_DATASET_DIR}/pressure_array_2D_xy.txt))'
 
 cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
