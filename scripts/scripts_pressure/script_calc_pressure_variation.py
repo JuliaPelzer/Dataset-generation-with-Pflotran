@@ -54,49 +54,10 @@ def sampling_regular_log(param_dataset_size):
 
 def sampling_regular_uniform(param_dataset_size):
     # regular spacing: uniform
-    value_start = -0.001 #-1*10**-6 (self reasoned)
-    value_stop = -0.005 #fabian: -0.01 #-2.5*10**-4 (self reasoned)
+    value_start = -1*10**-6 #-0.001 #
+    value_stop = -2.5*10**-4 #-0.005 #fabian: -0.01 #
     x_array = np.linspace(value_start, value_stop, param_dataset_size)
     return x_array
-  
-def sampling_regular_uniform_2D(param_dataset_size):
-    # samples_total_pressure = int(np.round(_cubic_root(param_dataset_size)))
-    samples_pressure_sqrt = int(np.round(np.sqrt(param_dataset_size)))
-    total_pressure = sampling_regular_uniform(samples_pressure_sqrt)
-    print(samples_pressure_sqrt, total_pressure)
-    pressure_array_2D = [] #np.ndarray((samples_pressure_sqrt, samples_pressure_sqrt))
-
-    for value in total_pressure:
-      pressure_x_array = np.linspace(0, value, samples_pressure_sqrt)
-      pressure_y_array = np.sqrt(value**2 - pressure_x_array**2)
-      pressure_array_2D.append([[pressure_x_array[i], pressure_y_array[i]] for i in range(samples_pressure_sqrt)])
-
-    return pressure_array_2D
-
-def _cubic_root(number):
-  return number**(1./3)
-
-def test():
-
-  # calc pressure array
-  pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
-
-  if not debug:
-    # save in txt file
-    for linw in pressure_array_2D:
-      print(linw)
-    print(len(pressure_array_2D))
-    with open("pressure_array_2D.txt", "w") as f:
-        for value in pressure_array_2D:
-            print(value)
-            # f.write(f"{value}")
-        pass
-
-  else:
-    # print for debugging purposes
-    y = [i for i in range(0,param_dataset_size)]
-    #plt.scatter(pressure_array, y)
-    #plt.show()
 
 if __name__ == "__main__":
   pressure_array = sampling_regular_uniform(param_dataset_size)
