@@ -25,13 +25,12 @@ fi
 MIN_DATASET_POINTS=$CLA_NUMBER_DATAPOINTS #1 #5 #100
 python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_XY=($(cat ${OUTPUT_DATASET_DIR}/pressure_array_2D_xy.txt))'
+# number of datapoints can differ from number of wished datapoints in 2D case (see calc pressure_variation)
 
 cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 
 i=0
 len=${#PRESSURE_XY[@]}
-# len=$(( $len /2 ))
-# number of datapoints can differ from number of wished datapoints in 2D case (see calc pressure_variation)
 
 # len_perm = 1
 # # calculate permeability fields
@@ -80,7 +79,7 @@ do
     bash ../scripts/scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR
 
     # pressure consists of two values, so only half of the number of pressure values in loop
-    i=$(( $i + 2 ))
+    i=$(( $i + 1 ))
 done
 
 rm interim_pressure_gradient.txt
