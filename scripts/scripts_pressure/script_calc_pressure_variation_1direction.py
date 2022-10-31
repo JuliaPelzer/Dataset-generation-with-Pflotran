@@ -4,6 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+debug = False
+
+# set dataset size
+if not debug:
+  param_dataset_size = int(sys.argv[1])
+else:
+  param_dataset_size = 20
+
 def sampling_random(param_dataset_size, debug):
     
     # random distribution : log-normal
@@ -46,39 +54,12 @@ def sampling_regular_log(param_dataset_size):
 
 def sampling_regular_uniform(param_dataset_size):
     # regular spacing: uniform
-    value_start = -1*10**-6 
-    value_stop = -2.5*10**-4
+    value_start = -1*10**-6 #-0.001 #
+    value_stop = -2.5*10**-4 #-0.005 #fabian: -0.01 #
     x_array = np.linspace(value_start, value_stop, param_dataset_size)
     return x_array
-  
-def sampling_regular_uniform_2D(param_dataset_size):
-    samples_pressure_sqrt = math.isqrt(param_dataset_size)+1
-    total_pressure = sampling_regular_uniform(samples_pressure_sqrt)
-
-    pressure_array_2D = []
-    for value in total_pressure:
-      pressure_x_array = np.linspace(0, value/2, samples_pressure_sqrt)
-      pressure_y_array = - np.sqrt(value**2 - pressure_x_array**2)
-      pressure_array_2D += zip(pressure_x_array, pressure_y_array)
-
-    return pressure_array_2D
 
 if __name__ == "__main__":
-  debug = False
-  case="2D"
-
-  # set dataset size
-  if not debug:
-    param_dataset_size = int(sys.argv[1])
-    dataset_folder = sys.argv[2]
-  else:
-    param_dataset_size = 20
-
-  if case=="1D":
-    pressure_array = sampling_regular_uniform(param_dataset_size)
-    pressure_file = open("parameter_values_pressure_y.txt", "w")
-    np.savetxt(pressure_file, pressure_array)
-  elif case=="2D":
-    pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
-    with open(dataset_folder+"/pressure_array_2D_xy.txt", "w") as f:
-      f.writelines([f"{value[0]} {value[1]}\n" for value in pressure_array_2D])
+  pressure_array = sampling_regular_uniform(param_dataset_size)
+  pressure_file = open("parameter_values_pressure_y.txt", "w")
+  np.savetxt(pressure_file, pressure_array)
