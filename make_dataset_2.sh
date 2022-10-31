@@ -29,13 +29,12 @@ IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_XY=($(cat ${OUTPUT_DATASET_DI
 
 cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 
-i=0
-len=${#PRESSURE_XY[@]}
-
 # len_perm = 1
 # # calculate permeability fields
 # python3 ../scripts/scripts_permeability/create_permeability_field.py INFO $len_perm "test" "False"
 
+len=${#PRESSURE_XY[@]}
+i=0
 while [ $i -lt $len ];
 do
     # calculate pressure files
