@@ -46,13 +46,12 @@ def sampling_regular_log(param_dataset_size):
 
 def sampling_regular_uniform(param_dataset_size):
     # regular spacing: uniform
-    value_start = -0.001 #-1*10**-6 (self reasoned)
-    value_stop = -0.005 #fabian: -0.01 #-2.5*10**-4 (self reasoned)
+    value_start = -1*10**-6 
+    value_stop = -2.5*10**-4
     x_array = np.linspace(value_start, value_stop, param_dataset_size)
     return x_array
   
 def sampling_regular_uniform_2D(param_dataset_size):
-    # samples_total_pressure = int(np.round(_cubic_root(param_dataset_size)))
     samples_pressure_sqrt = math.isqrt(param_dataset_size)+1
     total_pressure = sampling_regular_uniform(samples_pressure_sqrt)
 
@@ -75,24 +74,21 @@ def test():
     # calc pressure array
   pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
 
-  if not debug:
-    # save in txt file
-    for linw in pressure_array_2D:
-      print(linw)
-    print(len(pressure_array_2D))
-    with open("pressure_array_2D.txt", "w") as f:
-        for value in pressure_array_2D:
-            # f.write(f"{value}")
-          pass
-
-  else:
-    # print for debugging purposes
-    y = [i for i in range(0,param_dataset_size)]
-    #plt.scatter(pressure_array, y)
-    #plt.show()
-
 if __name__ == "__main__":
-  test()
-  # pressure_array = sampling_regular_uniform(param_dataset_size)
-  # pressure_file = open("parameter_values_pressure_y.txt", "w")
-  # np.savetxt(pressure_file, pressure_array)
+  debug = False
+  case="2D"
+
+  # set dataset size
+  if not debug:
+    param_dataset_size = int(sys.argv[1])
+  else:
+    param_dataset_size = 20
+
+  if case=="1D":
+    pressure_array = sampling_regular_uniform(param_dataset_size)
+    pressure_file = open("parameter_values_pressure_y.txt", "w")
+    np.savetxt(pressure_file, pressure_array)
+  elif case=="2D":
+    pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
+    with open("pressure_all_directions_dataset/pressure_array_2D.txt", "w") as f:
+      f.writelines([f"{value[0]} {value[1]}\n" for value in pressure_array_2D])
