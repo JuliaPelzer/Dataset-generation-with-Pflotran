@@ -72,20 +72,20 @@
     CHARACTERISTIC_CURVES cc1
   END
 
-  MATERIAL_PROPERTY gravel_ext
-    ID 3
-    POROSITY 0.25d0                     
-    TORTUOSITY 0.5d0                    
-    ROCK_DENSITY 2.8d3                  
-    SPECIFIC_HEAT 4.1d3                 
-    THERMAL_CONDUCTIVITY_DRY 0.7        
-    THERMAL_CONDUCTIVITY_WET 1.0
-    LONGITUDINAL_DISPERSIVITY 3.1536d0  
-    PERMEABILITY                       
-      PERM_ISO 1.d-9 
-    /
-    CHARACTERISTIC_CURVES cc1
-  END
+  # MATERIAL_PROPERTY gravel_ext
+  #   ID 3
+  #   POROSITY 0.25d0                     
+  #   TORTUOSITY 0.5d0                    
+  #   ROCK_DENSITY 2.8d3                  
+  #   SPECIFIC_HEAT 4.1d3                 
+  #   THERMAL_CONDUCTIVITY_DRY 0.7        
+  #   THERMAL_CONDUCTIVITY_WET 1.0
+  #   LONGITUDINAL_DISPERSIVITY 3.1536d0  
+  #   PERMEABILITY                       
+  #     PERM_ISO 1.d-9 
+  #   /
+  #   CHARACTERISTIC_CURVES cc1
+  # END
 
   #=========================== characteristic curves ============================
   CHARACTERISTIC_CURVES cc1
@@ -134,9 +134,9 @@
     FACE NORTH
   /
 
-  REGION heatpump_extract1
-    COORDINATE 50.d0 100.d0 50.d0
-  /
+  # REGION heatpump_extract1
+  #   COORDINATE 50.d0 100.d0 50.d0
+  # /
   REGION heatpump_inject1
     COORDINATE 50.d0 120.d0 50.d0
   /
@@ -155,21 +155,21 @@
     TEMPERATURE 10.6d0 ! [C]
   /
 
-  FLOW_CONDITION extraction
-    TYPE
-      RATE SCALED_VOLUMETRIC_RATE VOLUME
-      TEMPERATURE DIRICHLET
-    /
-    #RATE -4.2 m^3/day
-    RATE LIST
-      TIME_UNITS d
-      DATA_UNITS m^3/day
-      0.    0.
-      38.   0.
-      72.  -4.2
-    /
-    TEMPERATURE -10.6d0
-  /
+  # FLOW_CONDITION extraction
+  #   TYPE
+  #     RATE SCALED_VOLUMETRIC_RATE VOLUME
+  #     TEMPERATURE DIRICHLET
+  #   /
+  #   #RATE -4.2 m^3/day
+  #   RATE LIST
+  #     TIME_UNITS d
+  #     DATA_UNITS m^3/day
+  #     0.    0.
+  #     38.   0.
+  #     72.  -4.2
+  #   /
+  #   TEMPERATURE -10.6d0
+  # /
 
   FLOW_CONDITION injection
     TYPE
@@ -205,11 +205,11 @@
     REGION south
   /
 
-  # heatpump source/sink
-  SOURCE_SINK heatpump_extract1
-    FLOW_CONDITION extraction
-    REGION heatpump_extract1
-  /
+  # # heatpump source/sink
+  # SOURCE_SINK heatpump_extract1
+  #   FLOW_CONDITION extraction
+  #   REGION heatpump_extract1
+  # /
   SOURCE_SINK heatpump_inject1
     FLOW_CONDITION injection
     REGION heatpump_inject1
@@ -226,10 +226,10 @@
     REGION heatpump_inject1
     MATERIAL gravel_inj
   END
-  STRATA
-    REGION heatpump_extract1
-    MATERIAL gravel_ext
-  END
+  # STRATA
+  #   REGION heatpump_extract1
+  #   MATERIAL gravel_ext
+  # END
 
   #=========================== output options ===================================
   OUTPUT
