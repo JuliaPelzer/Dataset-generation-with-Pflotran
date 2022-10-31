@@ -4,14 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-debug = False
-
-# set dataset size
-if not debug:
-  param_dataset_size = int(sys.argv[1])
-else:
-  param_dataset_size = 20
-
 def sampling_random(param_dataset_size, debug):
     
     # random distribution : log-normal
@@ -61,24 +53,26 @@ def sampling_regular_uniform(param_dataset_size):
   
 def sampling_regular_uniform_2D(param_dataset_size):
     # samples_total_pressure = int(np.round(_cubic_root(param_dataset_size)))
-    samples_pressure_sqrt = int(np.round(np.sqrt(param_dataset_size)))
+    samples_pressure_sqrt = math.isqrt(param_dataset_size)+1
     total_pressure = sampling_regular_uniform(samples_pressure_sqrt)
-    print(samples_pressure_sqrt, total_pressure)
-    pressure_array_2D = [] #np.ndarray((samples_pressure_sqrt, samples_pressure_sqrt))
 
+    pressure_array_2D = []
     for value in total_pressure:
-      pressure_x_array = np.linspace(0, value, samples_pressure_sqrt)
+      pressure_x_array = np.linspace(0, value/2, samples_pressure_sqrt)
       pressure_y_array = np.sqrt(value**2 - pressure_x_array**2)
-      pressure_array_2D.append([[pressure_x_array[i], pressure_y_array[i]] for i in range(samples_pressure_sqrt)])
+      pressure_array_2D += zip(pressure_x_array, pressure_y_array)
 
     return pressure_array_2D
 
-def _cubic_root(number):
-  return number**(1./3)
-
 def test():
+  debug = False
 
-  # calc pressure array
+  # set dataset size
+  if not debug:
+    param_dataset_size = int(sys.argv[1])
+  else:
+    param_dataset_size = 20
+    # calc pressure array
   pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
 
   if not debug:
@@ -88,9 +82,8 @@ def test():
     print(len(pressure_array_2D))
     with open("pressure_array_2D.txt", "w") as f:
         for value in pressure_array_2D:
-            print(value)
             # f.write(f"{value}")
-        pass
+          pass
 
   else:
     # print for debugging purposes
@@ -99,6 +92,7 @@ def test():
     #plt.show()
 
 if __name__ == "__main__":
-  pressure_array = sampling_regular_uniform(param_dataset_size)
-  pressure_file = open("parameter_values_pressure_y.txt", "w")
-  np.savetxt(pressure_file, pressure_array)
+  test()
+  # pressure_array = sampling_regular_uniform(param_dataset_size)
+  # pressure_file = open("parameter_values_pressure_y.txt", "w")
+  # np.savetxt(pressure_file, pressure_array)
