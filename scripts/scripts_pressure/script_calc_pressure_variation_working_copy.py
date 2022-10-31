@@ -63,17 +63,6 @@ def sampling_regular_uniform_2D(param_dataset_size):
 
     return pressure_array_2D
 
-def test():
-  debug = False
-
-  # set dataset size
-  if not debug:
-    param_dataset_size = int(sys.argv[1])
-  else:
-    param_dataset_size = 20
-    # calc pressure array
-  pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
-
 if __name__ == "__main__":
   debug = False
   case="2D"
