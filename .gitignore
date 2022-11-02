@@ -1,5 +1,5 @@
 *.code-workspace
-vary_permeability/Kyle_create_perm_pflotran_file/
+vary_permeability/Kyle_create_perm_pflotran_file
 
 # Pflotran files
 *.vtk
@@ -19,6 +19,8 @@ approach2_dataset_generation_simplified/dataset/
 approach2_dataset_generation_simplified/dataset_HDF5_uniformly_distributed_data/
 approach2_dataset_generation_simplified/Vorbilder_and_OLD_stuff/
 OLD/
+# interim stand : distributed to Kyle:
+ZZZ_*
 
 # Paraview output files
 *.pvsm
