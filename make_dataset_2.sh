@@ -28,7 +28,6 @@ python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_DATAS
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/pressure_values.txt))'
 # number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
-cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 
 # len_perm = 1
 # # calculate permeability fields
@@ -36,6 +35,7 @@ cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 
 len=${#PRESSURE[@]}
 i=0
+echo $len #TODO
 while [ $i -lt $len ];
 do
     # j=0
@@ -49,7 +49,7 @@ do
 
     # calculate pressure files
     if [ "$CLA_CASE" = "1D" ]; 
-        then
+    then
         python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
         NAME_OF_RUN="RUN_${i}"
 
@@ -71,7 +71,7 @@ do
     fi
     
     # to DEBUG the simulation turn screen_output on
-    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_DIR/pflotran.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
+    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
 
     cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
     echo finished PFLOTRAN simulation at $(date)
@@ -84,4 +84,5 @@ do
     i=$(( $i + 1 ))
 done
 
+cp pflotran.in $OUTPUT_DATASET_DIR/pflotran_copy.in
 rm interim_pressure_gradient.txt
