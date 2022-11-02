@@ -46,8 +46,8 @@ def sampling_regular_log(param_dataset_size):
 
 def sampling_regular_uniform(param_dataset_size):
     # regular spacing: uniform
-    value_start = -1*10**-6 #-0.001 #
-    value_stop = -2.5*10**-4 #-0.005 #fabian: -0.01 #
+    value_start = -0.001 #-1*10**-6 #
+    value_stop = -0.01 #-2.5*10**-4 #-0.005 #fabian:
     x_array = np.linspace(value_start, value_stop, param_dataset_size)
     return x_array
   
