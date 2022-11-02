@@ -65,7 +65,6 @@ def sampling_regular_uniform_2D(param_dataset_size):
 
 if __name__ == "__main__":
   debug = False
-  case="2D"
 
   # set dataset size
   if not debug:
@@ -74,11 +73,16 @@ if __name__ == "__main__":
   else:
     param_dataset_size = 20
 
+  if sys.argv[3] == "1D":
+    case = "1D"
+  else:
+    case = "2D"
+
   if case=="1D":
     pressure_array = sampling_regular_uniform(param_dataset_size)
-    pressure_file = open("parameter_values_pressure_y.txt", "w")
+    pressure_file = open(dataset_folder+"/pressure_values.txt", "w")
     np.savetxt(pressure_file, pressure_array)
   elif case=="2D":
     pressure_array_2D = sampling_regular_uniform_2D(param_dataset_size)
-    with open(dataset_folder+"/pressure_array_2D_xy.txt", "w") as f:
+    with open(dataset_folder+"/pressure_values.txt", "w") as f:
       f.writelines([f"{value[0]} {value[1]}\n" for value in pressure_array_2D])

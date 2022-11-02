@@ -1,4 +1,4 @@
-## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_DEBUG> <CLA_NUMBER_DATAPOINTS> <CLA_NAME> <CLA_VISUALISATION>"
+## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_DEBUG> <CLA_NUMBER_DATAPOINTS> <CLA_NAME> <CLA_CASE> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
 
@@ -6,8 +6,10 @@
 args=("$@")
 CLA_DEBUG=${args[0]} # expects "debug" or "no_debug"
 CLA_NUMBER_DATAPOINTS=${args[1]} # expects the number of desired datapoints in the dataset
-CLA_NAME=${args[2]} # expects an string with the name of the dataset
-CLA_VISUALISATION=${args[3]} # expects "vis" or "no_vis"
+CLA_NAME=${args[2]} # expects a string with the name of the dataset
+CLA_CASE=${args[3]} # expects a string: "2D" or "1D" (for the pressure field)
+CLA_VISUALISATION=${args[4]} # expects "vis" or "no_vis"
+#TODO remove debug
 
 echo working at $(date) on folder $(pwd)
 # dataset generation
@@ -21,11 +23,11 @@ then
 fi
 
 # LOOP
-# calc parameters, read them for PRESSURE_XY
+# calc parameters, read them for PRESSURE
 MIN_DATASET_POINTS=$CLA_NUMBER_DATAPOINTS #1 #5 #100
-python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR
-IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE_XY=($(cat ${OUTPUT_DATASET_DIR}/pressure_array_2D_xy.txt))'
-# number of datapoints can differ from number of wished datapoints in 2D case (see calc pressure_variation)
+python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR $CLA_CASE
+IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/pressure_values.txt))'
+# number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
 cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 
@@ -33,13 +35,10 @@ cp pflotran.in $OUTPUT_DATASET_DIR/pflotran.in
 # # calculate permeability fields
 # python3 ../scripts/scripts_permeability/create_permeability_field.py INFO $len_perm "test" "False"
 
-len=${#PRESSURE_XY[@]}
+len=${#PRESSURE[@]}
 i=0
 while [ $i -lt $len ];
 do
-    # calculate pressure files
-    python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE_XY[$i]} ${PRESSURE_XY[$i+1]}
-
     # j=0
     # while [ $j -lt $len_perm ];
     # do
@@ -49,8 +48,18 @@ do
     #     j=$(( $j + 1 ))
     # done
 
+    # calculate pressure files
+    if [ "$CLA_CASE" = "1D" ]; 
+        then
+        python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
+        NAME_OF_RUN="RUN_${i}"
+
+    else # 2D case
+        python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
+        NAME_OF_RUN="RUN_$(($i/2))"
+    fi
+
     # call pflotran
-    NAME_OF_RUN="RUN_$(($i/2))"
     OUTPUT_DATASET_RUN_DIR="${OUTPUT_DATASET_DIR}/${NAME_OF_RUN}"
     OUTPUT_DATASET_RUN_PREFIX="${OUTPUT_DATASET_RUN_DIR}/pflotran"
     echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)

@@ -16,7 +16,10 @@ if __name__ == "__main__":
       #logging.info(f"input arguments: {cla_args}")
 
       # test varying pressure gradient, for one heat pump
-      pressure_gradient_x = cla_args[3]
+      if len(cla_args) > 3:
+        pressure_gradient_x = cla_args[3]
+      else:
+        pressure_gradient_x = 0
       pressure_gradient_y = cla_args[2]
       pressure_gradient_z = 0
 
