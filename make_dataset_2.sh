@@ -1,14 +1,13 @@
-## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_DEBUG> <CLA_NUMBER_DATAPOINTS> <CLA_NAME> <CLA_CASE> <CLA_VISUALISATION>"
+## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_NUMBER_DATAPOINTS> <CLA_NAME> <CLA_CASE> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
 
 #command line arguments
 args=("$@")
-CLA_DEBUG=${args[0]} # expects "debug" or "no_debug"
-CLA_NUMBER_DATAPOINTS=${args[1]} # expects the number of desired datapoints in the dataset
-CLA_NAME=${args[2]} # expects a string with the name of the dataset
-CLA_CASE=${args[3]} # expects a string: "2D" or "1D" (for the pressure field)
-CLA_VISUALISATION=${args[4]} # expects "vis" or "no_vis"
+CLA_NUMBER_DATAPOINTS=${args[0]} # expects the number of desired datapoints in the dataset
+CLA_NAME=${args[1]} # expects a string with the name of the dataset
+CLA_CASE=${args[2]} # expects a string: "2D" or "1D" (for the pressure field)
+CLA_VISUALISATION=${args[3]} # expects "vis" or "no_vis"
 #TODO remove debug
 
 echo working at $(date) on folder $(pwd)
@@ -71,13 +70,8 @@ do
         #echo ...$OUTPUT_DATASET_RUN_DIR folder is created
     fi
     
-    if [ "$CLA_DEBUG" = "debug" ];
-    then
-    # DEBUG simulation (one single run)
-        mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_DIR/pflotran.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX
-    else
-        mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_DIR/pflotran.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
-    fi
+    # to DEBUG the simulation turn screen_output on
+    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -$OUTPUT_DATASET_DIR/pflotran.in -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
 
     cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
     echo finished PFLOTRAN simulation at $(date)
