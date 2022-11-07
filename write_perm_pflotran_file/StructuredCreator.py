@@ -1,35 +1,47 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Apr 30 17:11:25 2020
-
-@author: Fabian Böttcher
-"""
-
-import os
 import numpy as np
-from h5py import File
-import matplotlib.pyplot as plt
 
-def write_mesh_and_loc_hp_files(path_to_output:str, cell_widths, number_cells):
+def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
 	xGrid, yGrid, zGrid = number_cells
 
 	volume = 1
 	output_string = []
 	output_string.append("CELLS "+str(xGrid*yGrid*zGrid))
-	cellID = 1
-
+	cellID_1 = 1
 	for k in range(0,zGrid):
 		zloc = (k + 0.5)*cellZWidth
 		for j in range(0,yGrid):
 			yloc = (j + 0.5)*cellYWidth
 			for i in range(0,xGrid):
 				xloc = (i + 0.5)*cellXWidth
-				output_string.append("\n" + str(cellID)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(volume))
+				output_string.append("\n" + str(cellID_1)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(volume))
 				# check for location of heat pump
 				# if [52.5,122.5,52.5] == [xloc, yloc, zloc]:
 				# 	print("CALC", cellID)
-				cellID += 1
+				cellID_1 += 1
+	
+	output_string.append("\nCONNECTIONS " + str((xGrid-1)*yGrid*zGrid + xGrid*(yGrid-1)*zGrid + xGrid*yGrid*(zGrid-1)))
+	for k in range(0,zGrid):
+		zloc = (k + 0.5)*cellZWidth
+		for j in range(0,yGrid):
+			yloc = (j + 0.5)*cellYWidth
+			for i in range(0,xGrid):
+				xloc = (i + 0.5)*cellXWidth
+				cellID_1 = i+1 + j*xGrid + k*xGrid*yGrid
+				if i < xGrid-1:
+					xloc_local = (i + 1)*cellXWidth
+					cellID_2 = cellID_1+1
+					output_string.append("\n" + str(cellID_1)+"  "+str(cellID_2)+"  "+str(xloc_local)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(faceArea))
+				if j < yGrid-1:
+					yloc_local = (j + 1)*cellYWidth
+					cellID_2 = cellID_1+xGrid
+					output_string.append("\n" + str(cellID_1)+"  "+str(cellID_2)+"  "+str(xloc)+"  "+str(yloc_local)+"  "+str(zloc)+"  "+str(faceArea))
+				if k < zGrid-1:
+					zloc_local = (k + 1)*cellZWidth
+					cellID_2 = cellID_1+xGrid*yGrid
+					output_string.append("\n" + str(cellID_1)+"  "+str(cellID_2)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc_local)+"  "+str(faceArea))
+
+
 
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
@@ -97,82 +109,10 @@ if __name__ == "__main__":
 	grid_widths=[100, 750, 80]	# Grid width in metres
 	number_cells=[20, 150, 16]	# Number of grid cells
 	cell_widths = grid_widths/np.array(number_cells)	# Cell width in metres
+	faceArea=1
+	write_mesh_file(path_to_output, cell_widths, number_cells, faceArea)
 	loc_hp = [50, 120, 50]		# Location of the heatpump in metres
-	write_mesh_and_loc_hp_files(path_to_output, cell_widths, number_cells)
 	write_loc_well_file(path_to_output, cell_widths, number_cells, loc_hp)
 
-	faceArea=1
 	write_SN_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
 	write_WE_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
-
-
-
-
-# def initial_permeability_variation(x, y):
-#     """calculate example permeability field for calibration testing"""
-#     var_val = x*0 + 1e-9 + y*0
-#     return var_val
-    
-# #perm_grid = initial_permeability_variation(coords[:,0], coords[:,1])
-
-# #for i in range(0,xGrid*yGrid):
-# 	#print(coords[i,0], coords[i,1], coords[i,2])
-
-
-
-# # cell_centers_path = "grid_cell_centers.dat"
-# # cell_center_coords = np.loadtxt(cell_centers_path)
-# #perm_grid = initial_permeability_variation(cell_center_coords[:, 0], cell_center_coords[:, 1])
-# scale_factor = 2
-# #perm_grid_log = np.log(perm_grid)
-# #perm_grid = np.exp(perm_grid_log.mean() + ((perm_grid_log - perm_grid_log.mean()) * scale_factor))
-
-# #print(cell_center_coords)
-# #plt.scatter(cell_center_coords[:, 0], cell_center_coords[:, 1], c=perm_grid)
-# #plt.show()
-
-# iarray = [] #np.arange(1, cell_center_coords.shape[0] + 1, 1)
-# perm_grid = []
-# for i in range(xGrid*yGrid):
-# 	iarray.append(i+1)
-# 	perm_grid.append(0.000000001)
-
-
-# filename = 'permeability.h5'
-
-# print(iarray)
-# print(perm_grid)
-
-# print('setting cell indices....')
-# # add cell ids to file
-# dataset_name = 'Cell Ids'
-# h5file = File(filename, mode='w')
-# h5dset = h5file.create_dataset(dataset_name, data=iarray)
-# # add permeability to file
-# dataset_name = 'Permeability'
-# h5dset = h5file.create_dataset(dataset_name, data=iarray)
-# h5file.close()
-
-# # debug output
-# print('min: %e' % np.max(perm_grid))
-# print('max: %e' % np.min(perm_grid))
-# print('ave: %e' % np.mean(perm_grid))
-    
-
-# '''	
-# ###########################################
-# # variables for setup #####################
-# ###########################################
-
-# #cell_centers_path = "../PFLOTRAN/test_model/grid_cell_centers.dat"
-
-# # mean initial permeability
-# const_permeability = 1e-8
-
-# #scaling factor to increase permeability field differences
-# scale_factor = 2
-# plot=False
-
-# # permeability dataset file name
-# # has to match the link in the PFLOTRAN input file
-# filename = '../PFLOTRAN/permeability.h5'
