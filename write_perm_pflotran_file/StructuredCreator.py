@@ -10,16 +10,15 @@ import numpy as np
 from h5py import File
 import matplotlib.pyplot as plt
 
-def write_mesh_file(path_to_output:str, cell_widths, number_cells):
-	# Cell width in metres
+def write_mesh_and_loc_hp_files(path_to_output:str, cell_widths, number_cells):
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
-	# Number of grid cells
 	xGrid, yGrid, zGrid = number_cells
 
 	volume = 1
 	output_string = []
 	output_string.append("CELLS "+str(xGrid*yGrid*zGrid))
 	cellID = 1
+
 	for k in range(0,zGrid):
 		zloc = (k + 0.5)*cellZWidth
 		for j in range(0,yGrid):
@@ -27,90 +26,84 @@ def write_mesh_file(path_to_output:str, cell_widths, number_cells):
 			for i in range(0,xGrid):
 				xloc = (i + 0.5)*cellXWidth
 				output_string.append("\n" + str(cellID)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(volume))
+				# check for location of heat pump
+				# if [52.5,122.5,52.5] == [xloc, yloc, zloc]:
+				# 	print("CALC", cellID)
 				cellID += 1
 
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 
-def calc_connections(cell_widths, number_cells, grid_witdhs):
-	# Cell width in metres
-	cellXWidth, cellYWidth, cellZWidth = cell_widths
-	# Number of grid cells
+def write_loc_well_file(path_to_output:str, cell_widths, number_cells, loc_well):
+	i,j,k = loc_hp/cell_widths
+	cellID = int(i+1 + j*number_cells[0] + k*number_cells[0]*number_cells[1])
+
+	with open(str(path_to_output)+"/heatpump_inject1.vs", "w") as file:
+		file.write(str(cellID))
+
+def write_SN_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, faceArea=1):
+	cellXWidth, _, cellZWidth = cell_widths
 	xGrid, yGrid, zGrid = number_cells
-	# Grid width in metres
-	xWidth, yWidth, zWidth = grid_witdhs
+	_, yWidth, _ = grid_witdhs
 
-	# print("CONNECTIONS")
-	# # for k in range(0,zGrid):
-	# for j in range(0,yGrid):
-	# 	for i in range(0,xGrid):
-	# 		if (i < (xGrid - 1)):
-	# 			cellID_1 = (i+1) + j*yGrid
-	# 			cellID_2 = (i+1) + j*yGrid + 1
-	# 			xloc = cellXWidth + i*cellXWidth
-	# 			yloc = 0.5*cellYWidth + j*cellYWidth
-	# 			zloc = 0.5*cellZWidth
-	# 			faceArea = 1
-	# 			print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-			
-	# 		if (j < (yGrid - 1)):
-	# 			cellID_1 = (i+1) + j*yGrid
-	# 			cellID_2 = (i+1) + j*yGrid + xGrid
-	# 			xloc = 0.5*cellXWidth + i*cellXWidth
-	# 			yloc = cellYWidth + j*cellYWidth
-	# 			zloc = 0.5*cellZWidth
-	# 			faceArea = 1
-	# 			print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-	
-	print("NorthBC")
-	output_string = []
-	output_string.append("CONNECTIONS " + str(xGrid*zGrid))
+	output_string_north = []
+	output_string_north.append("CONNECTIONS " + str(xGrid*zGrid))
+	output_string_south = []
+	output_string_south.append("CONNECTIONS " + str(xGrid*zGrid))
+	yloc_north = yWidth
+	yloc_south = 0
 	for k in range(0, zGrid):
+		zloc = 0.5*cellZWidth + k*cellZWidth
 		for i in range(0,xGrid):
-			cellID = (xGrid*(yGrid-1)) + i + 1
-			xloc = 0.5*cellXWidth + i*cellXWidth
-			yloc = yWidth
-			zloc = 0.5*cellZWidth + k*cellZWidth
-			faceArea = 1
-			print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-			output_string.append("\n" + str(cellID)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(faceArea))
-		
-	print("SouthBC")
-	for i in range(0,xGrid):
-		cellID = i + 1
-		xloc = 0.5*cellXWidth + i*cellXWidth
-		yloc = 0
-		zloc = 0.5*cellZWidth
-		faceArea = 1
-		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-		
-	print("WestBC")
-	for i in range(0,yGrid):
-		cellID = 1 + i*xGrid
-		xloc = 0
-		yloc = 0.5*cellYWidth + i*cellYWidth
-		zloc = 0.5*cellZWidth
-		faceArea = 1
-		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-		
-	print("EastBC")
-	for i in range(0,yGrid):
-		cellID = i*xGrid +xGrid
-		xloc = xWidth
-		yloc = 0.5*cellYWidth + i*cellYWidth
-		zloc = 0.5*cellZWidth
-		faceArea = 1
-		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+			xloc = (i+0.5)*cellXWidth
+			cellID_north = (xGrid*(yGrid-1)) + i+1 + k*xGrid*yGrid
+			cellID_south = i+1 + k*xGrid*yGrid
+			output_string_north.append("\n" + str(cellID_north)+"  "+str(xloc)+"  "+str(yloc_north)+"  "+str(zloc)+"  "+str(faceArea))
+			output_string_south.append("\n" + str(cellID_south)+"  "+str(xloc)+"  "+str(yloc_south)+"  "+str(zloc)+"  "+str(faceArea))
+	
+	with open(str(path_to_output)+"/north.ex", "w") as file:
+		file.writelines(output_string_north)
+	with open(str(path_to_output)+"/south.ex", "w") as file:
+		file.writelines(output_string_south)
+	
+def write_WE_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, faceArea=1):
+	_, cellYWidth, cellZWidth = cell_widths
+	xGrid, yGrid, zGrid = number_cells
+	xWidth, _, _ = grid_witdhs
 
-
+	output_string_east = []
+	output_string_east.append("CONNECTIONS " + str(yGrid*zGrid))
+	output_string_west = []
+	output_string_west.append("CONNECTIONS " + str(yGrid*zGrid))
+	xloc_east = xWidth
+	xloc_west = 0
+	for k in range(0, zGrid):
+		zloc = 0.5*cellZWidth + k*cellZWidth
+		for j in range(0,yGrid):
+			yloc = (j+0.5)*cellYWidth
+			cellID_east = (j+1)*xGrid + k*xGrid*yGrid
+			cellID_west = j*xGrid + 1 + k*xGrid*yGrid
+			output_string_east.append("\n" + str(cellID_east)+"  "+str(xloc_east)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(faceArea))
+			output_string_west.append("\n" + str(cellID_west)+"  "+str(xloc_west)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(faceArea))
+	
+	with open(str(path_to_output)+"/east.ex", "w") as file:
+		file.writelines(output_string_east)
+	with open(str(path_to_output)+"/west.ex", "w") as file:
+		file.writelines(output_string_west)
+		
 if __name__ == "__main__":
-	grid_widths=[100, 750, 80]
-	number_cells=[20, 150, 16]
-	cell_widths = grid_widths/np.array(number_cells)
+	
 	path_to_output = "."
+	grid_widths=[100, 750, 80]	# Grid width in metres
+	number_cells=[20, 150, 16]	# Number of grid cells
+	cell_widths = grid_widths/np.array(number_cells)	# Cell width in metres
+	loc_hp = [50, 120, 50]		# Location of the heatpump in metres
+	write_mesh_and_loc_hp_files(path_to_output, cell_widths, number_cells)
+	write_loc_well_file(path_to_output, cell_widths, number_cells, loc_hp)
 
-	write_mesh_file(path_to_output=path_to_output, cell_widths=cell_widths, number_cells=number_cells)
-	calc_connections(cell_widths=cell_widths, number_cells=number_cells, grid_witdhs=grid_widths)
+	faceArea=1
+	write_SN_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
+	write_WE_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
 
 
 
