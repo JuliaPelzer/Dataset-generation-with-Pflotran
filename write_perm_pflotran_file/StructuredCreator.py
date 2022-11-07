@@ -16,65 +16,64 @@ def write_mesh_file(path_to_output:str, cell_widths, number_cells):
 	# Number of grid cells
 	xGrid, yGrid, zGrid = number_cells
 
-
-	coords = np.zeros((xGrid*yGrid*zGrid,3))
-	cellID = 0
+	volume = 1
 	output_string = []
 	output_string.append("CELLS "+str(xGrid*yGrid*zGrid))
-	index = 0
+	cellID = 1
 	for k in range(0,zGrid):
 		zloc = (k + 0.5)*cellZWidth
 		for j in range(0,yGrid):
 			yloc = (j + 0.5)*cellYWidth
 			for i in range(0,xGrid):
 				xloc = (i + 0.5)*cellXWidth
-				# index = i + j*xGrid + k*yGrid*xGrid
-				coords[index] = [xloc,yloc,zloc]
-				volume = 1
-				# cellID = (i+1) + j*xGrid + k*yGrid*xGrid
-				cellID = index+1
 				output_string.append("\n" + str(cellID)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(volume))
-				index += 1
+				cellID += 1
 
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 
-def calc_connections(cell_widths, number_cells):
+def calc_connections(cell_widths, number_cells, grid_witdhs):
 	# Cell width in metres
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
 	# Number of grid cells
 	xGrid, yGrid, zGrid = number_cells
+	# Grid width in metres
+	xWidth, yWidth, zWidth = grid_witdhs
 
-	print("CONNECTIONS")
-	# for k in range(0,zGrid):
-	for j in range(0,yGrid):
-		for i in range(0,xGrid):
-			if (i < (xGrid - 1)):
-				cellID_1 = (i+1) + j*yGrid
-				cellID_2 = (i+1) + j*yGrid + 1
-				xloc = cellXWidth + i*cellXWidth
-				yloc = 0.5*cellYWidth + j*cellYWidth
-				zloc = 0.5*cellZWidth
-				faceArea = 1
-				print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+	# print("CONNECTIONS")
+	# # for k in range(0,zGrid):
+	# for j in range(0,yGrid):
+	# 	for i in range(0,xGrid):
+	# 		if (i < (xGrid - 1)):
+	# 			cellID_1 = (i+1) + j*yGrid
+	# 			cellID_2 = (i+1) + j*yGrid + 1
+	# 			xloc = cellXWidth + i*cellXWidth
+	# 			yloc = 0.5*cellYWidth + j*cellYWidth
+	# 			zloc = 0.5*cellZWidth
+	# 			faceArea = 1
+	# 			print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
 			
-			if (j < (yGrid - 1)):
-				cellID_1 = (i+1) + j*yGrid
-				cellID_2 = (i+1) + j*yGrid + xGrid
-				xloc = 0.5*cellXWidth + i*cellXWidth
-				yloc = cellYWidth + j*cellYWidth
-				zloc = 0.5*cellZWidth
-				faceArea = 1
-				print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+	# 		if (j < (yGrid - 1)):
+	# 			cellID_1 = (i+1) + j*yGrid
+	# 			cellID_2 = (i+1) + j*yGrid + xGrid
+	# 			xloc = 0.5*cellXWidth + i*cellXWidth
+	# 			yloc = cellYWidth + j*cellYWidth
+	# 			zloc = 0.5*cellZWidth
+	# 			faceArea = 1
+	# 			print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
 	
 	print("NorthBC")
-	for i in range(0,xGrid):
-		cellID = (xGrid*(yGrid-1)) + i + 1
-		xloc = 0.5*cellXWidth + i*cellXWidth
-		yloc = yWidth
-		zloc = 0.5*cellZWidth
-		faceArea = 1
-		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+	output_string = []
+	output_string.append("CONNECTIONS " + str(xGrid*zGrid))
+	for k in range(0, zGrid):
+		for i in range(0,xGrid):
+			cellID = (xGrid*(yGrid-1)) + i + 1
+			xloc = 0.5*cellXWidth + i*cellXWidth
+			yloc = yWidth
+			zloc = 0.5*cellZWidth + k*cellZWidth
+			faceArea = 1
+			print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+			output_string.append("\n" + str(cellID)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(faceArea))
 		
 	print("SouthBC")
 	for i in range(0,xGrid):
@@ -111,7 +110,7 @@ if __name__ == "__main__":
 	path_to_output = "."
 
 	write_mesh_file(path_to_output=path_to_output, cell_widths=cell_widths, number_cells=number_cells)
-	calc_connections(cell_widths=cell_widths, number_cells=number_cells)
+	calc_connections(cell_widths=cell_widths, number_cells=number_cells, grid_witdhs=grid_widths)
 
 
 
