@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_NUMBER_DATAPOINTS> <CLA_NAME> <CLA_CASE> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
@@ -51,13 +53,12 @@ do
     if [ "$CLA_CASE" = "1D" ]; 
     then
         python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
-        NAME_OF_RUN="RUN_${i}"
-
     else # 2D case
         python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
-        NAME_OF_RUN="RUN_$(($i/2))"
     fi
 
+    NAME_OF_RUN="RUN_${i}"
+    
     # call pflotran
     OUTPUT_DATASET_RUN_DIR="${OUTPUT_DATASET_DIR}/${NAME_OF_RUN}"
     OUTPUT_DATASET_RUN_PREFIX="${OUTPUT_DATASET_RUN_DIR}/pflotran"
