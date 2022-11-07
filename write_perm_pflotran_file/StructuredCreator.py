@@ -10,97 +10,109 @@ import numpy as np
 from h5py import File
 import matplotlib.pyplot as plt
 
-# Width in metres
-xWidth = 100
-yWidth = 750
-zWidth = 80
-#Number of grid cells
-xGrid = 20
-yGrid = 150
-zGrid = 16
+def write_mesh_file(path_to_output:str, cell_widths, number_cells):
+	# Cell width in metres
+	cellXWidth, cellYWidth, cellZWidth = cell_widths
+	# Number of grid cells
+	xGrid, yGrid, zGrid = number_cells
 
-coords = np.zeros((xGrid*yGrid*zGrid,3))
 
-cellXWidth = xWidth/xGrid
-cellYWidth = yWidth/yGrid
-cellZWidth = zWidth/zGrid
+	coords = np.zeros((xGrid*yGrid*zGrid,3))
+	cellID = 0
+	output_string = []
+	output_string.append("CELLS "+str(xGrid*yGrid*zGrid))
+	index = 0
+	for k in range(0,zGrid):
+		zloc = (k + 0.5)*cellZWidth
+		for j in range(0,yGrid):
+			yloc = (j + 0.5)*cellYWidth
+			for i in range(0,xGrid):
+				xloc = (i + 0.5)*cellXWidth
+				# index = i + j*xGrid + k*yGrid*xGrid
+				coords[index] = [xloc,yloc,zloc]
+				volume = 1
+				# cellID = (i+1) + j*xGrid + k*yGrid*xGrid
+				cellID = index+1
+				output_string.append("\n" + str(cellID)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(volume))
+				index += 1
 
-totalCells = xGrid*yGrid*zGrid
-cellID = 0
-print("CELLS ", xGrid*yGrid*zGrid)
-index = 0
-for k in range(0,zGrid):
-	zloc = (k + 0.5)*cellZWidth
+	with open(str(path_to_output)+"/mesh.uge", "w") as file:
+		file.writelines(output_string)
+
+def calc_connections(cell_widths, number_cells):
+	# Cell width in metres
+	cellXWidth, cellYWidth, cellZWidth = cell_widths
+	# Number of grid cells
+	xGrid, yGrid, zGrid = number_cells
+
+	print("CONNECTIONS")
+	# for k in range(0,zGrid):
 	for j in range(0,yGrid):
-		yloc = (j + 0.5)*cellYWidth
 		for i in range(0,xGrid):
-			xloc = (i + 0.5)*cellXWidth
-			# index = i + j*xGrid + k*yGrid*xGrid
-			coords[index] = [xloc,yloc,zloc]
-			volume = 1
-			# cellID = (i+1) + j*xGrid + k*yGrid*xGrid
-			cellID = index+1
-			print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  volume)
-			index += 1
+			if (i < (xGrid - 1)):
+				cellID_1 = (i+1) + j*yGrid
+				cellID_2 = (i+1) + j*yGrid + 1
+				xloc = cellXWidth + i*cellXWidth
+				yloc = 0.5*cellYWidth + j*cellYWidth
+				zloc = 0.5*cellZWidth
+				faceArea = 1
+				print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+			
+			if (j < (yGrid - 1)):
+				cellID_1 = (i+1) + j*yGrid
+				cellID_2 = (i+1) + j*yGrid + xGrid
+				xloc = 0.5*cellXWidth + i*cellXWidth
+				yloc = cellYWidth + j*cellYWidth
+				zloc = 0.5*cellZWidth
+				faceArea = 1
+				print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+	
+	print("NorthBC")
+	for i in range(0,xGrid):
+		cellID = (xGrid*(yGrid-1)) + i + 1
+		xloc = 0.5*cellXWidth + i*cellXWidth
+		yloc = yWidth
+		zloc = 0.5*cellZWidth
+		faceArea = 1
+		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
 		
+	print("SouthBC")
+	for i in range(0,xGrid):
+		cellID = i + 1
+		xloc = 0.5*cellXWidth + i*cellXWidth
+		yloc = 0
+		zloc = 0.5*cellZWidth
+		faceArea = 1
+		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
 		
-# print("CONNECTIONS")
-# for j in range(0,yGrid):
-# 	for i in range(0,xGrid):
-# 		if (i < (xGrid - 1)):
-# 			cellID_1 = (i+1) + j*yGrid
-# 			cellID_2 = (i+1) + j*yGrid + 1
-# 			xloc = cellXWidth + i*cellXWidth
-# 			yloc = 0.5*cellYWidth + j*cellYWidth
-# 			zloc = 0.5*cellZWidth
-# 			faceArea = 1
-# 			print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+	print("WestBC")
+	for i in range(0,yGrid):
+		cellID = 1 + i*xGrid
+		xloc = 0
+		yloc = 0.5*cellYWidth + i*cellYWidth
+		zloc = 0.5*cellZWidth
+		faceArea = 1
+		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
 		
-# 		if (j < (yGrid - 1)):
-# 			cellID_1 = (i+1) + j*yGrid
-# 			cellID_2 = (i+1) + j*yGrid + xGrid
-# 			xloc = 0.5*cellXWidth + i*cellXWidth
-# 			yloc = cellYWidth + j*cellYWidth
-# 			zloc = 0.5*cellZWidth
-# 			faceArea = 1
-# 			print(cellID_1, "  ", cellID_2, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+	print("EastBC")
+	for i in range(0,yGrid):
+		cellID = i*xGrid +xGrid
+		xloc = xWidth
+		yloc = 0.5*cellYWidth + i*cellYWidth
+		zloc = 0.5*cellZWidth
+		faceArea = 1
+		print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
 
 
-# print("NorthBC")
-# for i in range(0,xGrid):
-# 	cellID = (xGrid*(yGrid-1)) + i + 1
-# 	xloc = 0.5*cellXWidth + i*cellXWidth
-# 	yloc = yWidth
-# 	zloc = 0.5*cellZWidth
-# 	faceArea = 1
-# 	print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-	
-# print("SouthBC")
-# for i in range(0,xGrid):
-# 	cellID = i + 1
-# 	xloc = 0.5*cellXWidth + i*cellXWidth
-# 	yloc = 0
-# 	zloc = 0.5*cellZWidth
-# 	faceArea = 1
-# 	print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-	
-# print("WestBC")
-# for i in range(0,yGrid):
-# 	cellID = 1 + i*xGrid
-# 	xloc = 0
-# 	yloc = 0.5*cellYWidth + i*cellYWidth
-# 	zloc = 0.5*cellZWidth
-# 	faceArea = 1
-# 	print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
-	
-# print("EastBC")
-# for i in range(0,yGrid):
-# 	cellID = i*xGrid +xGrid
-# 	xloc = xWidth
-# 	yloc = 0.5*cellYWidth + i*cellYWidth
-# 	zloc = 0.5*cellZWidth
-# 	faceArea = 1
-# 	print(cellID, "  ", xloc, "  ", yloc, "  ", zloc, "  ",  faceArea)
+if __name__ == "__main__":
+	grid_widths=[100, 750, 80]
+	number_cells=[20, 150, 16]
+	cell_widths = grid_widths/np.array(number_cells)
+	path_to_output = "."
+
+	write_mesh_file(path_to_output=path_to_output, cell_widths=cell_widths, number_cells=number_cells)
+	calc_connections(cell_widths=cell_widths, number_cells=number_cells)
+
 
 
 
