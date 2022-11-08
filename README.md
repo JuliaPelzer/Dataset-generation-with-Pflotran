@@ -1,3 +1,6 @@
+# Prerequisite (installs)
+# TODO
+
 # Phd_simulation_groundtruth
 builds datasets with definable number of data points; based on one pflotran.in file, varying pressure gradients in external .txt file
 
