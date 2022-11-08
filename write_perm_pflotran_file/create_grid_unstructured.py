@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+import os
 
 def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
@@ -42,7 +44,9 @@ def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
 					output_string.append("\n" + str(cellID_1)+"  "+str(cellID_2)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc_local)+"  "+str(faceArea))
 
 
-
+	if not os.path.exists(path_to_output):
+		os.makedirs(path_to_output)
+		
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 
@@ -105,10 +109,13 @@ def write_WE_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, f
 		
 if __name__ == "__main__":
 	
+	cla = sys.argv
+	assert len(cla) == 2, "Please provide a path to the output folder"
+	path_to_output = cla[1]
+
 	grid_widths=[100, 750, 80]	# Grid width in metres
 	number_cells=[20, 150, 16]	# Number of grid cells
 	loc_hp = [50, 120, 50]		# Location of the heatpump in metres
-	path_to_output = "."
 
 	faceArea=1
 	cell_widths = grid_widths/np.array(number_cells)	# Cell width in metres
