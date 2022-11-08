@@ -105,14 +105,14 @@ def write_WE_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, f
 		
 if __name__ == "__main__":
 	
-	path_to_output = "."
 	grid_widths=[100, 750, 80]	# Grid width in metres
 	number_cells=[20, 150, 16]	# Number of grid cells
-	cell_widths = grid_widths/np.array(number_cells)	# Cell width in metres
-	faceArea=1
-	write_mesh_file(path_to_output, cell_widths, number_cells, faceArea)
 	loc_hp = [50, 120, 50]		# Location of the heatpump in metres
-	write_loc_well_file(path_to_output, cell_widths, number_cells, loc_hp)
+	path_to_output = "."
 
+	faceArea=1
+	cell_widths = grid_widths/np.array(number_cells)	# Cell width in metres
+	write_mesh_file(path_to_output, cell_widths, number_cells, faceArea)
+	write_loc_well_file(path_to_output, cell_widths, number_cells, loc_hp)
 	write_SN_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
 	write_WE_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
