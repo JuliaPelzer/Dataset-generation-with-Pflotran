@@ -48,7 +48,7 @@ def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
 
 def write_loc_well_file(path_to_output:str, cell_widths, number_cells, loc_hp):
 	i,j,k = loc_hp/cell_widths
-	cellID = int(i+1 + j*number_cells[0] + k*number_cells[0]*number_cells[1])
+	cellID = int(i + (j-1)*number_cells[0] + (k-1)*number_cells[0]*number_cells[1])
 
 	with open(str(path_to_output)+"/heatpump_inject1.vs", "w") as file:
 		file.write(str(cellID))

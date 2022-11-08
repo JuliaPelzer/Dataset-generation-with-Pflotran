@@ -14,7 +14,7 @@
   #=========================== times ============================================
   TIME
     FINAL_TIME 5.0 y
-    # INITIAL_TIMESTEP_SIZE 0.1 y
+    INITIAL_TIMESTEP_SIZE 0.1 y
     MAXIMUM_TIMESTEP_SIZE 0.5 y
   /
 
