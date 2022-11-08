@@ -17,10 +17,14 @@ if __name__ == "__main__":
 
       # test varying pressure gradient, for one heat pump
       if len(cla_args) > 3:
-        pressure_gradient_x = cla_args[3]
-      else:
+        pressure_gradient_x = cla_args[2]
+        pressure_gradient_y = cla_args[3]
+      elif len(cla_args) == 3:
         pressure_gradient_x = 0
-      pressure_gradient_y = cla_args[2]
+        pressure_gradient_y = cla_args[2]
+      elif len(cla_args) < 3:
+        raise ValueError("Not enough input arguments")
+
       pressure_gradient_z = 0
 
       pressure_text = f"    PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
