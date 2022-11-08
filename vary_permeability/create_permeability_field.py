@@ -15,15 +15,15 @@ import logging
 @dataclass
 class Settings:
     random_bool      :   bool
-    ncells      :   np.array    =   np.array([20,150,16])
-    size        :   np.array    =   np.array([100,750,80])
-    perm_max    :   float       =   6.65*10**-9
-    perm_min    :   float       =   1.36*10**-12
-    factor      :   float       =  40
-    case        :   str         = "perlin_noise"
-    frequency   :   Union[int, Tuple[int, int, int]]    =   (4,9,3)
-    seed_id     :   int         =   0
-    # seed        :   int         =   np.random.seed(seed_id)
+    ncells           :   np.array    =   np.array([20,150,16])
+    size             :   np.array    =   np.array([100,750,80])
+    perm_max         :   float       =   6.65*10**-9
+    perm_min         :   float       =   1.36*10**-12
+    factor           :   float       =  40
+    case             :   str         = "perlin_noise"
+    frequency        :   Union[int, Tuple[int, int, int]]    =   (4,9,3)
+    seed_id          :   int         =   0
+    # seed              :   int         =   np.random.seed(seed_id)
 
     def get_keys(self):
         return [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
