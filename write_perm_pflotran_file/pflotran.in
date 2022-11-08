@@ -114,6 +114,14 @@
   FILE north.ex
   END
 
+  REGION west
+  FILE west.ex
+  END
+
+  REGION east
+  FILE east.ex
+  END
+
   REGION heatpump_inject1
   FILE heatpump_inject1.vs
   END
@@ -127,7 +135,7 @@
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
-    DATUM 50.d0 0.d0 80.d0 # PROBLEM?
+    DATUM 0.d0 0.d0 80.d0 # PROBLEM?
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
@@ -167,6 +175,16 @@
   BOUNDARY_CONDITION
     FLOW_CONDITION initial
     REGION south
+  /
+
+  BOUNDARY_CONDITION
+    FLOW_CONDITION initial
+    REGION west
+  /
+
+  BOUNDARY_CONDITION
+    FLOW_CONDITION initial
+    REGION east
   /
 
   SOURCE_SINK heatpump_inject1
