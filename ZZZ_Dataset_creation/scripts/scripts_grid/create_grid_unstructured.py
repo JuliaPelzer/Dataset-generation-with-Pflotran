@@ -110,11 +110,16 @@ def write_WE_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, f
 if __name__ == "__main__":
 	
 	cla = sys.argv
-	assert len(cla) == 2, "Please provide a path to the output folder"
+	assert len(cla) >= 2, "Please provide a path to the output folder"
 	path_to_output = cla[1]
 
 	grid_widths=[100, 750, 80]	# Grid width in metres
 	number_cells=[20, 150, 16]	# Number of grid cells
+	if len(cla) > 2:
+		assert len(cla) >= 8, "Please provide a path to the output folder and the grid widths and number of cells per direction"
+		grid_widths = [float(cla[2]), float(cla[3]), float(cla[4])]
+		number_cells = [int(cla[5]), int(cla[6]), int(cla[7])]
+
 	loc_hp = [50, 120, 50]		# Location of the heatpump in metres
 
 	faceArea=1

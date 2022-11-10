@@ -15,13 +15,13 @@ import logging
 @dataclass
 class Settings:
     random_bool      :   bool
-    ncells           :   np.array    =   np.array([20,150,16])
-    size             :   np.array    =   np.array([100,750,80])
+    ncells           :   np.array    =   np.array([20,150,16]) # number of cells per direction
+    size             :   np.array    =   np.array([100,750,80]) # length of domain in meters in each direction
     perm_max         :   float       =   6.65*10**-9
     perm_min         :   float       =   1.36*10**-12
     factor           :   float       =  40
     case             :   str         = "perlin_noise"
-    frequency        :   Union[int, Tuple[int, int, int]]    =   (2,4,2)
+    frequency        :   Union[float, Tuple[float, float, float]]    =   (2,4,2)
     seed_id          :   int         =   2907
     # seed              :   int         =   np.random.seed(seed_id)
 
@@ -120,13 +120,13 @@ def plot_perm(cells, fileOfolder, case="trigonometric"):
     # fig.show()
     fig.savefig(f"permeability_{case}_{fileOfolder}.png")
     
-def create_perm_field(number_samples:int, folder:str, random_bool:bool=False, plot_bool:bool=False, filename_extension:str=""):
+def create_perm_field(number_samples:int, folder:str, settings:Settings, plot_bool:bool=False, filename_extension:str=""):
         # ncells:np.ndarray=np.ndarray([20,150,16]), 
         # size:np.ndarray=np.ndarray([100,750,80]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
     
-    # TODO dimensionen? Reihenfolge?
     # TODO vary frequency
+    # TODO vary offset?
     
     # current_dir = os.getcwd()
     # folder = os.path.join(current_dir, "permeability_fields")
@@ -134,8 +134,9 @@ def create_perm_field(number_samples:int, folder:str, random_bool:bool=False, pl
         os.mkdir(folder)
     if not os.path.exists(f"{folder}/permeability_fields"):
         os.mkdir(f"{folder}/permeability_fields")
+    if not os.path.exists(f"{folder}/inputs"):
+        os.mkdir(f"{folder}/inputs")
 
-    settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
     if not settings.random_bool:
         np.random.seed(settings.seed_id)
     with open(f"{folder}/inputs/perm_field_parameters.txt", "w") as f:
@@ -153,7 +154,7 @@ def create_perm_field(number_samples:int, folder:str, random_bool:bool=False, pl
             plot_perm(cells, folder, case=settings.case)
     
     logging.info("Created perm-field(s)")
-    return cells, settings # for pytest
+    return cells # for pytest
 
 def read_and_plot_perm_field(settings:Settings, filename:str="permeability_fields/permeability_base_8325804_test.h5"):
     # read h5 perm file
@@ -167,7 +168,7 @@ def read_and_plot_perm_field(settings:Settings, filename:str="permeability_field
         logging.info(h5file['Permeability'])
         logging.info(h5file['Permeability'][:])
     perm_field_orig = h5file['Permeability'][:]
-    perm_field = perm_field_orig.reshape((20,150,16), order="F").T # TODO SETTINGSSIZE
+    perm_field = perm_field_orig.reshape((20,150,16), order="F") # TODO SETTINGSSIZE
     plot_perm(perm_field, filename[-10:-3], case=settings.case)
 
     h5file.close()
@@ -196,13 +197,22 @@ if __name__=="__main__":
         folder = cla_args[3]
     else:
         folder = "."
-    if len(cla_args) > 4:
-        random_bool = bool(cla_args[4])
+    if len(cla_args) > 4 and cla_args[4] == "True":
+        random_bool:bool = True
     else:
-        random_bool = False
+        random_bool:bool = False
+
+    settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
+
+    # if you want to change the size of the domain:
+    square_bool = False
+    if square_bool:
+        settings.ncells = np.array([150,150,16])
+        settings.size = np.array([750,750,80])
+        settings.frequency = (4,4,2)
     
     plot_bool = False
-    _, settings = create_perm_field(number_samples, folder, random_bool, plot_bool)
+    create_perm_field(number_samples, folder, settings, plot_bool)
     
     # for file in os.listdir(f"{folder}/permeability_fields"):
     #     if file.endswith(".h5"):
