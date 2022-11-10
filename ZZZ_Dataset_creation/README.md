@@ -23,3 +23,17 @@ builds datasets with definable number of data points; based on one pflotran.in f
     - CLA_NAME is the name of the dataset to create
     - CLA_CASE currently has two options: "1D" creates a dataset with a constant pressure field that only varies in the y-component; "2D" creates a dataset with a constant pressure field that varies in the x- and y-component
     - CLA_VISULISATION is an optional commandline argument defining whether to produce some automated pictures (selfmade in python) : if you want it, write "vis" as CLA_VISUALISATION, else leave it empty
+
+## how to change the size of the domain
+- pflotran.in :
+    - REGION all
+- run the script create_grid_unstructured.py in the folder /scripts/scripts_grid with the desired size of the domain like this:
+    - "/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/scripts_grid/create_grid_unstructured.py datasets/perm_3D_square 750 750 80 150 150 16" - resulting in a domain of 750x750x80m with a grid of 150x150x16 in folder datasets/perm_3D_square
+    - if you want to change the size of the domain, you need to change the size of the grid as well (e.g. 150x150x16 -> 300x300x32)
+- create_permeability_field.py:
+    - to make it a square, just say square_bool = True, else:
+    - change the size and number of cells in the main function like this:
+        - settings.ncells = np.array([150,150,16])
+        - settings.size = np.array([750,750,80])
+        - you probably also want to change the frequency to be squarish like this:
+            - settings.frequency = (4,4,2)
