@@ -15,13 +15,13 @@ import logging
 @dataclass
 class Settings:
     random_bool      :   bool
-    ncells           :   np.array    =   np.array([20,150,16])
-    size             :   np.array    =   np.array([100,750,80])
+    ncells           :   np.array    =   np.array([20,150,16]) # number of cells per direction
+    size             :   np.array    =   np.array([100,750,80]) # length of domain in meters in each direction
     perm_max         :   float       =   6.65*10**-9
     perm_min         :   float       =   1.36*10**-12
     factor           :   float       =  40
     case             :   str         = "perlin_noise"
-    frequency        :   Union[int, Tuple[int, int, int]]    =   (2,4,2)
+    frequency        :   Union[float, Tuple[float, float, float]]    =   (2,4,2)
     seed_id          :   int         =   2907
     # seed              :   int         =   np.random.seed(seed_id)
 
@@ -120,7 +120,7 @@ def plot_perm(cells, fileOfolder, case="trigonometric"):
     # fig.show()
     fig.savefig(f"permeability_{case}_{fileOfolder}.png")
     
-def create_perm_field(number_samples:int, folder:str, random_bool:bool=False, plot_bool:bool=False, filename_extension:str=""):
+def create_perm_field(number_samples:int, folder:str, settings:Settings, plot_bool:bool=False, filename_extension:str=""):
         # ncells:np.ndarray=np.ndarray([20,150,16]), 
         # size:np.ndarray=np.ndarray([100,750,80]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
@@ -135,7 +135,6 @@ def create_perm_field(number_samples:int, folder:str, random_bool:bool=False, pl
     if not os.path.exists(f"{folder}/permeability_fields"):
         os.mkdir(f"{folder}/permeability_fields")
 
-    settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
     if not settings.random_bool:
         np.random.seed(settings.seed_id)
     with open(f"{folder}/inputs/perm_field_parameters.txt", "w") as f:
@@ -200,6 +199,14 @@ if __name__=="__main__":
         random_bool = bool(cla_args[4])
     else:
         random_bool = False
+
+    square_bool = False
+    settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
+    # if you want to change the size of the domain:
+    if square_bool:
+        settings.ncells = np.array([150,150,16])
+        settings.size = np.array([750,750,80])
+        settings.frequency = (4,4,2)
     
     plot_bool = False
     _, settings = create_perm_field(number_samples, folder, random_bool, plot_bool)
