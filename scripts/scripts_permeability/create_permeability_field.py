@@ -15,15 +15,15 @@ import logging
 @dataclass
 class Settings:
     random_bool      :   bool
-    ncells      :   np.array    =   np.array([20,150,12])
-    size        :   np.array    =   np.array([100,500,30])
-    perm_max    :   float       =   6.65*10**-9
-    perm_min    :   float       =   1.36*10**-12
-    factor      :   float       =  40
-    case        :   str         = "perlin_noise"
-    frequency   :   Union[int, Tuple[int, int, int]]    =   (4,9,3)
-    seed_id     :   int         =   0
-    # seed        :   int         =   np.random.seed(seed_id)
+    ncells           :   np.array    =   np.array([20,150,16])
+    size             :   np.array    =   np.array([100,750,80])
+    perm_max         :   float       =   6.65*10**-9
+    perm_min         :   float       =   1.36*10**-12
+    factor           :   float       =  40
+    case             :   str         = "perlin_noise"
+    frequency        :   Union[int, Tuple[int, int, int]]    =   (2,4,2)
+    seed_id          :   int         =   2907
+    # seed              :   int         =   np.random.seed(seed_id)
 
     def get_keys(self):
         return [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
@@ -68,7 +68,6 @@ def make_perm_grid(settings:Settings, base:float = 0):
         interpolator = RegularGridInterpolator(icells_base, values_base)
         method = "linear" # in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
         values = interpolator(test_points, method=method).reshape(settings.ncells[0], settings.ncells[1], settings.ncells[2]).T
-
     elif settings.case=="perlin_noise":
         def perlin_noise(x,y,z):
             return noise.pnoise3(x, y, z, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, repeatz=1024, base=base)
@@ -104,7 +103,7 @@ def save_perm(filename, ncells, cells):
     # rarray[4:7] = 0.3
 
 # 2d plot of a permeability field
-def plot_perm(cells, case="trigonometric"):
+def plot_perm(cells, fileOfolder, case="trigonometric"):
     fig, axes = plt.subplots(2, 2, figsize=(10, 6))
     fig.suptitle(f"Permeability field [{case}]")
     axes = axes.ravel()
@@ -118,40 +117,45 @@ def plot_perm(cells, case="trigonometric"):
         axes[i].axis("off")
     fig.tight_layout()
     # plt.colorbar()
-    fig.show()
+    # fig.show()
+    fig.savefig(f"permeability_{case}_{fileOfolder}.png")
     
-def create_perm_field(number_samples:int, filename_extension:str=None, random_bool:bool=False):
-        # ncells:np.ndarray=np.ndarray([20,150,12]), 
-        # size:np.ndarray=np.ndarray([100,500,30]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
+def create_perm_field(number_samples:int, folder:str, random_bool:bool=False, plot_bool:bool=False, filename_extension:str=""):
+        # ncells:np.ndarray=np.ndarray([20,150,16]), 
+        # size:np.ndarray=np.ndarray([100,750,80]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
     
     # TODO dimensionen? Reihenfolge?
     # TODO vary frequency
     
-    current_dir = os.getcwd()
-    folder = os.path.join(current_dir, "permeability_fields")
+    # current_dir = os.getcwd()
+    # folder = os.path.join(current_dir, "permeability_fields")
     if not os.path.exists(folder):
         os.mkdir(folder)
+    if not os.path.exists(f"{folder}/permeability_fields"):
+        os.mkdir(f"{folder}/permeability_fields")
 
     settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
     if not settings.random_bool:
         np.random.seed(settings.seed_id)
-    with open(f"{folder}/perm_field_parameters.txt", "w") as f:
+    with open(f"{folder}/inputs/perm_field_parameters.txt", "w") as f:
         f.write(settings.all_settings_to_str())
 
     # vary bases to get different fields
-    bases = np.random.randint(0, 2**25, size=number_samples) 
-
+    # OLD: bases = np.random.randint(0, 2**19, size=number_samples) 
+    bases = [_random_exclude() for i in range(number_samples)]
+    
     for base in tqdm(bases):
         cells, _ = make_perm_grid(settings, base)
-        filename = f"{folder}/permeability_base_{base}_{filename_extension}.h5"
+        filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
         save_perm(filename, settings.ncells, cells)
-        plot_perm(cells, case=settings.case)
+        if plot_bool:
+            plot_perm(cells, folder, case=settings.case)
     
-    logging.info("Created perm-field")
-    return cells # for pytest
+    logging.info("Created perm-field(s)")
+    return cells, settings # for pytest
 
-def read_and_plot_perm_field(filename:str="permeability_fields/permeability_base_8325804_test.h5"):
+def read_and_plot_perm_field(settings:Settings, filename:str="permeability_fields/permeability_base_8325804_test.h5"):
     # read h5 perm file
     h5file = _edit_perm_file(filename,mode='r')
 
@@ -163,8 +167,8 @@ def read_and_plot_perm_field(filename:str="permeability_fields/permeability_base
         logging.info(h5file['Permeability'])
         logging.info(h5file['Permeability'][:])
     perm_field_orig = h5file['Permeability'][:]
-    perm_field = perm_field_orig.reshape((12,150,20)).T
-    plot_perm(perm_field, case="perlin_noise")
+    perm_field = perm_field_orig.reshape((20,150,16), order="F").T # TODO SETTINGSSIZE
+    plot_perm(perm_field, filename[-10:-3], case=settings.case)
 
     h5file.close()
     return perm_field # for pytest
@@ -172,18 +176,34 @@ def read_and_plot_perm_field(filename:str="permeability_fields/permeability_base
 def _edit_perm_file(filename:str, mode:str="r"):
     return File(filename, mode=mode)
 
+def _random_exclude():
+    """Returns a random number that is not in the excluded range."""
+    exclude_min = 140000
+    exclude_max = 260000
+
+    while True:
+        base = np.random.randint(1, 2**19)
+        if base < exclude_min or base > exclude_max:
+            return base
+
 if __name__=="__main__":
 
     # read input parameters
     cla_args = sys.argv
     logging.basicConfig(level=cla_args[1])
     number_samples = int(cla_args[2])
-    filename_extension = cla_args[3]
-    random_bool = bool(cla_args[4])
-    create_perm_field(number_samples, filename_extension, random_bool)
+    if len(cla_args) > 3:
+        folder = cla_args[3]
+    else:
+        folder = "."
+    if len(cla_args) > 4:
+        random_bool = bool(cla_args[4])
+    else:
+        random_bool = False
     
+    plot_bool = False
+    _, settings = create_perm_field(number_samples, folder, random_bool, plot_bool)
     
-    # read_and_plot_perm_field("permeability_fields/permeability_base_8325804_test.h5")
-
-    # size = np.array([500, 1000, 30])
-    # ncells = np.array([75, 150, 12])
+    # for file in os.listdir(f"{folder}/permeability_fields"):
+    #     if file.endswith(".h5"):
+    #         read_and_plot_perm_field(settings, filename=f"{folder}/permeability_fields/{file}")
