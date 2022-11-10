@@ -50,7 +50,7 @@ def _plot_y(data, path, name_pic="plot_y_exemplary"):
         plt.ylabel("x or z")
         _aligned_colorbar(label=data_point["property"])
     
-    pic_file_name = f"{path}/{name_pic}.jpg"
+    pic_file_name = f"{path}/{name_pic}_{case}.jpg"
     logging.info(f"Resulting picture is at {pic_file_name}")  
     plt.savefig(pic_file_name)
 

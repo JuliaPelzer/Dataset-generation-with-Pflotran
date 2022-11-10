@@ -83,6 +83,7 @@ do
         # bash ../scripts/scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR # # problem with visualisation, if less than 50 pics TODO
         then
             python3 ../scripts/scripts_visualisation/visualisation_self.py $OUTPUT_DATASET_RUN_DIR
+            python3 ../scripts/scripts_visualisation/visualisation_self.py $OUTPUT_DATASET_RUN_DIR "top_hp"
         fi
 
         run_id=$(( $run_id + 1 ))
