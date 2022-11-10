@@ -134,6 +134,8 @@ def create_perm_field(number_samples:int, folder:str, settings:Settings, plot_bo
         os.mkdir(folder)
     if not os.path.exists(f"{folder}/permeability_fields"):
         os.mkdir(f"{folder}/permeability_fields")
+    if not os.path.exists(f"{folder}/inputs"):
+        os.mkdir(f"{folder}/inputs")
 
     if not settings.random_bool:
         np.random.seed(settings.seed_id)
@@ -152,7 +154,7 @@ def create_perm_field(number_samples:int, folder:str, settings:Settings, plot_bo
             plot_perm(cells, folder, case=settings.case)
     
     logging.info("Created perm-field(s)")
-    return cells, settings # for pytest
+    return cells # for pytest
 
 def read_and_plot_perm_field(settings:Settings, filename:str="permeability_fields/permeability_base_8325804_test.h5"):
     # read h5 perm file
@@ -166,7 +168,7 @@ def read_and_plot_perm_field(settings:Settings, filename:str="permeability_field
         logging.info(h5file['Permeability'])
         logging.info(h5file['Permeability'][:])
     perm_field_orig = h5file['Permeability'][:]
-    perm_field = perm_field_orig.reshape((20,150,16), order="F").T # TODO SETTINGSSIZE
+    perm_field = perm_field_orig.reshape((20,150,16), order="F") # TODO SETTINGSSIZE
     plot_perm(perm_field, filename[-10:-3], case=settings.case)
 
     h5file.close()
@@ -209,7 +211,7 @@ if __name__=="__main__":
         settings.frequency = (4,4,2)
     
     plot_bool = False
-    _, settings = create_perm_field(number_samples, folder, random_bool, plot_bool)
+    create_perm_field(number_samples, folder, settings, random_bool, plot_bool)
     
     # for file in os.listdir(f"{folder}/permeability_fields"):
     #     if file.endswith(".h5"):
