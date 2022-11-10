@@ -135,7 +135,7 @@
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
-    DATUM 0.d0 0.d0 80.d0 # PROBLEM?
+    DATUM 0.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
