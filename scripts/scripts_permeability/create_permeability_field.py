@@ -125,8 +125,8 @@ def create_perm_field(number_samples:int, folder:str, settings:Settings, plot_bo
         # size:np.ndarray=np.ndarray([100,750,80]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
     
-    # TODO dimensionen? Reihenfolge?
     # TODO vary frequency
+    # TODO vary offset?
     
     # current_dir = os.getcwd()
     # folder = os.path.join(current_dir, "permeability_fields")
@@ -197,21 +197,22 @@ if __name__=="__main__":
         folder = cla_args[3]
     else:
         folder = "."
-    if len(cla_args) > 4:
-        random_bool = bool(cla_args[4])
+    if len(cla_args) > 4 and cla_args[4] == "True":
+        random_bool:bool = True
     else:
-        random_bool = False
+        random_bool:bool = False
 
-    square_bool = False
     settings = Settings(random_bool) #ncells, size, perm_max, perm_min, factor, case, frequency)
+
     # if you want to change the size of the domain:
+    square_bool = False
     if square_bool:
         settings.ncells = np.array([150,150,16])
         settings.size = np.array([750,750,80])
         settings.frequency = (4,4,2)
     
     plot_bool = False
-    create_perm_field(number_samples, folder, settings, random_bool, plot_bool)
+    create_perm_field(number_samples, folder, settings, plot_bool)
     
     # for file in os.listdir(f"{folder}/permeability_fields"):
     #     if file.endswith(".h5"):
