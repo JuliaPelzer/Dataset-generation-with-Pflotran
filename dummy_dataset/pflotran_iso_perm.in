@@ -43,7 +43,7 @@
 
   # DATASET perm
   #   HDF5_DATASET_NAME Permeability
-  #   FILENAME permeability.h5
+  #   FILENAME interim_permeability_field.h5
   # END
 
   #=========================== material properties ==============================
