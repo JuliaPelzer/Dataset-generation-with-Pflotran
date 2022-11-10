@@ -204,6 +204,6 @@ if __name__=="__main__":
     plot_bool = False
     _, settings = create_perm_field(number_samples, folder, random_bool, plot_bool)
     
-    for file in os.listdir(f"{folder}/permeability_fields"):
-        if file.endswith(".h5"):
-            read_and_plot_perm_field(settings, filename=f"{folder}/permeability_fields/{file}")
+    # for file in os.listdir(f"{folder}/permeability_fields"):
+    #     if file.endswith(".h5"):
+    #         read_and_plot_perm_field(settings, filename=f"{folder}/permeability_fields/{file}")

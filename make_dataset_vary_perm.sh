@@ -73,7 +73,7 @@ do
     
         echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)
         # to DEBUG the simulation turn screen_output on
-        # mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
+        mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
         echo finished PFLOTRAN simulation at $(date)
 
         cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
