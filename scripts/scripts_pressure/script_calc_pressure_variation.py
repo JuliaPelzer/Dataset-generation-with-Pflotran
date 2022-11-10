@@ -20,9 +20,7 @@ def sampling_random(param_dataset_size, debug):
         samples_clean = samples_clean[:number_negative_values]
         number_runs += 1
 
-        if number_runs >= 100:
-              print("ERROR no valid sample set found, see script_calc_pressure_variation line 30")
-              exit()
+        assert number_runs < 100, "ERROR no valid sample set found, see script_calc_pressure_variation line 30"
     
     if debug:
       log_bins = np.logspace(-3, -2.1, 100) - 7*10**-3
