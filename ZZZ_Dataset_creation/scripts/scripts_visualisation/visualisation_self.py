@@ -14,9 +14,9 @@ def plot_sim(path:str="try/RUN_0", plot_name:str="plot_simulation_results", case
 
     _plot_y(list_to_plot, path, name_pic=plot_name)
     try:
-        print(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
+        logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
     except:
-        print(f"Temperature at HP: {np.round(list_to_plot[11]['data'][23,9], 4)}")
+        logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][23,9], 4)}")
 
 def _make_plottable_and_2D(hdf5_file, case, reshape):
     # helper function to make the data plottable, i.e. put it into a dictionary
