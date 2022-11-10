@@ -11,6 +11,7 @@ from typing import Tuple, Dict, Union
 from dataclasses import dataclass
 from tqdm import tqdm
 import logging
+import yaml
 
 @dataclass
 class Settings:
@@ -34,6 +35,17 @@ class Settings:
 
     def get_all_settings(self):
         return {key: getattr(self, key) for key in self.get_keys()}
+
+    def all_settings_to_yaml(self, filename):
+        # print settings to yaml file
+        yaml_prep = self.get_all_settings()      
+        for key, value in yaml_prep.items():
+            if value.__class__ == np.ndarray:
+                yaml_prep[key] = value.tolist()
+            if value.__class__ == tuple:
+                yaml_prep[key] = list(value)
+        with open(filename, "w") as f:
+            yaml.dump(yaml_prep, f)
 
     def all_settings_to_str(self):
         # for putting them into a settings file
@@ -137,10 +149,13 @@ def create_perm_field(number_samples:int, folder:str, settings:Settings, plot_bo
     if not os.path.exists(f"{folder}/inputs"):
         os.mkdir(f"{folder}/inputs")
 
+    settings.all_settings_to_yaml(f"{folder}/inputs/settings_perm_field.yaml")
+
+    # with open(f"{folder}/inputs/perm_field_parameters.txt", "w") as f:
+    #     f.write(settings.all_settings_to_str())
+
     if not settings.random_bool:
         np.random.seed(settings.seed_id)
-    with open(f"{folder}/inputs/perm_field_parameters.txt", "w") as f:
-        f.write(settings.all_settings_to_str())
 
     # vary bases to get different fields
     # OLD: bases = np.random.randint(0, 2**19, size=number_samples) 
