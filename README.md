@@ -37,3 +37,7 @@ builds datasets with definable number of data points; based on one pflotran.in f
         - settings.size = np.array([750,750,80])
         - you probably also want to change the frequency to be squarish like this:
             - settings.frequency = (4,4,2)
+
+## how to get vtk output to view in paraview
+- in pflotran.in change the following line:
+    - FORMAT VTK (approx. line 213)
