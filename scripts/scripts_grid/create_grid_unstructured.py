@@ -115,6 +115,10 @@ if __name__ == "__main__":
 
 	grid_widths=[100, 750, 80]	# Grid width in metres
 	number_cells=[20, 150, 16]	# Number of grid cells
+	#domainlarge:
+	# grid_widths=[100, 1280, 80]	# Grid width in metres
+	# number_cells=[20, 256, 16]	# Number of grid cells
+
 	if len(cla) > 2:
 		assert len(cla) >= 8, "Please provide a path to the output folder and the grid widths and number of cells per direction"
 		grid_widths = [float(cla[2]), float(cla[3]), float(cla[4])]

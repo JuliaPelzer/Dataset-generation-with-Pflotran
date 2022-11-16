@@ -221,10 +221,14 @@ if __name__=="__main__":
 
     # if you want to change the size of the domain:
     square_bool = False
+    large_domain_bool = False
     if square_bool:
         settings.ncells = np.array([150,150,16])
         settings.size = np.array([750,750,80])
         settings.frequency = (4,4,2)
+    elif large_domain_bool:
+        settings.ncells = np.array([20,256,16])
+        settings.size = np.array([100,1280,80])
     
     plot_bool = False
     create_perm_field(number_samples, folder, settings, plot_bool)
