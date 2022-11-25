@@ -1,31 +1,11 @@
 # run pytest from unittests folder
 import subprocess
-import shutil
 import os
 import scripts.make_general_settings as script_settings
-
-
-# OLD
-# def test_run_bash_pressure_1D():
-# 	subprocess.call("cp input_pflotran_files/pflotran_iso_perm.in pflotran.in", shell=True)
-# 	subprocess.call("bash ../make_dataset_2.sh 1 test_bash_1D 1D", shell=True)
-# 	assert _fcount("test_bash_1D") == 1, "1D created the wrong number of datapoints"
-# 	os.system("rm -r test_bash_1D")
-# 	os.system("rm pflotran.in")
-# 	os.system("rm -r __pycache__")
-
-# def test_run_bash_pressure_2D():
-# 	subprocess.call("mv input_pflotran_files/pflotran_iso_perm.in pflotran.in", shell=True)
-# 	subprocess.call("bash ../make_dataset_2.sh 1 test_bash_2D 2D", shell=True)
-# 	assert _fcount("test_bash_2D") == 4, "2D created the wrong number of datapoints"
-# 	os.system("rm -r test_bash_2D")
-# 	os.system("rm pflotran.in")
-# 	os.system("rm -r __pycache__")
 
 def test_run_bash_pressure_1D_permeability():
 	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests"
 
-	# shutil.copyfile(src, dst)
 	subprocess.call("cp input_pflotran_files/pflotran_vary_perm.in pflotran.in", shell=True)
 	for i in [1,2]:
 		number_vary_pressure = i
@@ -35,7 +15,8 @@ def test_run_bash_pressure_1D_permeability():
 			assert _fcount("test_bash_perm") == number_vary_pressure*number_vary_perm + 1, "perm test created the wrong number of datapoints"
 			assert os.path.isfile("test_bash_perm/inputs/settings.yaml"), "settings.yaml not found"
 			os.system("rm -r test_bash_perm")
-	os.system("rm pflotran.in")
+	for temp_file in ["pflotran.in", "mesh.uge", "north.ex", "south.ex", "west.ex", "east.ex", "heatpump_inject1.vs"]:
+		os.system(f"rm {temp_file}")
 	os.system("rm -r __pycache__")
 
 def test_create_grid():
@@ -79,3 +60,6 @@ def _fcount(path):
     if os.path.isdir(child):
       count += + 1
   return count
+
+if __name__ == "__main__":
+	test_run_bash_pressure_1D_permeability()

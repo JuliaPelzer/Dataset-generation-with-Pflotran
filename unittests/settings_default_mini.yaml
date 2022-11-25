@@ -14,6 +14,7 @@ grid:
   - 50
   - 120
   - 50
+  faceArea: 1
 permeability:
   case: perlin_noise
   factor: 40
