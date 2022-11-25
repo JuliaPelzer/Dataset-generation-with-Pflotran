@@ -1,47 +1,5 @@
 import yaml
 from typing import List, Dict
-# import numpy as np
-# from dataclasses import dataclass
-
-# @dataclass
-# class Settings:
-# 	random_bool      :   bool
-# 	seed_id          :   int         =   2907
-# 	# seed              :   int         =   np.random.seed(seed_id)
-
-# 	def get_keys(self):
-# 		return [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
-
-# 	def get_next_value(self):
-# 		for key in self.get_keys():
-# 			yield getattr(self, key)
-
-# 	def get_all_settings(self):
-# 		return {key: getattr(self, key) for key in self.get_keys()}
-
-# 	def all_settings_to_yaml(self, filename):
-# 		# print settings to yaml file
-# 		yaml_prep = self.get_all_settings()      
-# 		for key, value in yaml_prep.items():
-# 			if value.__class__ == np.ndarray:
-# 				yaml_prep[key] = value.tolist()
-# 			if value.__class__ == tuple:
-# 				yaml_prep[key] = list(value)
-# 		with open(filename, "w") as f:
-# 			yaml.dump(yaml_prep, f)
-
-#	def all_settings_to_str(self):
-#		# for putting them into a settings file
-#		return_str = ""
-#		for key in self.get_keys():
-#			return_str += f"{key} : {getattr(self, key)} \n"
-#		return return_str
-
-#	def load_settings(category:str):
-#		with open("settings.yaml") as settings_file:
-#			data = yaml.load(settings_file, Loader=SafeLoader)
-#		return data[category]
-
 
 def load_settings(path:str, file_name="settings") -> Dict:
 	with open(f"{path}/{file_name}.yaml", "r") as file:

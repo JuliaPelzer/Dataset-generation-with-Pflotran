@@ -4,25 +4,12 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from h5py import *
-import matplotlib.pyplot as plt
 from scipy.interpolate import RegularGridInterpolator
 import noise
-from typing import Tuple, Dict, Union
-from dataclasses import dataclass
+from typing import Dict
 from tqdm import tqdm
 import logging
 from scripts.make_general_settings import load_settings
-# from Phd_simulation_groundtruth.scripts.scripts_grid.make_general_settings import Settings
-
-# @dataclass
-# class PermeabilitySettings(Settings):
-#     ncells           :   np.array    =   np.array([20,150,16]) # number of cells per direction
-#     size             :   np.array    =   np.array([100,750,80]) # length of domain in meters in each direction
-#     perm_max         :   float       =   6.65*10**-9
-#     perm_min         :   float       =   1.36*10**-12
-#     factor           :   float       =  40
-#     case             :   str         = "perlin_noise"
-#     frequency        :   Union[float, Tuple[float, float, float]]    =   (2,4,2)
 
 def make_perm_grid(settings:Dict, base:float = 0):
     length_cells = settings["grid"]["size"] / np.array(settings["grid"]["ncells"])
