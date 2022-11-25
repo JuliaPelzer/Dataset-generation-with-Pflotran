@@ -31,7 +31,7 @@ then
     echo ...$OUTPUT_DATASET_DIR/inputs folder is created
 fi
 cp dummy_dataset/settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
-cp dummy_dataset/pflotran_vary_perm.in $OUTPUT_DATASET_DIR/pflotran.in # if you want iso_perm: cp iso_perm instead
+cp dummy_dataset/pflotran_vary_perm.in pflotran.in # if you want iso_perm: cp iso_perm instead
 
 # make grid files
 python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)  #$OUTPUT_DATASET_DIR
@@ -100,8 +100,8 @@ do
 done
 
 
-cp pflotran.in $OUTPUT_DATASET_DIR/inputs/pflotran_copy.in
+mv pflotran.in $OUTPUT_DATASET_DIR/inputs/pflotran_copy.in
 rm interim_pressure_gradient.txt
 rm interim_permeability_field.h5
 rm -r $OUTPUT_DATASET_DIR/permeability_fields
-rm -rf {east,west,south,north}.ex heatpump_inject1.vs mesh.uge
+rm -rf {east,west,south,north}.ex heatpump_inject1.vs mesh.uge settings.yaml
