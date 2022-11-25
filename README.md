@@ -39,7 +39,7 @@ builds datasets with definable number of data points; based on one pflotran.in f
 
 ## if you encounter an unexpected error
 - you can see that e.g. if a file fort.86 is produced
-- comment "-screen_output off" out in the bash file to get a log output from pflotran
+- comment "-screen_output off" out in the bash-script to get a log output from pflotran
 
 ## how to change the size of the domain
 - pflotran.in :
