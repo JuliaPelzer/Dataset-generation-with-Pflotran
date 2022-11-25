@@ -37,6 +37,10 @@ builds datasets with definable number of data points; based on one pflotran.in f
     - CLA_CASE currently has two options: "1D" creates a dataset with a constant pressure field that only varies in the y-component (MOST LIKELY WHAT YOU WANT); "2D" creates a dataset with a constant pressure field that varies in the x- and y-component
     - CLA_VISULISATION is an **optional** commandline argument defining whether to produce some automated pictures (selfmade in python) : if you want it, write "vis" as CLA_VISUALISATION, else leave it empty
 
+## if you encounter an unexpected error
+- you can see that e.g. if a file fort.86 is produced
+- comment "-screen_output off" out in the bash file to get a log output from pflotran
+
 ## how to change the size of the domain
 - pflotran.in :
     - adapt REGION all if domain should be larger than 200x2000x100m
