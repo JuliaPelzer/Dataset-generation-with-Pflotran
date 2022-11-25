@@ -86,7 +86,6 @@ do
 
         # # call visualisation
         if [ "$CLA_VISUALISATION" = "vis" ]; 
-        # bash ../scripts/scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR # # problem with visualisation, if less than 50 pics TODO
         then
             python3 ../scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
             python3 ../scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
