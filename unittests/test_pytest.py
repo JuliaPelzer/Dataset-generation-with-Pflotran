@@ -1,20 +1,76 @@
 # run pytest from unittests folder
 import subprocess
+import shutil
 import os
+import scripts.make_general_settings as script_settings
 
-def test_run_bash_pressure_1D():
-    os.getcwd()
-    subprocess.call("bash ../make_dataset_2.sh 1 test_bash_1D 1D", shell=True)
-    assert _fcount("test_bash_1D") == 1, "1D created too little datapoints"
-    os.system("rm -r test_bash_1D")
-    os.system("rm -r __pycache__")
 
-def test_run_bash_pressure_2D():
-    os.getcwd()
-    subprocess.call("bash ../make_dataset_2.sh 1 test_bash_2D 2D", shell=True)
-    assert _fcount("test_bash_2D") == 4, "2D created too little datapoints"
-    os.system("rm -r test_bash_2D")
-    os.system("rm -r __pycache__")
+# OLD
+# def test_run_bash_pressure_1D():
+# 	subprocess.call("cp input_pflotran_files/pflotran_iso_perm.in pflotran.in", shell=True)
+# 	subprocess.call("bash ../make_dataset_2.sh 1 test_bash_1D 1D", shell=True)
+# 	assert _fcount("test_bash_1D") == 1, "1D created the wrong number of datapoints"
+# 	os.system("rm -r test_bash_1D")
+# 	os.system("rm pflotran.in")
+# 	os.system("rm -r __pycache__")
+
+# def test_run_bash_pressure_2D():
+# 	subprocess.call("mv input_pflotran_files/pflotran_iso_perm.in pflotran.in", shell=True)
+# 	subprocess.call("bash ../make_dataset_2.sh 1 test_bash_2D 2D", shell=True)
+# 	assert _fcount("test_bash_2D") == 4, "2D created the wrong number of datapoints"
+# 	os.system("rm -r test_bash_2D")
+# 	os.system("rm pflotran.in")
+# 	os.system("rm -r __pycache__")
+
+def test_run_bash_pressure_1D_permeability():
+	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests"
+
+	# shutil.copyfile(src, dst)
+	subprocess.call("cp input_pflotran_files/pflotran_vary_perm.in pflotran.in", shell=True)
+	for i in [1,2]:
+		number_vary_pressure = i
+		for j in [1,2]:
+			number_vary_perm = j
+			subprocess.call(f"bash ../make_dataset_vary_perm.sh {number_vary_pressure} {number_vary_perm} test_bash_perm 1D", shell=True)
+			assert _fcount("test_bash_perm") == number_vary_pressure*number_vary_perm + 1, "perm test created the wrong number of datapoints"
+			assert os.path.isfile("test_bash_perm/inputs/settings.yaml"), "settings.yaml not found"
+			os.system("rm -r test_bash_perm")
+	os.system("rm pflotran.in")
+	os.system("rm -r __pycache__")
+
+def test_create_grid():
+	os.getcwd()
+	try:
+		os.mkdir("test_grid")
+	except:
+		pass
+	subprocess.call(f"/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/scripts_grid/create_grid_unstructured.py /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/test_grid/", shell=True)
+	os.system("rm -r test_grid")
+	os.system("rm -r __pycache__")
+
+def test_create_grid_different_size():
+	os.getcwd()
+	try:
+		os.mkdir("test_grid_small")
+	except:
+		pass
+	grid_widths = [200, 200, 200]
+	number_cells = [2, 3, 6]
+	subprocess.call(f"/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/scripts_grid/create_grid_unstructured.py /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/test_grid_small/ {grid_widths[0]} {grid_widths[1]} {grid_widths[2]} {number_cells[0]} {number_cells[1]} {number_cells[2]}", shell=True)
+	subprocess.call("bash ../make_dataset_vary_perm.sh 1 1 test_grid_small 1D", shell=True)
+	# TODO actual ASSERT
+	# TODO interaction with bash script
+	os.system("rm -r test_grid_small")
+	os.system("rm -r __pycache__")
+
+def test_create_and_change_settings():
+	path="/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/"
+
+	settings_changed = script_settings.main_change_grid_size(path, case="", name_file="settings_mini", grid_widths=[200,200,200], number_cells=[10,10,10], frequency=[2,2,2])
+	settings_default = script_settings.load_settings(path, file_name="settings_default_mini")
+
+	assert settings_default == settings_changed, "settings_default and settings_changed are not equal"
+	subprocess.call("rm settings_mini.yaml", shell=True)
 
 def _fcount(path):
   count = 0

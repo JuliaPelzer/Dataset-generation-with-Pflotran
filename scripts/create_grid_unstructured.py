@@ -1,10 +1,14 @@
 import numpy as np
 import sys
 import os
+from typing import Dict
+from make_general_settings import load_settings, change_grid_domain_size, save_settings
 
-def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
+def write_mesh_file(path_to_output:str, settings:Dict):
+	faceArea = settings["grid"]["faceArea"]
+	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
+	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
-	xGrid, yGrid, zGrid = number_cells
 
 	volume = 1
 	output_string = []
@@ -21,7 +25,7 @@ def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
 				# if [52.5,122.5,52.5] == [xloc, yloc, zloc]:
 				# 	print("CALC", cellID)
 				cellID_1 += 1
-	
+
 	output_string.append("\nCONNECTIONS " + str((xGrid-1)*yGrid*zGrid + xGrid*(yGrid-1)*zGrid + xGrid*yGrid*(zGrid-1)))
 	for k in range(0,zGrid):
 		zloc = (k + 0.5)*cellZWidth
@@ -50,17 +54,24 @@ def write_mesh_file(path_to_output:str, cell_widths, number_cells, faceArea=1):
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 
-def write_loc_well_file(path_to_output:str, cell_widths, number_cells, loc_hp):
+def write_loc_well_file(path_to_output:str, settings:Dict):
+	loc_hp = settings["grid"]["loc_hp"]
+	number_cells = settings["grid"]["ncells"]
+	cell_widths = settings["grid"]["size"]/np.array(number_cells)	# Cell width in metres
 	i,j,k = loc_hp/cell_widths
 	cellID = int(i + (j-1)*number_cells[0] + (k-1)*number_cells[0]*number_cells[1])
+	assert cellID > 0, "CellID is negative"
 
 	with open(str(path_to_output)+"/heatpump_inject1.vs", "w") as file:
 		file.write(str(cellID))
 
-def write_SN_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, faceArea=1):
+def write_SN_files(path_to_output:str, settings:Dict):
+
+	faceArea = settings["grid"]["faceArea"]
+	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
+	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
 	cellXWidth, _, cellZWidth = cell_widths
-	xGrid, yGrid, zGrid = number_cells
-	_, yWidth, _ = grid_witdhs
+	_, yWidth, _ = settings["grid"]["size"]
 
 	output_string_north = []
 	output_string_north.append("CONNECTIONS " + str(xGrid*zGrid))
@@ -81,11 +92,18 @@ def write_SN_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, f
 		file.writelines(output_string_north)
 	with open(str(path_to_output)+"/south.ex", "w") as file:
 		file.writelines(output_string_south)
+
+def check_region_all(size:np.ndarray):
+	region_all = [200, 2000, 100]
+	region_all = np.array(region_all)
+	assert np.all(region_all >= size), "Region all is smaller than size - you have to manually change the region size in pflotran.in"
 	
-def write_WE_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, faceArea=1):
+def write_WE_files(path_to_output:str, settings:Dict):
+	faceArea = settings["grid"]["faceArea"]
+	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
+	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
 	_, cellYWidth, cellZWidth = cell_widths
-	xGrid, yGrid, zGrid = number_cells
-	xWidth, _, _ = grid_witdhs
+	xWidth, _, _ = settings["grid"]["size"]
 
 	output_string_east = []
 	output_string_east.append("CONNECTIONS " + str(yGrid*zGrid))
@@ -106,29 +124,27 @@ def write_WE_files(path_to_output:str, cell_widths, number_cells, grid_witdhs, f
 		file.writelines(output_string_east)
 	with open(str(path_to_output)+"/west.ex", "w") as file:
 		file.writelines(output_string_west)
-		
-if __name__ == "__main__":
-	
-	cla = sys.argv
-	assert len(cla) >= 2, "Please provide a path to the output folder"
-	path_to_output = cla[1]
 
-	grid_widths=[100, 750, 80]	# Grid width in metres
-	number_cells=[20, 150, 16]	# Number of grid cells
+if __name__ == "__main__":
+	cla = sys.argv
+	assert len(cla) >= 3, "Please provide a path to the input and output folder"
+	path_to_input = cla[1]
+	path_to_output = cla[2]
+
+
 	#domainlarge:
 	# grid_widths=[100, 1280, 80]	# Grid width in metres
 	# number_cells=[20, 256, 16]	# Number of grid cells
+	settings = load_settings(path_to_input)
+	if len(cla) > 3:
+		assert len(cla) >= 9, "Please provide a path to the output folder and the grid widths and number of cells per direction"
+		grid_widths = [float(cla[3]), float(cla[4]), float(cla[5])]
+		number_cells = [int(cla[6]), int(cla[7]), int(cla[8])]
+		settings = change_grid_domain_size(settings, case="", grid_widths=grid_widths, number_cells=number_cells)
+	save_settings(settings, path_to_output)
 
-	if len(cla) > 2:
-		assert len(cla) >= 8, "Please provide a path to the output folder and the grid widths and number of cells per direction"
-		grid_widths = [float(cla[2]), float(cla[3]), float(cla[4])]
-		number_cells = [int(cla[5]), int(cla[6]), int(cla[7])]
-
-	loc_hp = [50, 120, 50]		# Location of the heatpump in metres
-
-	faceArea=1
-	cell_widths = grid_widths/np.array(number_cells)	# Cell width in metres
-	write_mesh_file(path_to_output, cell_widths, number_cells, faceArea)
-	write_loc_well_file(path_to_output, cell_widths, number_cells, loc_hp)
-	write_SN_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
-	write_WE_files(path_to_output, cell_widths, number_cells, grid_widths, faceArea)
+	check_region_all(settings["grid"]["size"])
+	write_mesh_file(path_to_output, settings)
+	write_loc_well_file(path_to_output, settings)
+	write_SN_files(path_to_output, settings)
+	write_WE_files(path_to_output, settings)

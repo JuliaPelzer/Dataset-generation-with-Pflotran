@@ -26,14 +26,14 @@ fi
 # LOOP
 # calc parameters, read them for PRESSURE
 MIN_DATASET_POINTS=$CLA_NUMBER_DATAPOINTS #1 #5 #100
-python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR $CLA_CASE
+python3 ../scripts/script_calc_pressure_variation.py $MIN_DATASET_POINTS $OUTPUT_DATASET_DIR $CLA_CASE
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/pressure_values.txt))'
 # number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
 
 # len_perm = 1
 # # calculate permeability fields
-# python3 ../scripts/scripts_permeability/create_permeability_field.py INFO $len_perm "test" "False"
+# python3 ../scripts/create_permeability_field.py INFO $len_perm "test" "False"
 
 len=${#PRESSURE[@]}
 i=0
@@ -50,11 +50,11 @@ do
     # done
 
     # calculate pressure files
-    if [ "$CLA_CASE" = "1D" ]; 
+    if [ "$CLA_CASE" = "1D" ];
     then
-        python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
+        python3 ../scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
     else # 2D case
-        python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
+        python3 ../scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
     fi
 
     NAME_OF_RUN="RUN_${i}"

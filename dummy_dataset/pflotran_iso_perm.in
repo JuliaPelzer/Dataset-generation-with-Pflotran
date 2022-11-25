@@ -101,10 +101,10 @@
   #=========================== regions ==========================================
   REGION all
     COORDINATES
-      0.d0 0.d0 0.d0
-      100.d0 750.d0 80.d0
-    /
-  /
+      0.0d0 0.0d0 0.0d0
+      200.0d0 2000.0d0 100.0d0
+    END
+  END
 
   REGION south
   FILE south.ex

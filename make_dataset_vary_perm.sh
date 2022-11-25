@@ -2,7 +2,9 @@
 
 ## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_NAME> <CLA_CASE> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
+
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
+# remote: after spack installation: export PFLOTRAN_DIR="/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-4.0.1-yilpwmx73suky3faq3ez4okbnpmnaezm"
 
 #command line arguments
 args=("$@")
@@ -16,28 +18,32 @@ echo working at $(date) on folder $(pwd)
 # dataset generation
 
 # check whether output folder exists else define
-OUTPUT_DATASET_DIR=$CLA_NAME #"uniformly_distributed_data_velo"
+OUTPUT_DATASET_DIR=$CLA_NAME
 if [ ! -d $OUTPUT_DATASET_DIR ]
 then
     mkdir $OUTPUT_DATASET_DIR
     echo ...$OUTPUT_DATASET_DIR folder is created
 fi
-# folder for files like pflotran.in, pressure_values.txt and perm_field_parameters.txt
+# folder for files like pflotran.in, pressure_values.txt and perm_field_parameters.txt, mesh.uge etc.
 if [ ! -d $OUTPUT_DATASET_DIR/inputs ]
 then
     mkdir $OUTPUT_DATASET_DIR/inputs
     echo ...$OUTPUT_DATASET_DIR/inputs folder is created
 fi
+cp settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+
+# make grid files
+python3 ../scripts/create_grid_unstructured.py $(pwd) $(pwd)  #$OUTPUT_DATASET_DIR
 
 MIN_VARIATIONS_PRESSURE=$CLA_NUMBER_VARIATIONS_PRESSURE #1 #5 #100  # calc parameters, read them for PRESSURE
-python3 ../scripts/scripts_pressure/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_CASE
+python3 ../scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_CASE
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
 # number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
 # calculate permeability fields
 len_perm=$CLA_NUMBER_VARIATIONS_PERMEABILITY # calc parameters, read them for PERMEABILITY
-# TODO later set last parameter (random_bool) to "True"
-python3 ../scripts/scripts_permeability/create_permeability_field.py INFO $len_perm $OUTPUT_DATASET_DIR "False"
+# TODO later set random_bool in settings.yaml to True
+python3 ../scripts/create_permeability_field.py INFO $len_perm $(pwd) $OUTPUT_DATASET_DIR
 
 run_id=0
 
@@ -52,9 +58,9 @@ do
         # calculate pressure files
         if [ "$CLA_CASE" = "1D" ]; 
         then
-            python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
+            python3 ../scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
         else # 2D case
-            python3 ../scripts/scripts_pressure/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
+            python3 ../scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
         fi
 
         # create run folder    
@@ -68,7 +74,7 @@ do
         fi
 
         # copy next permeability field file to pflotran.in folder
-        python3 ../scripts/scripts_permeability/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
+        python3 ../scripts/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
         j=$(( $j + 1 ))
     
         echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)
@@ -82,8 +88,9 @@ do
         if [ "$CLA_VISUALISATION" = "vis" ]; 
         # bash ../scripts/scripts_visualisation/call_visualisation.sh $CLA_VISUALISATION $OUTPUT_DATASET_RUN_DIR # # problem with visualisation, if less than 50 pics TODO
         then
-            python3 ../scripts/scripts_visualisation/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
-            python3 ../scripts/scripts_visualisation/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
+            python3 ../scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
+            python3 ../scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
+            echo ...visualisation of $NAME_OF_RUN is done
         fi
 
         run_id=$(( $run_id + 1 ))

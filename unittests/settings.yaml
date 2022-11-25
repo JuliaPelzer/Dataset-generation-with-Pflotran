@@ -1,0 +1,25 @@
+general:
+  random_bool: false
+  seed_id: 2907
+grid:
+  loc_hp:
+  - 50
+  - 120
+  - 50
+  ncells:
+  - 20
+  - 256
+  - 16
+  size:
+  - 100
+  - 1280
+  - 80
+permeability:
+  case: perlin_noise
+  factor: 40
+  frequency:
+  - 2
+  - 4
+  - 2
+  perm_max: 6.650000000000001e-09
+  perm_min: 1.36e-12

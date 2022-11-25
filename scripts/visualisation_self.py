@@ -86,9 +86,9 @@ def plot_perm(path_settings:str="try_perm", path_run="try_perm/RUN_0", case="top
 
 def _get_dimensions(path:str) -> Tuple[int, int, int]:
     # read json file for dimensions
-    with open(f"{path}/inputs/settings_perm_field.yaml", "r") as f:
+    with open(f"{path}/inputs/settings.yaml", "r") as f:
         perm_settings = yaml.safe_load(f)
-    dimensions_of_datapoint = perm_settings["ncells"]
+    dimensions_of_datapoint = perm_settings["grid"]["ncells"]
     return dimensions_of_datapoint
 
 if __name__ == "__main__":

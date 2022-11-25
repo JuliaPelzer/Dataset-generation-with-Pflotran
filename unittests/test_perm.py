@@ -1,8 +1,9 @@
-import pytest
-from create_permeability_field import *
+import os
+from scripts.create_permeability_field import create_perm_field, read_and_plot_perm_field
+from scripts.make_general_settings import load_settings
 
 def test_combi_perm_field_create_and_plot():
-    settings = Settings(random_bool=False)
+    settings = load_settings(".")
     perm_created = create_perm_field(1, "test", settings)
 
     # read h5 perm file
