@@ -9,7 +9,7 @@ import noise
 from typing import Dict
 from tqdm import tqdm
 import logging
-from make_general_settings import load_settings
+from scripts.make_general_settings import load_settings
 
 def make_perm_grid(settings:Dict, base:float = 0):
     length_cells = settings["grid"]["size"] / np.array(settings["grid"]["ncells"])

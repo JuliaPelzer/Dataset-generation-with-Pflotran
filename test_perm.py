@@ -4,7 +4,7 @@ from scripts.create_permeability_field import create_perm_field, read_and_plot_p
 from scripts.make_general_settings import load_settings
 
 def test_combi_perm_field_create_and_plot():
-    settings = load_settings(".")
+    settings = load_settings("unittests")
     perm_created = create_perm_field(1, "test", settings)
 
     # read h5 perm file

@@ -35,7 +35,3 @@ def main_change_grid_size(path, case, name_file="settings", **grid_args) -> Dict
 	settings = change_grid_domain_size(settings, case=case, **grid_args)
 	save_settings(settings, path, name_file)
 	return settings
-
-if __name__ == "__main__":
-
-	main_change_grid_size(path="Phd_simulation_groundtruth/scripts/scripts_permeability", case="large")

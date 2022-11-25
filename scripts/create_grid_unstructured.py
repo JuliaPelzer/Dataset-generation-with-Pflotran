@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import os
 from typing import Dict
-from make_general_settings import load_settings, change_grid_domain_size, save_settings
+from scripts.make_general_settings import load_settings, change_grid_domain_size, save_settings
 
 def write_mesh_file(path_to_output:str, settings:Dict):
 	faceArea = settings["grid"]["faceArea"]

@@ -4,14 +4,14 @@ import os
 import scripts.make_general_settings as script_settings
 
 def test_run_bash_pressure_1D_permeability():
-	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests"
+	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
 
-	subprocess.call("cp input_pflotran_files/pflotran_vary_perm.in pflotran.in", shell=True)
+	subprocess.call("cp unittests/input_pflotran_files/pflotran_vary_perm.in pflotran.in", shell=True)
 	for i in [1,2]:
 		number_vary_pressure = i
 		for j in [1,2]:
 			number_vary_perm = j
-			subprocess.call(f"bash ../make_dataset_vary_perm.sh {number_vary_pressure} {number_vary_perm} test_bash_perm 1D", shell=True)
+			subprocess.call(f"bash make_dataset_vary_perm.sh {number_vary_pressure} {number_vary_perm} test_bash_perm 1D", shell=True)
 			assert _fcount("test_bash_perm") == number_vary_pressure*number_vary_perm + 1, "perm test created the wrong number of datapoints"
 			assert os.path.isfile("test_bash_perm/inputs/settings.yaml"), "settings.yaml not found"
 			os.system("rm -r test_bash_perm")
@@ -25,7 +25,7 @@ def test_create_grid():
 		os.mkdir("test_grid")
 	except:
 		pass
-	subprocess.call(f"/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/scripts_grid/create_grid_unstructured.py /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/test_grid/", shell=True)
+	subprocess.call(f"/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/create_grid_unstructured.py /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/test_grid/", shell=True)
 	os.system("rm -r test_grid")
 	os.system("rm -r __pycache__")
 
@@ -37,7 +37,7 @@ def test_create_grid_different_size():
 		pass
 	grid_widths = [200, 200, 200]
 	number_cells = [2, 3, 6]
-	subprocess.call(f"/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/scripts_grid/create_grid_unstructured.py /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/test_grid_small/ {grid_widths[0]} {grid_widths[1]} {grid_widths[2]} {number_cells[0]} {number_cells[1]} {number_cells[2]}", shell=True)
+	subprocess.call(f"/bin/python3 /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/scripts/create_grid_unstructured.py /home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/test_grid_small/ {grid_widths[0]} {grid_widths[1]} {grid_widths[2]} {number_cells[0]} {number_cells[1]} {number_cells[2]}", shell=True)
 	subprocess.call("bash ../make_dataset_vary_perm.sh 1 1 test_grid_small 1D", shell=True)
 	# TODO actual ASSERT
 	# TODO interaction with bash script

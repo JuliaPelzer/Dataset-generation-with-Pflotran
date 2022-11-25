@@ -30,20 +30,21 @@ then
     mkdir $OUTPUT_DATASET_DIR/inputs
     echo ...$OUTPUT_DATASET_DIR/inputs folder is created
 fi
-cp settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+cp dummy_dataset/settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+cp dummy_dataset/pflotran_vary_perm.in $OUTPUT_DATASET_DIR/pflotran.in # if you want iso_perm: cp iso_perm instead
 
 # make grid files
-python3 ../scripts/create_grid_unstructured.py $(pwd) $(pwd)  #$OUTPUT_DATASET_DIR
+python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)  #$OUTPUT_DATASET_DIR
 
 MIN_VARIATIONS_PRESSURE=$CLA_NUMBER_VARIATIONS_PRESSURE #1 #5 #100  # calc parameters, read them for PRESSURE
-python3 ../scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_CASE
+python3 scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_CASE
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
 # number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
 # calculate permeability fields
 len_perm=$CLA_NUMBER_VARIATIONS_PERMEABILITY # calc parameters, read them for PERMEABILITY
 # TODO later set random_bool in settings.yaml to True
-python3 ../scripts/create_permeability_field.py INFO $len_perm $(pwd) $OUTPUT_DATASET_DIR
+python3 scripts/create_permeability_field.py INFO $len_perm $(pwd) $OUTPUT_DATASET_DIR
 
 run_id=0
 
@@ -58,9 +59,9 @@ do
         # calculate pressure files
         if [ "$CLA_CASE" = "1D" ]; 
         then
-            python3 ../scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
+            python3 scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
         else # 2D case
-            python3 ../scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
+            python3 scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
         fi
 
         # create run folder    
@@ -74,12 +75,12 @@ do
         fi
 
         # copy next permeability field file to pflotran.in folder
-        python3 ../scripts/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
+        python3 scripts/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
         j=$(( $j + 1 ))
     
         echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)
         # to DEBUG the simulation turn screen_output on
-        mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX #-screen_output off
+        mpirun -n 1 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off
         echo finished PFLOTRAN simulation at $(date)
 
         cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
@@ -87,8 +88,8 @@ do
         # # call visualisation
         if [ "$CLA_VISUALISATION" = "vis" ]; 
         then
-            python3 ../scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
-            python3 ../scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
+            python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
+            python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
             echo ...visualisation of $NAME_OF_RUN is done
         fi
 
@@ -103,3 +104,4 @@ cp pflotran.in $OUTPUT_DATASET_DIR/inputs/pflotran_copy.in
 rm interim_pressure_gradient.txt
 rm interim_permeability_field.h5
 rm -r $OUTPUT_DATASET_DIR/permeability_fields
+rm -rf {east,west,south,north}.ex heatpump_inject1.vs mesh.uge

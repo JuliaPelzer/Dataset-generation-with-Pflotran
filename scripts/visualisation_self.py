@@ -1,7 +1,7 @@
 import os
 import h5py
 import numpy as np
-from typing import Dict, Tuple, List
+from typing import Tuple, List
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
