@@ -3,6 +3,7 @@
 - python 3.8.10 or newer (tested with this version)
 - python packages (installation via pip possible): numpy, noise
 - bash 5.0.17 or newer (tested with this version)
+- check requirements.txt for more details
 
 ## how to install Pflotran using spack:
 - git clone -c feature.manyFiles=true https://github.com/spack/spack.git
