@@ -7,7 +7,7 @@
 ## how to install Pflotran using spack:
 - git clone -c feature.manyFiles=true https://github.com/spack/spack.git
 - . spack/share/spack/setup-env.sh
-- copy spack.yaml to folder and go there
+- copy spack.yaml to folder and go there (e.g. "cd test_nn/installs/")
 - spack env activate .
 - spack install pflotran (#needs internet access for it)
 ### next login: 
