@@ -13,7 +13,7 @@
 - spack install pflotran (#needs internet access for it)
 ### next login: 
 - . spack/share/spack/setup-env.sh
-- go to folder with spack.yaml
+- go to folder with spack.yaml (e.g. test_nn/installs)
 - spack env activate .
 - spack install pflotran
 
@@ -23,7 +23,7 @@ builds datasets with definable number of data points; based on one pflotran.in f
 ## if you use this script on a new computer
 - remember to copy all (!) required files (see /dummy_dataset + *.sh bash-script + /scripts)
 - if you run the script for a varying permeability field, check that you have all required files in dummy_dataset:
-    - pflotran_vary_perm.in
+    - pflotran.in
     - settings.yaml
 - set the $PFLOTRAN_DIR (in ~/.zshrc or bashrc or similar)
 
