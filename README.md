@@ -12,8 +12,8 @@
 - spack install pflotran (#needs internet access for it)
 ### next login: 
 - . spack/share/spack/setup-env.sh
-- go to folder with spack.yaml
-- spack env activate .
+- go to folder with spack.yaml (e.g. test_nn/installs)
+- spack env activate . 
 - spack install pflotran
 
 # Phd_simulation_groundtruth
