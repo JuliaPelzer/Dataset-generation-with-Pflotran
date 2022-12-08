@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_NAME> <CLA_CASE> <CLA_VISUALISATION>"
+## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_NAME> <CLA_PRESSURE_CASE> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
 
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
@@ -11,7 +11,7 @@ args=("$@")
 CLA_NUMBER_VARIATIONS_PRESSURE=${args[0]} # expects the number of desired variations of the pressure field in the dataset
 CLA_NUMBER_VARIATIONS_PERMEABILITY=${args[1]} # expects the number of desired variations of the permeability field in the dataset
 CLA_NAME=${args[2]} # expects a string with the name of the dataset
-CLA_CASE=${args[3]} # expects a string: "2D" or "1D" (for the pressure field)
+CLA_PRESSURE_CASE=${args[3]} # expects a string: "2D" or "1D" (for the pressure field)
 CLA_VISUALISATION=${args[4]} # expects "vis" or "no_vis"
 
 echo working at $(date) on folder $(pwd)
@@ -37,7 +37,7 @@ cp dummy_dataset/pflotran_vary_perm.in pflotran.in # if you want iso_perm: cp is
 python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)  #$OUTPUT_DATASET_DIR
 
 MIN_VARIATIONS_PRESSURE=$CLA_NUMBER_VARIATIONS_PRESSURE #1 #5 #100  # calc parameters, read them for PRESSURE
-python3 scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_CASE
+python3 scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_PRESSURE_CASE
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
 # number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
@@ -57,7 +57,7 @@ do
     while [ $j -lt $len_perm ];
     do
         # calculate pressure files
-        if [ "$CLA_CASE" = "1D" ]; 
+        if [ "$CLA_PRESSURE_CASE" = "1D" ]; 
         then
             python3 scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
         else # 2D case
