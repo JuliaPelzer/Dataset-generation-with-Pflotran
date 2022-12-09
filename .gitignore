@@ -6,6 +6,9 @@ vary_permeability/Kyle_create_perm_pflotran_file
 *.h5
 *.out
 *.txt
+*.vs
+*.ex
+mesh.uge
 
 # currently exclude .in files
 *.in
