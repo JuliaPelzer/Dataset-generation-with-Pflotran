@@ -41,11 +41,6 @@
     DIFFUSION_COEFFICIENT 1.d-9 #[m^2/s] #checked
   END
 
-  # DATASET perm
-  #   HDF5_DATASET_NAME Permeability
-  #   FILENAME interim_permeability_field.h5
-  # END
-
   #=========================== material properties ==============================
   MATERIAL_PROPERTY gravel
     ID 1
@@ -57,7 +52,6 @@
     THERMAL_CONDUCTIVITY_WET 1.0
     LONGITUDINAL_DISPERSIVITY 3.1536d0  #[m] # checked
     PERMEABILITY                        #[m^2] #checked
-      # DATASET perm
       PERM_ISO 1.d-9 
     /
     CHARACTERISTIC_CURVES cc1
@@ -73,7 +67,6 @@
     THERMAL_CONDUCTIVITY_WET 1.0
     LONGITUDINAL_DISPERSIVITY 3.1536d0  
     PERMEABILITY                        
-      # DATASET perm
       PERM_ISO 1.d-9 
     /
     CHARACTERISTIC_CURVES cc1
