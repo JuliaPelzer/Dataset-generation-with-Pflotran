@@ -35,6 +35,7 @@ ZZZ_*
 *.pdf
 *.svg
 *.ogv
+*.jpg
 
 # test files
 try_python_write_in_pflotran.ipynb
