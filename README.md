@@ -9,11 +9,11 @@
 
 `. spack/share/spack/setup-env.sh`
 
-copy `spack.yaml` to folder and go there (e.g. "cd test_nn/installs/")
+copy `spack.yaml` (pflotran specific) to folder and go there (e.g. "cd test_nn/installs/")
 
 `spack env activate .`
 
-`spack install pflotran`
+`spack install` / `spack install pflotran`
 
 > **Note**
 > need internet access for it
