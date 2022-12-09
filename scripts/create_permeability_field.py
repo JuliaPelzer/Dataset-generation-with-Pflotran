@@ -90,7 +90,7 @@ def plot_perm(cells, fileOfolder, case="trigonometric"):
     # fig.show()
     fig.savefig(f"permeability_{case}_{fileOfolder}.png")
     
-def create_perm_field(number_samples:int, folder:str, settings:Dict, plot_bool:bool=False, filename_extension:str=""):
+def create_perm_field(number_samples:int, folder:str, settings:Dict, plot_bool:bool=False, filename_extension:str="", restrict_bool:bool=False):
         # ncells:np.ndarray=np.ndarray([20,150,16]), 
         # size:np.ndarray=np.ndarray([100,750,80]), perm_max:float=6.65*10**-9,perm_min:float=1.36*10**-12,
         # factor:float=40, case:str="perlin_noise", frequency:Union[int, Tuple[int, int, int]]=10, base:int=0):
@@ -114,13 +114,37 @@ def create_perm_field(number_samples:int, folder:str, settings:Dict, plot_bool:b
     
     for base in tqdm(bases):
         cells, _ = make_perm_grid(settings, base)
+        size = np.array(settings["grid"]["ncells"])
         filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
-        save_perm(filename, settings["grid"]["ncells"], cells)
+
+        save_perm(filename, size, cells)
         if plot_bool:
             plot_perm(cells, folder, case=settings["permeability"]["case"])
+
+        if restrict_bool:
+            restrict_factors = settings["grid"]["restriction_factor"]
+            for restrict_factor in restrict_factors:
+                cells_restricted = restrict_and_save_perm_field(cells, int(restrict_factor), settings, filename, folder, plot_bool)
     
     logging.info("Created perm-field(s)")
     return cells # for pytest
+
+def restrict_and_save_perm_field(perm_field_orig, restrict_factor:int, settings:Dict, filename_orig:str, folder:str, plot_bool:bool=False):
+    assert restrict_factor > 0, "Restrict factor must be > 0"
+
+    if (np.array(perm_field_orig.shape)%restrict_factor).any() != 0:
+        logging.warning(f"Restrict factor {restrict_factor} does not divide size {np.array(perm_field_orig.shape)} without remainder. Using floor division.")
+
+    # restrict perm field
+    perm_field_restricted = perm_field_orig[::restrict_factor,::restrict_factor,::restrict_factor]
+
+    filename_restrict = f"{filename_orig[:-3]}_restricted_factor_{int(restrict_factor)}.h5"
+    save_perm(filename_restrict, perm_field_restricted.shape, perm_field_restricted)
+
+    if plot_bool:
+        plot_perm(perm_field_restricted, folder, case=f"restricted_factor_{restrict_factor}")
+
+    return perm_field_restricted # for pytest TODO
 
 def read_and_plot_perm_field(settings:Dict, filename:str="permeability_fields/permeability_base_8325804_test.h5"):
     # read h5 perm file
@@ -167,8 +191,8 @@ if __name__=="__main__":
         folder = "."
     
     settings = load_settings(folder_settings)
-    plot_bool = False
-    create_perm_field(number_samples, folder, settings, plot_bool)
+    plot_bool = True
+    create_perm_field(number_samples, folder, settings, plot_bool, restrict_bool=True)
     
     # for file in os.listdir(f"{folder}/permeability_fields"):
     #     if file.endswith(".h5"):
