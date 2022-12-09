@@ -47,7 +47,6 @@ def write_mesh_file(path_to_output:str, settings:Dict):
 					cellID_2 = cellID_1+xGrid*yGrid
 					output_string.append("\n" + str(cellID_1)+"  "+str(cellID_2)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc_local)+"  "+str(faceArea))
 
-
 	if not os.path.exists(path_to_output):
 		os.makedirs(path_to_output)
 		
@@ -58,8 +57,11 @@ def write_loc_well_file(path_to_output:str, settings:Dict):
 	loc_hp = settings["grid"]["loc_hp"]
 	number_cells = settings["grid"]["ncells"]
 	cell_widths = settings["grid"]["size"]/np.array(number_cells)	# Cell width in metres
-	i,j,k = loc_hp/cell_widths
-	cellID = int(i + (j-1)*number_cells[0] + (k-1)*number_cells[0]*number_cells[1])
+
+	i,j,k = np.array(loc_hp/cell_widths, int)
+	cellID = int(i + (j-1)*number_cells[0])
+	if k != 0:
+		cellID += (k-1)*number_cells[0]*number_cells[1]
 	assert cellID > 0, "CellID is negative"
 
 	with open(str(path_to_output)+"/heatpump_inject1.vs", "w") as file:
@@ -130,7 +132,6 @@ if __name__ == "__main__":
 	assert len(cla) >= 3, "Please provide a path to the input and output folder"
 	path_to_input = cla[1]
 	path_to_output = cla[2]
-
 
 	#domainlarge:
 	# grid_widths=[100, 1280, 80]	# Grid width in metres

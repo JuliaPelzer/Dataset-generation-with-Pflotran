@@ -22,7 +22,7 @@ def plot_sim(path_settings:str="try", path_run:str="try/RUN_0", plot_name:str="p
 def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings:str) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
     dimensions = _get_dimensions(path_settings)
-    if dimensions != (20,150,16):
+    if dimensions != (20,150,16) and dimensions[2] != 1:
         logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
     list_to_plot = []
     for time in hdf5_file.keys():
@@ -35,6 +35,8 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
                     data_dict["data"] = data_dict["data"][9,:,:].T
                 elif case=="top_hp":
                     data_dict["data"] = data_dict["data"][:,:,9]
+                elif case=="2D":
+                    data_dict["data"] = data_dict["data"][:,:]
                 else:
                     raise ValueError("Case not implemented")
                 list_to_plot.append(data_dict)

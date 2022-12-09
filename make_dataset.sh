@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) 
-## <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_PRESSURE_CASE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_PERM_CASE> <CLA_NAME> <CLA_VISUALISATION>"
+## <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_PRESSURE_CASE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_PERM_CASE> <CLA_DIMENSIONS> <CLA_NAME> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
 
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
@@ -13,26 +13,38 @@ CLA_NUMBER_VARIATIONS_PRESSURE=${args[0]} # expects the number of desired variat
 CLA_PRESSURE_CASE=${args[1]} # expects a string: "2D" or "1D" (for the pressure field)
 CLA_NUMBER_VARIATIONS_PERMEABILITY=${args[2]} # expects the number of desired variations of the permeability field in the dataset
 CLA_PERM_CASE=${args[3]} # expects a string: "iso" or "vary" (for the permeability field)
-CLA_NAME=${args[4]} # expects a string with the name of the dataset
-CLA_VISUALISATION=${args[5]} # expects "vis" or "no_vis"
+CLA_DIMENSIONS=${args[4]} # expects a string: "2D" or "3D"
+CLA_NAME=${args[5]} # expects a string with the name of the dataset
+CLA_VISUALISATION=${args[6]} # expects "vis" or "no_vis"
+
+if [ ! "$CLA_DIMENSIONS" = "2D" ] && [ ! "$CLA_DIMENSIONS" = "3D" ];
+then
+    echo "CLA_DIMENSIONS must be 2D or 3D"
+    exit 1
+fi
 
 echo working at $(date) on folder $(pwd)
 # dataset generation
 
 # check whether output folder exists else define
 OUTPUT_DATASET_DIR=$CLA_NAME
-if [ ! -d $OUTPUT_DATASET_DIR ]
+if [ ! -d $OUTPUT_DATASET_DIR ];
 then
     mkdir $OUTPUT_DATASET_DIR
     echo ...$OUTPUT_DATASET_DIR folder is created
 fi
 # folder for files like pflotran.in, pressure_values.txt and perm_field_parameters.txt, mesh.uge etc.
-if [ ! -d $OUTPUT_DATASET_DIR/inputs ]
+if [ ! -d $OUTPUT_DATASET_DIR/inputs ];
 then
     mkdir $OUTPUT_DATASET_DIR/inputs
     echo ...$OUTPUT_DATASET_DIR/inputs folder is created
 fi
-cp dummy_dataset/settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+if [ "$CLA_DIMENSIONS" = "2D" ];
+then
+    cp dummy_dataset/settings_2D.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+else
+    cp dummy_dataset/settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+fi
 
 if [ "$CLA_PERM_CASE" = "vary" ]; 
 then
@@ -42,7 +54,7 @@ else
 fi
 
 # make grid files
-python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)  #$OUTPUT_DATASET_DIR
+python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)
 
 MIN_VARIATIONS_PRESSURE=$CLA_NUMBER_VARIATIONS_PRESSURE #1 #5 #100  # calc parameters, read them for PRESSURE
 python3 scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_PRESSURE_CASE
@@ -102,8 +114,13 @@ do
         # # call visualisation
         if [ "$CLA_VISUALISATION" = "vis" ]; 
         then
-            python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
-            python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
+            if [ "$CLA_DIMENSIONS" = "2D" ];
+            then
+                python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "2D"
+            else
+                python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR
+                python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "top_hp"
+            fi
             echo ...visualisation of $NAME_OF_RUN is done
         fi
 
@@ -116,6 +133,9 @@ done
 
 mv pflotran.in $OUTPUT_DATASET_DIR/inputs/pflotran_copy.in
 rm interim_pressure_gradient.txt
-rm interim_permeability_field.h5
-rm -r $OUTPUT_DATASET_DIR/permeability_fields
 rm -rf {east,west,south,north}.ex heatpump_inject1.vs mesh.uge settings.yaml
+if [ "$CLA_PERM_CASE" = "vary" ];
+then
+    rm interim_permeability_field.h5
+    rm -r $OUTPUT_DATASET_DIR/permeability_fields
+fi
