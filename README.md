@@ -40,10 +40,11 @@ builds datasets with definable number of data points; based on one pflotran.in f
 ## How to run the script
 - always start from the dataset-directory where dummy_dataset, bash-script and scripts are located
 - the datasets you want to simulate will be created in a subfolder
-- run script via `bash <name_of_script>` (here `<name_of_script>` is `make_dataset_vary_perm.sh`) `<CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_NAME> <CLA_PRESSURE_CASE> <CLA_VISUALISATION>` with the respective commandline arguments
+- run script via `bash <name_of_script>` (here `<name_of_script>` is `make_dataset_vary_perm.sh`) `<CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_PRESSURE_CASE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_PERM_CASE> <CLA_NAME> <CLA_VISUALISATION>` with the respective commandline arguments
     -CLA_NUMBER_VARIATIONS_PRESSURE and CLA_NUMBER_VARIATIONS_PERMEABILITY: number of variations of pressure and permeability field (e.g. 10 10)
-    - CLA_NAME is the name of the dataset to create, i.e. of the subfolder to create in the current directory
     - CLA_PRESSURE_CASE currently has two options: "1D" creates a dataset with a constant pressure field that only varies in the y-component (MOST LIKELY WHAT YOU WANT); "2D" creates a dataset with a constant pressure field that varies in the x- and y-component
+    - CLA_PERM_CASE currently has two options: "vary" creates a dataset with a varying permeability field (through perlin noise); "iso" creates a dataset with a constant permeability field
+    - CLA_NAME is the name of the dataset to create, i.e. of the subfolder to create in the current directory
     - CLA_VISULISATION is an **optional** commandline argument defining whether to produce some automated pictures (selfmade in python) : if you want it, write "vis" as CLA_VISUALISATION, else leave it empty
 
 ## If you encounter an unexpected error

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_NAME> <CLA_PRESSURE_CASE> <CLA_VISUALISATION>"
+## run script by "bash ../<name_of_script> (file should be in parent directory or otherwise name full path to script) 
+## <CLA_NUMBER_VARIATIONS_PRESSURE> <CLA_PRESSURE_CASE> <CLA_NUMBER_VARIATIONS_PERMEABILITY> <CLA_PERM_CASE> <CLA_NAME> <CLA_VISUALISATION>"
 ## always start from same directory as pflotran.in file
 
 #TODO user $PFLOTRAN_DIR neu setzen, wenn man in einer neuen Umgebung arbeitet (in ~/.zshrc or bashrc or similar)
@@ -9,10 +10,11 @@
 #command line arguments
 args=("$@")
 CLA_NUMBER_VARIATIONS_PRESSURE=${args[0]} # expects the number of desired variations of the pressure field in the dataset
-CLA_NUMBER_VARIATIONS_PERMEABILITY=${args[1]} # expects the number of desired variations of the permeability field in the dataset
-CLA_NAME=${args[2]} # expects a string with the name of the dataset
-CLA_PRESSURE_CASE=${args[3]} # expects a string: "2D" or "1D" (for the pressure field)
-CLA_VISUALISATION=${args[4]} # expects "vis" or "no_vis"
+CLA_PRESSURE_CASE=${args[1]} # expects a string: "2D" or "1D" (for the pressure field)
+CLA_NUMBER_VARIATIONS_PERMEABILITY=${args[2]} # expects the number of desired variations of the permeability field in the dataset
+CLA_PERM_CASE=${args[3]} # expects a string: "iso" or "vary" (for the permeability field)
+CLA_NAME=${args[4]} # expects a string with the name of the dataset
+CLA_VISUALISATION=${args[5]} # expects "vis" or "no_vis"
 
 echo working at $(date) on folder $(pwd)
 # dataset generation
@@ -31,7 +33,13 @@ then
     echo ...$OUTPUT_DATASET_DIR/inputs folder is created
 fi
 cp dummy_dataset/settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
-cp dummy_dataset/pflotran_vary_perm.in pflotran.in # if you want iso_perm: cp iso_perm instead
+
+if [ "$CLA_PERM_CASE" = "vary" ]; 
+then
+    cp dummy_dataset/pflotran_vary_perm.in pflotran.in
+else
+    cp dummy_dataset/pflotran_iso_perm.in pflotran.in
+fi
 
 # make grid files
 python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)  #$OUTPUT_DATASET_DIR
@@ -44,7 +52,10 @@ IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/
 # calculate permeability fields
 len_perm=$CLA_NUMBER_VARIATIONS_PERMEABILITY # calc parameters, read them for PERMEABILITY
 # TODO later set random_bool in settings.yaml to True
-python3 scripts/create_permeability_field.py INFO $len_perm $(pwd) $OUTPUT_DATASET_DIR
+if [ "$CLA_PERM_CASE" = "vary" ]; 
+then
+    python3 scripts/create_permeability_field.py INFO $len_perm $(pwd) $OUTPUT_DATASET_DIR
+fi
 
 run_id=0
 
@@ -75,7 +86,10 @@ do
         fi
 
         # copy next permeability field file to pflotran.in folder
-        python3 scripts/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
+        if [ "$CLA_PERM_CASE" = "vary" ]; 
+        then
+            python3 scripts/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
+        fi
         j=$(( $j + 1 ))
     
         echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)
