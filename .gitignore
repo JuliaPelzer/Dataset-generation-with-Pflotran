@@ -17,6 +17,9 @@ groundtruth_hps_no_hps/pflotran\ old.in
 groundtruth_hps_no_hps/pflotran\ copy.in
 groundtruth_hps_no_hps/pflotran\ copy\ 2.in
 
+# datasets:
+datasets/ 
+
 # Pflotran output / old folders
 approach2_dataset_generation_simplified/dataset/
 approach2_dataset_generation_simplified/dataset_HDF5_uniformly_distributed_data/
