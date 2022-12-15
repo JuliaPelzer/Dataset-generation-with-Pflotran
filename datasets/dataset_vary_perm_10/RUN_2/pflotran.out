@@ -1,0 +1,386 @@
+
+=================
+  PFLOTRAN v4.0
+=================
+
+ Extent of Gridded Domain
+  X: 2.5000000000000000 - 97.500000000000000
+  Y: 2.5000000000000000 - 1277.5000000000000
+  Z: 2.5000000000000000 - 77.500000000000000
+
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Initial Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   initial
+                  Region:   all
+--------------------------------------------------------------------------------
+
+  Flow Condition: initial
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   initial
+                  Region:   north
+--------------------------------------------------------------------------------
+
+  Flow Condition: initial
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   initial
+                  Region:   south
+--------------------------------------------------------------------------------
+
+  Flow Condition: initial
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   initial
+                  Region:   west
+--------------------------------------------------------------------------------
+
+  Flow Condition: initial
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   initial
+                  Region:   east
+--------------------------------------------------------------------------------
+
+  Flow Condition: initial
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Source Sink
+
+--------------------------------------------------------------------------------
+          Flow Condition:   injection
+                  Region:   heatpump_inject1
+--------------------------------------------------------------------------------
+
+  Flow Condition: injection
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+
+    Sub Condition: rate
+      Type: scaled volumetric rate
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Is transient?: yes
+          Number of times:      3
+          Is cyclic?: no
+          Buffer:
+            Rank:  2
+            Dims:    1   3
+            Buffer Slice Size:   0
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+ Requested processors =     1
+
+FLOW Time Stepper
+acceleration: on
+acceleration threshold: 5
+number of ramp entries: 5
+ramp entry #1: 2.0000
+ramp entry #2: 2.0000
+ramp entry #3: 2.0000
+ramp entry #4: 2.0000
+ramp entry #5: 2.0000
+ramp entry #6: 1.8000
+ramp entry #7: 1.6000
+ramp entry #8: 1.4000
+ramp entry #9: 1.2000
+ramp entry #10: 1.0000
+ramp entry #11: 1.0000
+ramp entry #12: 1.0000
+ramp entry #13: 1.0000
+maximum number of steps: 999999
+constant time steps threshold: 5
+maximum number of cuts: 16
+reduction factor: 5.000000E-01
+maximum growth factor: 2.000000E+00
+
+FLOW Newton Solver
+atol: 1.000000E-50
+rtol: 1.000000E-03
+stol: 1.000000E-08
+dtol: 1.000000E+04
+maxnorm: 1.000000E+20
+inftolres: -9.990000E+02
+inftolupd: 1.000000E+00
+inftolrelupd: -9.990000E+02
+inftolsclres: -9.990000E+02
+max iter: 50
+min iter: 1
+maxf: 10000
+matrix type: baij
+precond. matrix type: baij
+inexact newton: off
+print convergence: on
+print detailed convergence: off
+check infinity norm: on
+
+FLOW Linear Solver
+solver: bcgs
+preconditioner: bjacobi
+atol: 1.000000E-50
+rtol: 1.000000E-05
+dtol: 1.000000E+04
+maximum iteration: 10000
+
+== TH FLOW =====================================================================
+ Step      1 Time=  1.00000E-01 Dt=  1.00000E-01 [y] snes_conv_reason:    3
+  newton =   1 [       1] linear =    29 [        29] cuts =  0 [   0]
+  --> max chng: dpmx=   4.1940E+01 dtmpmx=   1.5631E-02
+
+== TH FLOW =====================================================================
+ Step      2 Time=  2.00000E-01 Dt=  1.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [       2] linear =    29 [        58] cuts =  0 [   0]
+  --> max chng: dpmx=   1.1263E-01 dtmpmx=   6.5444E-03
+
+== TH FLOW =====================================================================
+ Step      3 Time=  4.00000E-01 Dt=  2.00000E-01 [y] snes_conv_reason:   11
+  newton =   4 [       6] linear =   106 [       164] cuts =  0 [   0]
+  --> max chng: dpmx=   1.3473E+01 dtmpmx=   3.0887E+00
+
+== TH FLOW =====================================================================
+ Step      4 Time=  6.61880E-01 Dt=  2.61880E-01 [y] snes_conv_reason:   11
+  newton =   2 [       8] linear =    62 [       226] cuts =  0 [   0]
+  --> max chng: dpmx=   1.4747E+00 dtmpmx=   2.1604E-01
+
+== TH FLOW =====================================================================
+ Step      5 Time=  1.16188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   2 [      10] linear =    58 [       284] cuts =  0 [   0]
+  --> max chng: dpmx=   1.3141E+00 dtmpmx=   1.5199E-01
+
+== TH FLOW =====================================================================
+ Step      6 Time=  1.66188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      11] linear =    29 [       313] cuts =  0 [   0]
+  --> max chng: dpmx=   7.3942E-01 dtmpmx=   6.5497E-02
+
+== TH FLOW =====================================================================
+ Step      7 Time=  2.16188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      12] linear =    27 [       340] cuts =  0 [   0]
+  --> max chng: dpmx=   3.0443E-01 dtmpmx=   2.9475E-02
+
+== TH FLOW =====================================================================
+ Step      8 Time=  2.66188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      13] linear =    24 [       364] cuts =  0 [   0]
+  --> max chng: dpmx=   9.4639E-02 dtmpmx=   1.0117E-02
+
+== TH FLOW =====================================================================
+ Step      9 Time=  3.16188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      14] linear =    26 [       390] cuts =  0 [   0]
+  --> max chng: dpmx=   2.4500E-02 dtmpmx=   2.8153E-03
+
+== TH FLOW =====================================================================
+ Step     10 Time=  3.66188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      15] linear =    25 [       415] cuts =  0 [   0]
+  --> max chng: dpmx=   5.4648E-03 dtmpmx=   6.6292E-04
+
+== TH FLOW =====================================================================
+ Step     11 Time=  4.16188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      16] linear =    25 [       440] cuts =  0 [   0]
+  --> max chng: dpmx=   1.0739E-03 dtmpmx=   1.3739E-04
+
+== TH FLOW =====================================================================
+ Step     12 Time=  4.66188E+00 Dt=  5.00000E-01 [y] snes_conv_reason:   11
+  newton =   1 [      17] linear =    25 [       465] cuts =  0 [   0]
+  --> max chng: dpmx=   1.9225E-04 dtmpmx=   2.5617E-05
+
+== TH FLOW =====================================================================
+ Step     13 Time=  5.00000E+00 Dt=  3.38120E-01 [y] snes_conv_reason:   11
+  newton =   1 [      18] linear =    25 [       490] cuts =  0 [   0]
+  --> max chng: dpmx=   2.9438E-05 dtmpmx=   4.1573E-06
+
+ Wall Clock Time:  9.3513E+00 [sec]   1.5586E-01 [min]   2.5976E-03 [hr]
