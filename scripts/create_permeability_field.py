@@ -184,7 +184,8 @@ def create_perm_field(number_samples:int, folder:str, settings:Dict, plot_bool:b
 
     # vary bases to get different fields
     # OLD: bases = np.random.randint(0, 2**19, size=number_samples) 
-    bases = [_random_exclude() for i in range(number_samples)]
+    # bases = [_random_exclude() for i in range(number_samples)]
+    bases = np.random.randint(0, 255, size=number_samples) 
     
     for base in tqdm(bases):
         cells, _ = make_perm_grid(settings, base)
@@ -291,21 +292,28 @@ def _random_exclude():
 
 if __name__=="__main__":
 
-    # read input parameters
-    cla_args = sys.argv
-    logging.basicConfig(level=cla_args[1])
-    number_samples = int(cla_args[2])
-    folder_settings = cla_args[3]
-    if len(cla_args) > 4:
-        folder = cla_args[4]
-    else:
-        folder = "."
-    
-    settings = load_settings(folder_settings)
-    plot_bool = False
-    create_perm_field_Manuel(number_samples, folder, settings, plot_bool)
-    # create_perm_field(number_samples, folder, settings, plot_bool, restrict_bool=True)
-    
-    # for file in os.listdir(f"{folder}/permeability_fields"):
-    #     if file.endswith(".h5"):
-    #         read_and_plot_perm_field(settings, filename=f"{folder}/permeability_fields/{file}")
+    if True:
+        # read input parameters
+        cla_args = sys.argv
+        logging.basicConfig(level=cla_args[1])
+        number_samples = int(cla_args[2])
+        folder_settings = cla_args[3]
+        if len(cla_args) > 4:
+            folder = cla_args[4]
+        else:
+            folder = "."
+        
+        settings = load_settings(folder_settings)
+        plot_bool = False
+        
+        # create_perm_field_Manuel(number_samples, folder, settings, plot_bool)
+        create_perm_field(number_samples, folder, settings, plot_bool) #, restrict_bool=True)
+
+    else:    
+        folder = "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/"
+        folder += "try_perm"
+        folder_settings = folder + "/inputs"
+        settings = load_settings(folder_settings)
+        for file in os.listdir(f"{folder}/permeability_fields"):
+            if file.endswith(".h5"):
+                read_and_plot_perm_field(settings, filename=f"{folder}/permeability_fields/{file}")

@@ -19,8 +19,8 @@ permeability:
   case: perlin_noise
   factor: 40
   frequency:
-  - 2
-  - 6
+  - 10 #2
+  - 10 #6
   - 2
   perm_max: 6.65e-09
   perm_min: 1.36e-12
