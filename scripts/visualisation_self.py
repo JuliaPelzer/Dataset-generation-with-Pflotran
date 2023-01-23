@@ -26,7 +26,7 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
         logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
     list_to_plot = []
     for time in hdf5_file.keys():
-        if not time in ["   0 Time  0.00000E+00 y", "Coordinates", "Provenance", "Time:  0.00000E+00 y"]:
+        if not time in ["Coordinates", "Provenance", "   0 Time  0.00000E+00 y", "Time:  0.00000E+00 y"]:
             for property in hdf5_file[time].keys():
                 data_dict = {"data" : np.array(hdf5_file[time][property]), "property" : str(property)} #+str(time)}
                 if reshape_bool:
@@ -56,7 +56,7 @@ def _plot_y(data, path:str, name_pic:str="plot_y_exemplary"):
         plt.ylabel("x or z")
         _aligned_colorbar(label=data_point["property"])
     
-    pic_file_name = f"{path}/{name_pic}_{case}.jpg"
+    pic_file_name = f"{path}/{name_pic}_{case}.png"
     logging.info(f"Resulting picture is at {pic_file_name}")  
     plt.savefig(pic_file_name)
 
