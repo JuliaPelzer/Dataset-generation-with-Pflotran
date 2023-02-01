@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-def sampling_random(param_dataset_size, debug):
+def sampling_random_OLD(param_dataset_size, debug):
     
     # random distribution : log-normal
     samples_clean = []

@@ -4,17 +4,16 @@ general:
 grid:
   loc_hp: # Location of the heatpump in metres
   - 50
-  - 120
+  - 80
   - 50
   ncells:
   - 20
-  - 256
+  - 80
   - 16
   size:
   - 100
-  - 1280
+  - 400
   - 80
-  faceArea: 1
 permeability:
   case: perlin_noise
   factor: 40

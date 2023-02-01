@@ -5,12 +5,16 @@ from typing import Dict
 from scripts.make_general_settings import load_settings, change_grid_domain_size, save_settings
 
 def write_mesh_file(path_to_output:str, settings:Dict):
-	faceArea = settings["grid"]["faceArea"]
 	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
 	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
 
-	volume = 1
+	volume = cellXWidth*cellYWidth*cellZWidth
+	if cellXWidth == cellYWidth and cellXWidth == cellZWidth:
+		faceArea = cellXWidth**2
+	else:
+		print("WARNING: Cells are not cubes")
+		
 	output_string = []
 	output_string.append("CELLS "+str(xGrid*yGrid*zGrid))
 	cellID_1 = 1
@@ -69,12 +73,12 @@ def write_loc_well_file(path_to_output:str, settings:Dict):
 
 def write_SN_files(path_to_output:str, settings:Dict):
 
-	faceArea = settings["grid"]["faceArea"]
 	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
 	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
-	cellXWidth, _, cellZWidth = cell_widths
+	cellXWidth, cellYWidth, cellZWidth = cell_widths
 	_, yWidth, _ = settings["grid"]["size"]
-
+	faceArea = cellXWidth*cellZWidth
+		
 	output_string_north = []
 	output_string_north.append("CONNECTIONS " + str(xGrid*zGrid))
 	output_string_south = []
@@ -101,11 +105,11 @@ def check_region_all(size:np.ndarray):
 	assert np.all(region_all >= size), "Region all is smaller than size - you have to manually change the region size in pflotran.in"
 	
 def write_WE_files(path_to_output:str, settings:Dict):
-	faceArea = settings["grid"]["faceArea"]
 	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
 	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
-	_, cellYWidth, cellZWidth = cell_widths
+	cellXWidth, cellYWidth, cellZWidth = cell_widths
 	xWidth, _, _ = settings["grid"]["size"]
+	faceArea = cellYWidth*cellZWidth
 
 	output_string_east = []
 	output_string_east.append("CONNECTIONS " + str(yGrid*zGrid))

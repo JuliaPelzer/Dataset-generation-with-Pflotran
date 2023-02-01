@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
       pressure_gradient_z = 0
 
-      pressure_text = f"    PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
+      pressure_text = f"    LIQUID_PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
       with open("interim_pressure_gradient.txt","w") as file:
         file.write(pressure_text)
       logging.info(f"Pressure Input: {pressure_gradient_x}, {pressure_gradient_y}, {pressure_gradient_z}")
