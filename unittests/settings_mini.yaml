@@ -1,8 +1,8 @@
 general:
+  dimensions: 3
   random_bool: false
   seed_id: 2907
 grid:
-  faceArea: 1
   loc_hp:
   - 50
   - 120

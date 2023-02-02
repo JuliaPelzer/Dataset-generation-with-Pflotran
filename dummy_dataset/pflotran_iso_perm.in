@@ -14,8 +14,8 @@
   #=========================== times ============================================
   TIME
     FINAL_TIME 5.0 y
-    INITIAL_TIMESTEP_SIZE 0.1 y
-    MAXIMUM_TIMESTEP_SIZE 0.5 y
+    INITIAL_TIMESTEP_SIZE 1.d-5 y
+    MAXIMUM_TIMESTEP_SIZE 0.05 y
   /
 
   REFERENCE_PRESSURE 101325. #[Pa]
@@ -41,11 +41,6 @@
     DIFFUSION_COEFFICIENT 1.d-9 #[m^2/s] #checked
   END
 
-  # DATASET perm
-  #   HDF5_DATASET_NAME Permeability
-  #   FILENAME interim_permeability_field.h5
-  # END
-
   #=========================== material properties ==============================
   MATERIAL_PROPERTY gravel
     ID 1
@@ -57,7 +52,6 @@
     THERMAL_CONDUCTIVITY_WET 1.0
     LONGITUDINAL_DISPERSIVITY 3.1536d0  #[m] # checked
     PERMEABILITY                        #[m^2] #checked
-      # DATASET perm
       PERM_ISO 1.d-9 
     /
     CHARACTERISTIC_CURVES cc1
@@ -73,7 +67,6 @@
     THERMAL_CONDUCTIVITY_WET 1.0
     LONGITUDINAL_DISPERSIVITY 3.1536d0  
     PERMEABILITY                        
-      # DATASET perm
       PERM_ISO 1.d-9 
     /
     CHARACTERISTIC_CURVES cc1
@@ -101,9 +94,9 @@
   #=========================== regions ==========================================
   REGION all
     COORDINATES
-      0.0d0 0.0d0 0.0d0
-      200.0d0 2000.0d0 100.0d0
-    END
+      -1.d20 -1.d20 -1.d20
+      1.d20 1.d20 1.d20
+    /
   END
 
   REGION south
@@ -126,26 +119,32 @@
   FILE heatpump_inject1.vs
   END
 
-  # REGION heatpump_inject1
-  #   COORDINATE 50.d0 120.d0 50.d0
-  # /
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
     TYPE
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
-    DATUM 0.d0 0.d0 85.d0
+    DATUM 50.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
     LIQUID_PRESSURE 101325.d0
-    TEMPERATURE 10.6d0 ! [C]
+    TEMPERATURE 10.6d0 C
+  /
+  
+  FLOW_CONDITION default
+    TYPE
+      LIQUID_FLUX NEUMANN
+      TEMPERATURE DIRICHLET
+    /
+    LIQUID_FLUX 0.d0 m/s
+    TEMPERATURE 10.6d0 C
   /
 
   FLOW_CONDITION injection
     TYPE
-      RATE SCALED_VOLUMETRIC_RATE VOLUME
+      RATE SCALED_VOLUMETRIC_RATE VOLUME #PERM
       TEMPERATURE DIRICHLET
     /
     #RATE 4.2 m^3/day
@@ -171,22 +170,22 @@
     FLOW_CONDITION initial
     REGION north
   /
-
+ 
   BOUNDARY_CONDITION
     FLOW_CONDITION initial
     REGION south
   /
-
-  BOUNDARY_CONDITION
-    FLOW_CONDITION initial
-    REGION west
-  /
-
-  BOUNDARY_CONDITION
-    FLOW_CONDITION initial
-    REGION east
-  /
-
+ 
+  # BOUNDARY_CONDITION
+  #   FLOW_CONDITION default
+  #   REGION west
+  # /
+ # 
+  # BOUNDARY_CONDITION
+  #   FLOW_CONDITION default
+  #   REGION east
+  # /
+ 
   SOURCE_SINK heatpump_inject1
     FLOW_CONDITION injection
     REGION heatpump_inject1
@@ -207,14 +206,14 @@
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE
-      #PERIODIC TIME 1. y BETWEEN 5. y AND 5. y
-      TIMES y 0.1 5.
-      #PERIODIC TIME 0.1 y
+      #PERIODIC TIME 0.00001 y BETWEEN 0. y AND 0.00010 y
+      TIMES y 0.1 1.
       FORMAT HDF5 #VTK
       PRINT_COLUMN_IDS
       VARIABLES
         LIQUID_PRESSURE
         TEMPERATURE
+        PERMEABILITY
       /
     /
     VELOCITY_AT_CENTER

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-def sampling_random(param_dataset_size, debug):
+def sampling_random_OLD(param_dataset_size, debug):
     
     # random distribution : log-normal
     samples_clean = []
@@ -44,10 +44,13 @@ def sampling_regular_log(param_dataset_size):
 
 def sampling_regular_uniform(param_dataset_size):
     # regular spacing: uniform
-    value_start = -0.001 #-1*10**-6 #
-    value_stop = -0.01 #-2.5*10**-4 #-0.005 #fabian:
-    x_array = np.linspace(value_start, value_stop, param_dataset_size)
-    return x_array
+    if param_dataset_size == 1:
+      return np.array([-0.002])
+    else:
+      value_start = -0.001 #-1*10**-6 #
+      value_stop = -0.01 #-2.5*10**-4 #-0.005 #fabian:
+      x_array = np.linspace(value_start, value_stop, param_dataset_size)
+      return x_array
   
 def sampling_regular_uniform_2D(param_dataset_size):
     samples_pressure_sqrt = math.isqrt(param_dataset_size)+1

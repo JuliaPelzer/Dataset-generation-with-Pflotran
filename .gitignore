@@ -7,6 +7,9 @@ datasets/
 *.h5
 *.out
 *.txt
+*.vs
+*.ex
+mesh.uge
 
 # currently exclude .in files
 *.in
@@ -14,6 +17,9 @@ datasets/
 groundtruth_hps_no_hps/pflotran\ old.in
 groundtruth_hps_no_hps/pflotran\ copy.in
 groundtruth_hps_no_hps/pflotran\ copy\ 2.in
+
+# datasets:
+datasets/ 
 
 # Pflotran output / old folders
 approach2_dataset_generation_simplified/dataset/
@@ -33,6 +39,7 @@ ZZZ_*
 *.pdf
 *.svg
 *.ogv
+*.jpg
 
 # test files
 try_python_write_in_pflotran.ipynb

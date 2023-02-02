@@ -1,6 +1,7 @@
 general:
   random_bool: false
   seed_id: 2907
+  dimensions: 3
 grid:
   ncells:
   - 10
@@ -14,7 +15,6 @@ grid:
   - 50
   - 120
   - 50
-  faceArea: 1
 permeability:
   case: perlin_noise
   factor: 40

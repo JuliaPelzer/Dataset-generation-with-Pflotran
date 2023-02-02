@@ -22,11 +22,11 @@ def plot_sim(path_settings:str="try", path_run:str="try/RUN_0", plot_name:str="p
 def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings:str) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
     dimensions = _get_dimensions(path_settings)
-    if dimensions != (20,150,16):
-        logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
+    # if dimensions != (20,150,16) and dimensions[2] != 1:
+    #     logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
     list_to_plot = []
     for time in hdf5_file.keys():
-        if not time in ["   0 Time  0.00000E+00 y", "Coordinates", "Provenance", "Time:  0.00000E+00 y"]:
+        if not time in ["Coordinates", "Provenance", "   0 Time  0.00000E+00 y", "Time:  0.00000E+00 y"]:
             for property in hdf5_file[time].keys():
                 data_dict = {"data" : np.array(hdf5_file[time][property]), "property" : str(property)} #+str(time)}
                 if reshape_bool:
@@ -35,6 +35,8 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
                     data_dict["data"] = data_dict["data"][9,:,:].T
                 elif case=="top_hp":
                     data_dict["data"] = data_dict["data"][:,:,9]
+                elif case=="2D":
+                    data_dict["data"] = data_dict["data"][:,:]
                 else:
                     raise ValueError("Case not implemented")
                 list_to_plot.append(data_dict)
@@ -49,12 +51,11 @@ def _plot_y(data, path:str, name_pic:str="plot_y_exemplary"):
         plt.sca(axes[index])
         plt.imshow(data_point["data"])
         plt.gca().invert_yaxis()
-
         plt.xlabel("y")
         plt.ylabel("x or z")
         _aligned_colorbar(label=data_point["property"])
     
-    pic_file_name = f"{path}/{name_pic}_{case}.jpg"
+    pic_file_name = f"{path}/{name_pic}_{case}.png"
     logging.info(f"Resulting picture is at {pic_file_name}")  
     plt.savefig(pic_file_name)
 

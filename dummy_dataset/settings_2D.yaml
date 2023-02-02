@@ -1,26 +1,25 @@
 general:
   random_bool: false
   seed_id: 2907
-  dimensions: 3
+  dimensions: 2
 grid:
   loc_hp: # Location of the heatpump in metres
   - 50
   - 120
-  - 50
+  - 1
   ncells:
   - 20
   - 256
-  - 16
+  - 1
   size:
   - 100
   - 1280
-  - 80
+  - 0
 permeability:
   case: perlin_noise
   factor: 40
   frequency:
-  - 2 #10
-  - 8 #10
-  - 2 #2
+  - 2
+  - 8
   perm_max: 6.65e-09
   perm_min: 1.36e-12
