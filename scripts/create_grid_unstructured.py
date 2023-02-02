@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import os
+import logging
 from typing import Dict
 from scripts.make_general_settings import load_settings, change_grid_domain_size, save_settings
 
@@ -13,8 +14,8 @@ def write_mesh_file(path_to_output:str, settings:Dict):
 	if cellXWidth == cellYWidth and cellXWidth == cellZWidth:
 		faceArea = cellXWidth**2
 	else:
-		print("WARNING: Cells are not cubes")
-		
+		logging.error("The grid is not cubic - look at create_grid_unstructured.py OR 2D case and settings.yaml depth for z is not adapted")
+
 	output_string = []
 	output_string.append("CELLS "+str(xGrid*yGrid*zGrid))
 	cellID_1 = 1
@@ -63,6 +64,8 @@ def write_loc_well_file(path_to_output:str, settings:Dict):
 	cell_widths = settings["grid"]["size"]/np.array(number_cells)	# Cell width in metres
 
 	i,j,k = np.array(loc_hp/cell_widths, int)
+	if k == 0:
+		k = 1
 	cellID = int(i + (j-1)*number_cells[0])
 	if k != 0:
 		cellID += (k-1)*number_cells[0]*number_cells[1]
@@ -77,8 +80,12 @@ def write_SN_files(path_to_output:str, settings:Dict):
 	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
 	_, yWidth, _ = settings["grid"]["size"]
-	faceArea = cellXWidth*cellZWidth
-		
+
+	if not cellXWidth == cellZWidth:
+		logging.error("Something with create_grid_unstructured.py is wrong")
+	else:
+		faceArea = cellXWidth*cellZWidth
+
 	output_string_north = []
 	output_string_north.append("CONNECTIONS " + str(xGrid*zGrid))
 	output_string_south = []
@@ -99,17 +106,16 @@ def write_SN_files(path_to_output:str, settings:Dict):
 	with open(str(path_to_output)+"/south.ex", "w") as file:
 		file.writelines(output_string_south)
 
-def check_region_all(size:np.ndarray):
-	region_all = [200, 2000, 100]
-	region_all = np.array(region_all)
-	assert np.all(region_all >= size), "Region all is smaller than size - you have to manually change the region size in pflotran.in"
-	
 def write_WE_files(path_to_output:str, settings:Dict):
 	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
 	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
 	cellXWidth, cellYWidth, cellZWidth = cell_widths
 	xWidth, _, _ = settings["grid"]["size"]
-	faceArea = cellYWidth*cellZWidth
+
+	if not cellYWidth == cellZWidth:
+		logging.error("Something with create_grid_unstructured.py is wrong")
+	else:
+		faceArea = cellYWidth*cellZWidth
 
 	output_string_east = []
 	output_string_east.append("CONNECTIONS " + str(yGrid*zGrid))
@@ -131,6 +137,13 @@ def write_WE_files(path_to_output:str, settings:Dict):
 	with open(str(path_to_output)+"/west.ex", "w") as file:
 		file.writelines(output_string_west)
 
+def _set_z_width_in_2d_case(settings:Dict):
+	# If 2D case: set z-width to average of x and y width
+	cellXWidth = settings["grid"]["size"][0]/np.array(settings["grid"]["ncells"][0])	# Cell width in metres
+	cellYWidth = settings["grid"]["size"][1]/np.array(settings["grid"]["ncells"][1])
+	cellZWidth = (cellXWidth+cellYWidth)/2 
+	settings["grid"]["size"][2] = int(cellZWidth)
+
 if __name__ == "__main__":
 	cla = sys.argv
 	assert len(cla) >= 3, "Please provide a path to the input and output folder"
@@ -146,9 +159,10 @@ if __name__ == "__main__":
 		grid_widths = [float(cla[3]), float(cla[4]), float(cla[5])]
 		number_cells = [int(cla[6]), int(cla[7]), int(cla[8])]
 		settings = change_grid_domain_size(settings, case="", grid_widths=grid_widths, number_cells=number_cells)
-	save_settings(settings, path_to_output)
 
-	check_region_all(settings["grid"]["size"])
+	if settings["general"]["dimensions"] == 2:
+		_set_z_width_in_2d_case(settings)
+	save_settings(settings, path_to_output)
 	write_mesh_file(path_to_output, settings)
 	write_loc_well_file(path_to_output, settings)
 	write_SN_files(path_to_output, settings)

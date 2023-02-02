@@ -3,7 +3,7 @@ from typing import List, Dict
 
 def load_settings(path:str, file_name="settings") -> Dict:
 	with open(f"{path}/{file_name}.yaml", "r") as file:
-		settings = yaml.load(file, Loader=yaml.SafeLoader)
+		settings = yaml.safe_load(file)
 	return settings
 
 def save_settings(settings:Dict, path:str, name_file:str="settings"):

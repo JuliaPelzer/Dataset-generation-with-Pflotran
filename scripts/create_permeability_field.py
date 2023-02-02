@@ -1,4 +1,4 @@
-from random import random, seed
+from random import random, seed, sample
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -39,15 +39,25 @@ def make_perm_grid(settings:Dict, base:float = 0):
     #     method = "linear" # in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
     #     values = interpolator(test_points, method=method).reshape(settings.ncells[0], settings.ncells[1], settings.ncells[2]).T
     elif settings["permeability"]["case"]=="perlin_noise":
-        def perlin_noise(x,y,z):
-            return noise.pnoise3(x, y, z, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, repeatz=1024, base=base)
-        values = np.zeros((settings["grid"]["ncells"][0], settings["grid"]["ncells"][1], settings["grid"]["ncells"][2]))
-        for i in range(0, settings["grid"]["ncells"][0]):
-            for j in range(0, settings["grid"]["ncells"][1]):
-                for k in range(0, settings["grid"]["ncells"][2]):
-                    freq = settings["permeability"]["frequency"] / np.array(settings["grid"]["ncells"])
-                    x,y,z = [i, j, k] * freq
-                    values[i,j,k] = (perlin_noise(x,y,z)+1)/2 * (settings["permeability"]["perm_max"] - settings["permeability"]["perm_min"]) + settings["permeability"]["perm_min"]
+        if settings["general"]["dimensions"]==2:
+            def perlin_noise(x,y):
+                return noise.pnoise2(x, y, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, base=base)
+            values = np.zeros((settings["grid"]["ncells"][0], settings["grid"]["ncells"][1]))
+            for i in range(0, settings["grid"]["ncells"][0]):
+                for j in range(0, settings["grid"]["ncells"][1]):
+                    freq = settings["permeability"]["frequency"] / np.array(settings["grid"]["ncells"])[0:2]
+                    x,y = [i, j] * freq
+                    values[i,j] = (perlin_noise(x,y)+1)/2 * (settings["permeability"]["perm_max"] - settings["permeability"]["perm_min"]) + settings["permeability"]["perm_min"]
+        else: #3D case
+            def perlin_noise(x,y,z):
+                return noise.pnoise3(x, y, z, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, repeatz=1024, base=base)
+            values = np.zeros((settings["grid"]["ncells"][0], settings["grid"]["ncells"][1], settings["grid"]["ncells"][2]))
+            for i in range(0, settings["grid"]["ncells"][0]):
+                for j in range(0, settings["grid"]["ncells"][1]):
+                    for k in range(0, settings["grid"]["ncells"][2]):
+                        freq = settings["permeability"]["frequency"] / np.array(settings["grid"]["ncells"])
+                        x,y,z = [i, j, k] * freq
+                        values[i,j,k] = (perlin_noise(x,y,z)+1)/2 * (settings["permeability"]["perm_max"] - settings["permeability"]["perm_min"]) + settings["permeability"]["perm_min"]
     
     return values, icells
 
@@ -125,8 +135,11 @@ def awesome_new_perlin_noise(grid_dimensions, simulation_area, frequency, min_va
 
     return values
 
-def save_perm(filename, ncells, cells):
-    n = ncells[0] * ncells[1] * ncells[2]
+def save_perm(filename, ncells, cells, dimensionality:str="3D"):
+    if dimensionality == "2D":
+        n = ncells[0] * ncells[1]
+    else:
+        n = ncells[0] * ncells[1] * ncells[2]
     # create integer array for cell ids
     iarray = np.arange(n,dtype='u8')
     iarray[:] += 1 # convert to 1-based
@@ -185,14 +198,18 @@ def create_perm_field(number_samples:int, folder:str, settings:Dict, plot_bool:b
     # vary bases to get different fields
     # OLD: bases = np.random.randint(0, 2**19, size=number_samples) 
     # bases = [_random_exclude() for i in range(number_samples)]
-    bases = np.random.randint(0, 255, size=number_samples) 
+    # bases = np.random.randint(0, 255, size=number_samples) 
+    try:
+        bases = sample(range(0, 255), number_samples)
+    except ValueError:
+        print('Number of desired perm-field variations exceeds 255.')
     
     for base in tqdm(bases):
         cells, _ = make_perm_grid(settings, base)
         size = np.array(settings["grid"]["ncells"])
         filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
 
-        save_perm(filename, size, cells)
+        save_perm(filename, size, cells, settings["general"]["dimensions"])
         if plot_bool:
             plot_perm(cells, folder, case=settings["permeability"]["case"])
 
@@ -201,7 +218,7 @@ def create_perm_field(number_samples:int, folder:str, settings:Dict, plot_bool:b
             for restrict_factor in restrict_factors:
                 cells_restricted = restrict_and_save_perm_field(cells, int(restrict_factor), settings, filename, folder, plot_bool)
     
-    logging.info("Created perm-field(s)")
+    logging.info(f"Created {len(bases)} perm-field(s)")
     return cells # for pytest
 
 def create_perm_field_Manuel(number_samples:int, folder:str, settings:Dict, plot_bool:bool=False, filename_extension:str=""):
@@ -235,7 +252,7 @@ def create_perm_field_Manuel(number_samples:int, folder:str, settings:Dict, plot
     for base in tqdm(bases):
         cells, _ = make_perm_grid_Manuel(settings, offset=base_offset + [base,0,0])
         filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
-        save_perm(filename, settings["grid"]["ncells"], cells)
+        save_perm(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"])
         if plot_bool:
             plot_perm(cells, folder, case=settings["permeability"]["case"])
     
@@ -251,7 +268,7 @@ def restrict_and_save_perm_field(perm_field_orig, restrict_factor:int, settings:
     perm_field_restricted = perm_field_orig[::restrict_factor,::restrict_factor,::restrict_factor]
 
     filename_restrict = f"{filename_orig[:-3]}_restricted_factor_{int(restrict_factor)}.h5"
-    save_perm(filename_restrict, perm_field_restricted.shape, perm_field_restricted)
+    save_perm(filename_restrict, perm_field_restricted.shape, perm_field_restricted, settings["general"]["dimensions"])
 
     if plot_bool:
         plot_perm(perm_field_restricted, folder, case=f"restricted_factor_{restrict_factor}")
@@ -302,7 +319,7 @@ if __name__=="__main__":
             folder = cla_args[4]
         else:
             folder = "."
-        
+
         settings = load_settings(folder_settings)
         plot_bool = False
         
