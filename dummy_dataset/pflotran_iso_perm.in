@@ -13,7 +13,7 @@
 
   #=========================== times ============================================
   TIME
-    FINAL_TIME 1.0 y
+    FINAL_TIME 5.0 y
     INITIAL_TIMESTEP_SIZE 1.d-5 y
     MAXIMUM_TIMESTEP_SIZE 0.05 y
   /
@@ -125,7 +125,7 @@
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
-    DATUM 50.d0 0.d0 80.d0
+    DATUM 50.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
@@ -144,7 +144,7 @@
 
   FLOW_CONDITION injection
     TYPE
-      RATE SCALED_VOLUMETRIC_RATE VOLUME #PERM #NEIGHBOR_PERM
+      RATE SCALED_VOLUMETRIC_RATE VOLUME #PERM
       TEMPERATURE DIRICHLET
     /
     #RATE 4.2 m^3/day
