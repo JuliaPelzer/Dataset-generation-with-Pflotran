@@ -142,7 +142,7 @@ def _set_z_width_in_2d_case(settings:Dict):
 	cellXWidth = settings["grid"]["size"][0]/np.array(settings["grid"]["ncells"][0])	# Cell width in metres
 	cellYWidth = settings["grid"]["size"][1]/np.array(settings["grid"]["ncells"][1])
 	cellZWidth = (cellXWidth+cellYWidth)/2 
-	settings["grid"]["size"][2] = int(cellZWidth)
+	settings["grid"]["size"][2] = float(cellZWidth)
 
 if __name__ == "__main__":
 	cla = sys.argv

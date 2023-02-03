@@ -122,16 +122,21 @@ def awesome_new_perlin_noise(grid_dimensions, simulation_area, frequency, min_va
 
                 x = i / grid_dimensions[0] * scale_x + offset[0]
                 y = j / grid_dimensions[1] * scale_y + offset[1]
-                z = k / grid_dimensions[2] * scale_y + offset[2]
 
                 x = x * frequency[0]
                 y = y * frequency[1]
-                z = z * frequency[2]
-                
-                # pnoise3 returns values in the range of [-1,1]. We want [0, 1].
-                noise_value  = (noise.pnoise3(x,y,z) + 1.0) / 2.0
-                # scale from [0,1] to our perm range
-                values[i,j,k] = min_value + noise_value * (max_value - min_value)
+
+                if settings["general"]["dimensions"]==2:
+                    noise_value  = (noise.pnoise2(x,y) + 1.0) / 2.0
+                    values[i,j] = min_value + noise_value * (max_value - min_value)
+                else:
+                    z = k / grid_dimensions[2] * scale_y + offset[2]
+                    z = z * frequency[2]
+                    
+                    # pnoise3 returns values in the range of [-1,1]. We want [0, 1].
+                    noise_value  = (noise.pnoise3(x,y,z) + 1.0) / 2.0
+                    # scale from [0,1] to our perm range
+                    values[i,j,k] = min_value + noise_value * (max_value - min_value)
 
     return values
 
@@ -258,6 +263,7 @@ def create_perm_field_Manuel(number_samples:int, folder:str, settings:Dict, plot
     
     logging.info("Created perm-field(s)")
     return cells # for pytest
+    
 def restrict_and_save_perm_field(perm_field_orig, restrict_factor:int, settings:Dict, filename_orig:str, folder:str, plot_bool:bool=False):
     assert restrict_factor > 0, "Restrict factor must be > 0"
 
