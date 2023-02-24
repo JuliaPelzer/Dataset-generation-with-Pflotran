@@ -70,7 +70,7 @@ def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary"):
         if data_point["property"] == "Temperature [C]":
             plt.sca(axes[index])
             levels = np.arange(10, 15.0, 0.25)
-            plt.contourf(data_point["data"][:,:,0], levels=levels, cmap='RdBu_r')
+            plt.contourf(data_point["data"][:,:,0], levels=levels, cmap='RdBu_r',  extent=(0, 1280, 100, 0)) # TODO extent is hardcoded
             plt.gca().invert_yaxis()
             plt.xlabel("y")
             plt.ylabel("x or z")
