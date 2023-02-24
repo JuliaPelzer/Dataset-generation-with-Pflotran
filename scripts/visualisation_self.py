@@ -74,7 +74,7 @@ def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary"):
             plt.gca().invert_yaxis()
             plt.xlabel("y")
             plt.ylabel("x or z")
-            _aligned_colorbar(label=f"{data_point['property']} at {data_point['time']}")
+            _aligned_colorbar(label=f"{data_point['property']} \n at {data_point['time']}")
             index += 1
     
     pic_file_name = f"{path}/{name_pic}_{case}_isolines.png"
