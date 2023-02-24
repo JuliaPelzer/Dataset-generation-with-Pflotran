@@ -56,7 +56,7 @@ python3 scripts/script_make_benchmark_testcases.py $OUTPUT_DATASET_DIR/inputs
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PERM=($(cat ${OUTPUT_DATASET_DIR}/inputs/permeability_values.txt))'
 
-run_id=0
+testcase_id=1
 len=${#PRESSURE[@]}
 i=0
 while [ $i -lt $len ];
@@ -66,7 +66,7 @@ do
         python3 scripts/script_write_benchmark_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PERM[$i]}
 
         # create run folder    
-        NAME_OF_RUN="RUN_${run_id}"
+        NAME_OF_RUN="testcase_${testcase_id}"
         OUTPUT_DATASET_RUN_DIR="${OUTPUT_DATASET_DIR}/${NAME_OF_RUN}"
         OUTPUT_DATASET_RUN_PREFIX="${OUTPUT_DATASET_RUN_DIR}/pflotran"
         # check whether output folder exists else define
@@ -89,7 +89,7 @@ do
             python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "2D"
             echo ...visualisation of $NAME_OF_RUN is done
         fi
-        run_id=$(( $run_id + 1 ))
+        testcase_id=$(( $testcase_id + 1 ))
     i=$(( $i + 1 ))
 done
 
