@@ -87,7 +87,7 @@ do
         if [ "$CLA_VISUALISATION" = "vis" ]; 
         then
             python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "2D"
-            echo ...visualisation of $NAME_OF_RUN is done
+            echo "...visualisation of $NAME_OF_RUN is done"
         fi
         run_id=$(( $run_id + 1 ))
     i=$(( $i + 1 ))
