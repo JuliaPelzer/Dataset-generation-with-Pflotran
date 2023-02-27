@@ -62,34 +62,34 @@ i=0
 while [ $i -lt $len ];
 do
     # TODO random combination of pressure+permeability field or all combinations? currently: all combinations
-        # calculate pressure files
-        python3 scripts/script_write_benchmark_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PERM[$i]}
+    # calculate pressure files
+    python3 scripts/script_write_benchmark_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PERM[$i]}
 
-        # create run folder    
-        NAME_OF_RUN="RUN_${run_id}"
-        OUTPUT_DATASET_RUN_DIR="${OUTPUT_DATASET_DIR}/${NAME_OF_RUN}"
-        OUTPUT_DATASET_RUN_PREFIX="${OUTPUT_DATASET_RUN_DIR}/pflotran"
-        # check whether output folder exists else define
-        if [ ! -d $OUTPUT_DATASET_RUN_DIR ]
-        then
-            mkdir $OUTPUT_DATASET_RUN_DIR
-        fi
+    # create run folder
+    NAME_OF_RUN="RUN_${run_id}"
+    OUTPUT_DATASET_RUN_DIR="${OUTPUT_DATASET_DIR}/${NAME_OF_RUN}"
+    OUTPUT_DATASET_RUN_PREFIX="${OUTPUT_DATASET_RUN_DIR}/pflotran"
+    # check whether output folder exists else define
+    if [ ! -d $OUTPUT_DATASET_RUN_DIR ]
+    then
+        mkdir $OUTPUT_DATASET_RUN_DIR
+    fi
 
-        echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)
-        mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # local version
-        # mpirun -n 16 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # remote version (pcsgs05)
-        echo finished PFLOTRAN simulation at $(date)
+    echo "starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)"
+    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # local version
+    # mpirun -n 16 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # remote version (pcsgs05)
+    echo "finished PFLOTRAN simulation at $(date)"
 
-        cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
-        cp interim_iso_permeability.txt $OUTPUT_DATASET_RUN_DIR/permeability_iso.txt
+    cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
+    cp interim_iso_permeability.txt $OUTPUT_DATASET_RUN_DIR/permeability_iso.txt
 
-        # # call visualisation
-        if [ "$CLA_VISUALISATION" = "vis" ]; 
-        then
-            python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "2D"
-            echo "...visualisation of $NAME_OF_RUN is done"
-        fi
-        run_id=$(( $run_id + 1 ))
+    # # call visualisation
+    if [ "$CLA_VISUALISATION" = "vis" ];
+    then
+        python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "2D"
+        echo "...visualisation of $NAME_OF_RUN is done"
+    fi
+    run_id=$(( $run_id + 1 ))
     i=$(( $i + 1 ))
 done
 
