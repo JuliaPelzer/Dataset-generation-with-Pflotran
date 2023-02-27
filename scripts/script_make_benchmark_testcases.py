@@ -21,7 +21,7 @@ def calc_perm_from_pressure(pressure_array):
     rho_water = 1000
     g = 9.81
 
-    hydraulic_conductivity = 10 ** np.random.uniform(np.log10(K_min), np.log10(K_max), len(pressure_array)-1)
+    hydraulic_conductivity = 10 ** np.random.uniform(np.log10(K_min), np.log10(K_max), len(pressure_array)) #-1)
     permeability_array = hydraulic_conductivity * dynamic_viscosity_water / (rho_water * g)
     # permeability_array = np.append(permeability_array, 2.038735983690112025e-10) # add the permeability of the benchmark testcase
     return permeability_array
