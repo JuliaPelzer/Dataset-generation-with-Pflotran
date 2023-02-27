@@ -10,7 +10,7 @@ def benchmark_pressure_perm():
 def make_pressure_array(number_datapoints):
     # random pressure values between -0.0035 and -0.0015
     pressure_array = np.random.uniform(-0.0035, -0.0015, number_datapoints)
-    pressure_array = np.append(pressure_array, -0.0015)
+    # pressure_array = np.append(pressure_array, -0.0015)
     return pressure_array
 
 def calc_perm_from_pressure(pressure_array):
@@ -23,7 +23,7 @@ def calc_perm_from_pressure(pressure_array):
 
     hydraulic_conductivity = 10 ** np.random.uniform(np.log10(K_min), np.log10(K_max), len(pressure_array)-1)
     permeability_array = hydraulic_conductivity * dynamic_viscosity_water / (rho_water * g)
-    permeability_array = np.append(permeability_array, 2.038735983690112025e-10) # add the permeability of the benchmark testcase
+    # permeability_array = np.append(permeability_array, 2.038735983690112025e-10) # add the permeability of the benchmark testcase
     return permeability_array
   
 if __name__ == "__main__":
