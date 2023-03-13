@@ -10,7 +10,7 @@ CLA_BENCHMARK=true # set to true if you want to produce the benchmark dataset (d
 if $CLA_BENCHMARK;
 then
     echo Benchmark dataset will be generated...
-    CLA_DATAPOINTS=benchmark_3_testcases
+    CLA_DATAPOINTS=benchmark_4_testcases
     CLA_DIMENSIONS=2D
     CLA_NAME=benchmark_dataset
     CLA_VISUALISATION=vis

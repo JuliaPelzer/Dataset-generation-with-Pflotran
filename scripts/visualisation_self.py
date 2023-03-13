@@ -37,7 +37,7 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
                 elif case=="top_hp":
                     data_dict["data"] = data_dict["data"][:,:,9]
                 elif case=="2D":
-                    data_dict["data"] = data_dict["data"][:,:]
+                    data_dict["data"] = data_dict["data"][:,:,0]
                 else:
                     raise ValueError("Case not implemented")
                 list_to_plot.append(data_dict)
@@ -62,24 +62,27 @@ def _plot_y(data, path:str, name_pic:str="plot_y_exemplary"):
 
 def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary"):
     # helper function to plot the data
-    n_subplots = int(len(data)/7)
+    n_subplots = int(len(data)/4)-1 #7)
     _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(20,3*(n_subplots)))
     
     index = 0
     for data_point in data:
-        if data_point["property"] == "Temperature [C]":
+        if data_point["property"] == "Temperature [C]" and data_point["time"] != "   1 Time  1.00000E-01 y":
             plt.sca(axes[index])
-            levels = np.arange(10, 15.0, 0.25)
-            plt.contourf(data_point["data"][:,:,0], levels=levels, cmap='RdBu_r',  extent=(0, 1280, 100, 0)) # TODO extent is hardcoded
+            levels = np.arange(10.6, 15.6, 0.25)
+            plt.contourf(data_point["data"][:,:], levels=levels, cmap='RdBu_r',  extent=(0, 1280, 100, 0)) # TODO extent is hardcoded
             plt.gca().invert_yaxis()
-            plt.xlabel("y")
-            plt.ylabel("x or z")
-            _aligned_colorbar(label=f"{data_point['property']} \n at {data_point['time']}")
+            plt.xlabel("y [m]")
+            plt.ylabel("x [m]")
+            plottable_time = float(data_point["time"].split(" ")[-2])
+            _aligned_colorbar(label=f"{plottable_time} years")
             index += 1
     
-    pic_file_name = f"{path}/{name_pic}_{case}_isolines.png"
-    logging.info(f"Resulting picture is at {pic_file_name}")  
-    plt.savefig(pic_file_name)
+    pic_file_name = f"{path}/{name_pic}_{case}_isolines"
+    logging.info(f"Resulting picture is at {pic_file_name}") 
+    plt.suptitle(f"Isolines of Temperature [°C]")
+    plt.savefig(f"{pic_file_name}.svg")
+    plt.savefig(f"{pic_file_name}.png")
 
 def _aligned_colorbar(*args,**kwargs):
     # scales and positions the colorbar
