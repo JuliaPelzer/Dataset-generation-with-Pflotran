@@ -44,7 +44,7 @@ if [ "$CLA_DIMENSIONS" = "2D" ];
 then
     cp dummy_dataset_benchmark/settings_2D.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
 else
-    cp dummy_dataset_benchmark/settings.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+    cp dummy_dataset_benchmark/settings_3D_fine.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
 fi
 
 cp dummy_dataset_benchmark/pflotran_iso_perm.in pflotran.in

@@ -38,6 +38,8 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
                     data_dict["data"] = data_dict["data"][:,:,9]
                 elif case=="2D":
                     data_dict["data"] = data_dict["data"][:,:,0]
+                elif case=="3D":
+                    data_dict["data"] = data_dict["data"][:,:,5]
                 else:
                     raise ValueError("Case not implemented")
                 list_to_plot.append(data_dict)
