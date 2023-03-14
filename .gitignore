@@ -1,5 +1,6 @@
 *.code-workspace
 vary_permeability/Kyle_create_perm_pflotran_file
+datasets/
 
 # Pflotran files
 *.vtk
