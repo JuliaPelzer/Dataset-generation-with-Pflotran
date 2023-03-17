@@ -13,8 +13,8 @@ def plot_sim(path_settings:str="try", path_run:str="try/RUN_0", plot_name:str="p
     with h5py.File(path_run+"/pflotran.h5", "r") as file:
         list_to_plot = _make_plottable_and_2D(file, case, reshape_bool, path_settings)
 
-    _plot_y(list_to_plot, path_run, name_pic=plot_name)
-    _plot_isolines(list_to_plot, path_run, name_pic=plot_name)
+    _plot_y(list_to_plot, path_run, name_pic=plot_name, case=case)
+    _plot_isolines(list_to_plot, path_run, name_pic=plot_name, case=case)
     try:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
     except:
@@ -39,13 +39,13 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
                 elif case=="2D":
                     data_dict["data"] = data_dict["data"][:,:,0]
                 elif case=="3D":
-                    data_dict["data"] = data_dict["data"][:,:,5]
+                    data_dict["data"] = data_dict["data"][:,:,2]
                 else:
                     raise ValueError("Case not implemented")
                 list_to_plot.append(data_dict)
     return list_to_plot
 
-def _plot_y(data, path:str, name_pic:str="plot_y_exemplary"):
+def _plot_y(data, path:str, name_pic:str="plot_y_exemplary", case:str="side_hp"):
     # helper function to plot the data
     n_subplots = len(data)
     _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(20,3*(n_subplots)))
@@ -62,7 +62,7 @@ def _plot_y(data, path:str, name_pic:str="plot_y_exemplary"):
     logging.info(f"Resulting picture is at {pic_file_name}")  
     plt.savefig(pic_file_name)
 
-def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary"):
+def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:str="side_hp"):
     # helper function to plot the data
     n_subplots = int(len(data)/4)-1 #7)
     _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(20,3*(n_subplots)))
