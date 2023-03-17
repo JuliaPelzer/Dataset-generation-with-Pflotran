@@ -58,8 +58,9 @@ def write_mesh_file(path_to_output:str, settings:Dict):
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 
-def write_loc_well_file(path_to_output:str, settings:Dict):
-	loc_hp = settings["grid"]["loc_hp"]
+def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None):
+	if loc_hp is None:
+		loc_hp = settings["grid"]["loc_hp"]
 	number_cells = settings["grid"]["ncells"]
 	cell_widths = settings["grid"]["size"]/np.array(number_cells)	# Cell width in metres
 
@@ -146,15 +147,13 @@ def _set_z_width_in_2d_case(settings:Dict):
 
 if __name__ == "__main__":
 	cla = sys.argv
-	assert len(cla) >= 3, "Please provide a path to the input and output folder"
+	assert len(cla) >= 2, "Please provide a path to the input folder"
 	path_to_input = cla[1]
-	path_to_output = cla[2]
+	path_to_output = "."
 
-	#domainlarge:
-	# grid_widths=[100, 1280, 80]	# Grid width in metres
-	# number_cells=[20, 256, 16]	# Number of grid cells
 	settings = load_settings(path_to_input)
 	if len(cla) > 3:
+		path_to_output = cla[2]
 		assert len(cla) >= 9, "Please provide a path to the output folder and the grid widths and number of cells per direction"
 		grid_widths = [float(cla[3]), float(cla[4]), float(cla[5])]
 		number_cells = [int(cla[6]), int(cla[7]), int(cla[8])]
