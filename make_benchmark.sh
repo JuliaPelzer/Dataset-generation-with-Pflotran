@@ -61,7 +61,6 @@ len=${#PRESSURE[@]}
 i=0
 while [ $i -lt $len ];
 do
-    # TODO random combination of pressure+permeability field or all combinations? currently: all combinations
     # calculate pressure files
     python3 scripts/script_write_benchmark_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PERM[$i]}
 
@@ -76,8 +75,9 @@ do
     fi
 
     echo "starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)"
-    mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # local version
-    # mpirun -n 16 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # remote version (pcsgs05)
+    # mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # local version
+    PFLOTRAN_DIR=/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin
+    mpirun -n 16 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # remote version (pcsgs05)
     echo "finished PFLOTRAN simulation at $(date)"
 
     cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
@@ -86,7 +86,7 @@ do
     # # call visualisation
     if [ "$CLA_VISUALISATION" = "vis" ];
     then
-        python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR "2D"
+        python3 scripts/visualisation_self.py $OUTPUT_DATASET_DIR $OUTPUT_DATASET_RUN_DIR $CLA_DIMENSIONS
         echo "...visualisation of $NAME_OF_RUN is done"
     fi
     run_id=$(( $run_id + 1 ))
