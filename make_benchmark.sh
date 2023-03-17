@@ -10,10 +10,11 @@ CLA_BENCHMARK=true # set to true if you want to produce the benchmark dataset (d
 if $CLA_BENCHMARK;
 then
     echo Benchmark dataset will be generated...
-    CLA_DATAPOINTS=benchmark_4_testcases
+    CLA_DATAPOINTS=3            #benchmark_4_testcases
     CLA_DIMENSIONS=2D
-    CLA_NAME=benchmark_dataset
+    CLA_NAME=testBM4HP
     CLA_VISUALISATION=vis
+    CLA_HP_VARIATION=true   # needs to be "false" to not get HP-location-variations
 fi
 
 args=("$@")
@@ -50,7 +51,16 @@ fi
 cp dummy_dataset_benchmark/pflotran_iso_perm.in pflotran.in
 
 # make grid files
-python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)
+python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/
+
+if [ "$CLA_HP_VARIATION" != "false" ] && [ "$CLA_DATAPOINTS" != "benchmark_4_testcases" ];
+then
+    python3 scripts/script_calc_loc_hp_variation_2d.py $CLA_DATAPOINTS $OUTPUT_DATASET_DIR/inputs
+    IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_X=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_x.txt))'
+    IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_Y=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_y.txt))'
+    echo hp_x $HP_X
+    echo hp_y $HP_Y
+fi
 
 python3 scripts/script_make_benchmark_testcases.py $OUTPUT_DATASET_DIR/inputs $CLA_DATAPOINTS
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
@@ -61,9 +71,13 @@ len=${#PRESSURE[@]}
 i=0
 while [ $i -lt $len ];
 do
-    # TODO random combination of pressure+permeability field or all combinations? currently: all combinations
-    # calculate pressure files
-    python3 scripts/script_write_benchmark_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PERM[$i]}
+    # calculate pressure and permeability files
+    if [ "$CLA_HP_VARIATION" != "false" ];
+    then
+        python3 scripts/write_benchmark_parameters_input_files.py INFO ${PRESSURE[$i]} ${PERM[$i]} ${HP_X[$i]} ${HP_Y[$i]}
+    else
+        python3 scripts/write_benchmark_parameters_input_files.py INFO ${PRESSURE[$i]} ${PERM[$i]}
+    fi
 
     # create run folder
     NAME_OF_RUN="RUN_${run_id}"
@@ -77,6 +91,7 @@ do
 
     echo "starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)"
     mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # local version
+    # PFLOTRAN_DIR=/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin
     # mpirun -n 16 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # remote version (pcsgs05)
     echo "finished PFLOTRAN simulation at $(date)"
 
