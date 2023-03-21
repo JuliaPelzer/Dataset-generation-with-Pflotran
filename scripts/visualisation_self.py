@@ -86,7 +86,7 @@ def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:
     pic_file_name = f"{path}/{name_pic}_{case}_isolines"
     logging.info(f"Resulting picture is at {pic_file_name}") 
     plt.suptitle(f"Isolines of Temperature [°C]")
-    plt.savefig(f"{pic_file_name}.svg")
+    # plt.savefig(f"{pic_file_name}.svg")
     plt.savefig(f"{pic_file_name}.png")
 
 def _aligned_colorbar(*args,**kwargs):
