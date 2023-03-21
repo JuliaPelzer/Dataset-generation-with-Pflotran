@@ -58,8 +58,6 @@ then
     python3 scripts/script_calc_loc_hp_variation_2d.py $CLA_DATAPOINTS $OUTPUT_DATASET_DIR/inputs
     IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_X=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_x.txt))'
     IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_Y=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_y.txt))'
-    echo hp_x $HP_X
-    echo hp_y $HP_Y
 fi
 
 python3 scripts/script_make_benchmark_testcases.py $OUTPUT_DATASET_DIR/inputs $CLA_DATAPOINTS
@@ -97,6 +95,7 @@ do
 
     cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
     cp interim_iso_permeability.txt $OUTPUT_DATASET_RUN_DIR/permeability_iso.txt
+    cp heatpump_inject1.vs $OUTPUT_DATASET_RUN_DIR/heatpump_inject1.vs
 
     # # call visualisation
     if [ "$CLA_VISUALISATION" = "vis" ];
