@@ -125,7 +125,7 @@
       PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
-    DATUM 50.d0 0.d0 85.d0
+    DATUM 200.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
