@@ -10,7 +10,6 @@ if __name__ == "__main__":
 
 	# how much output should be printed
 	logging.basicConfig(level = cla_args[1])
-	#logging.info(f"input arguments: {cla_args}")
 
 	# test varying pressure gradient and permeabilities, for one heat pump (BENCHMARK)
 	pressure_gradient_x = 0
@@ -34,6 +33,16 @@ if __name__ == "__main__":
 		hp_z = 1
 		loc_hp = np.array([hp_x, hp_y, hp_z])
 		path_to_output = "."
-         
-		logging.info(f"HP Position: {loc_hp}")
-		write_loc_well_file(path_to_output, settings=load_settings(path_to_output), loc_hp=loc_hp)
+
+		logging.info(f"HP 1 Position: {loc_hp}")
+		write_loc_well_file(path_to_output, settings=load_settings(path_to_output), loc_hp=loc_hp, idx=1)
+
+		if len(cla_args) > 6:
+			hp_x = int(float(cla_args[6]))
+			hp_y = int(float(cla_args[7]))
+			hp_z = 1
+			loc_hp = np.array([hp_x, hp_y, hp_z])
+
+			logging.info(f"HP 2 Position: {loc_hp}")
+			write_loc_well_file(path_to_output, settings=load_settings(path_to_output), loc_hp=loc_hp, idx=2)
+ 

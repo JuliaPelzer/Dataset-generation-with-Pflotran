@@ -10,11 +10,12 @@ CLA_BENCHMARK=true # set to true if you want to produce the benchmark dataset (d
 if $CLA_BENCHMARK;
 then
     echo Benchmark dataset will be generated...
-    CLA_DATAPOINTS=300            #benchmark_4_testcases
+    CLA_DATAPOINTS=2            #300            # benchmark_4_testcases
     CLA_DIMENSIONS=2D
-    CLA_NAME=benchmark_dataset_2d_300dp_vary_hp_loc
-    CLA_VISUALISATION=no_vis
-    CLA_HP_VARIATION=true   # needs to be "false" to not get HP-location-variations
+    CLA_NAME=testi   # benchmark_dataset_2d_300dp_vary_hp_loc
+    CLA_VISUALISATION=vis
+    CLA_HP_VARIATION=true        # needs to be "false" to not get HP-location-variations
+    CLA_2HPS=true                # needs to be "false" to not get HP-location-variations
 fi
 
 args=("$@")
@@ -49,16 +50,27 @@ else
     # does not exist
 fi
 
-cp dummy_dataset_benchmark_squarish/pflotran_iso_perm.in pflotran.in
+if [ "$CLA_2HPS" != "false" ];
+then
+    cp dummy_dataset_benchmark_squarish/pflotran_iso_perm_2hps.in pflotran.in
+else
+    cp dummy_dataset_benchmark_squarish/pflotran_iso_perm.in pflotran.in
+fi
 
 # make grid files
 python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/
 
+# potentially calc 1 or 2 hp locations
 if [ "$CLA_HP_VARIATION" != "false" ] && [ "$CLA_DATAPOINTS" != "benchmark_4_testcases" ];
 then
-    python3 scripts/script_calc_loc_hp_variation_2d.py $CLA_DATAPOINTS $OUTPUT_DATASET_DIR/inputs
-    IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_X=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_x.txt))'
-    IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_Y=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_y.txt))'
+    python3 scripts/script_calc_loc_hp_variation_2d.py $CLA_DATAPOINTS $OUTPUT_DATASET_DIR/inputs $CLA_2HPS
+    IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_X_1=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_x_1.txt))'
+    IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_Y_1=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_y_1.txt))'
+    if [ "$CLA_2HPS" != "false" ];
+    then
+        IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_X_2=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_x_2.txt))'
+        IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_Y_2=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_y_2.txt))'
+    fi
 fi
 
 python3 scripts/script_make_benchmark_testcases.py $OUTPUT_DATASET_DIR/inputs $CLA_DATAPOINTS
@@ -73,7 +85,12 @@ do
     # calculate pressure and permeability files
     if [ "$CLA_HP_VARIATION" != "false" ];
     then
-        python3 scripts/write_benchmark_parameters_input_files.py INFO ${PRESSURE[$i]} ${PERM[$i]} ${HP_X[$i]} ${HP_Y[$i]}
+        if [ "$CLA_2HPS" != "false" ];
+        then
+            python3 scripts/write_benchmark_parameters_input_files.py INFO ${PRESSURE[$i]} ${PERM[$i]} ${HP_X_1[$i]} ${HP_Y_1[$i]} ${HP_X_2[$i]} ${HP_Y_2[$i]}
+        else
+            python3 scripts/write_benchmark_parameters_input_files.py INFO ${PRESSURE[$i]} ${PERM[$i]} ${HP_X_1[$i]} ${HP_Y_1[$i]}
+        fi
     else
         python3 scripts/write_benchmark_parameters_input_files.py INFO ${PRESSURE[$i]} ${PERM[$i]}
     fi
@@ -89,14 +106,18 @@ do
     fi
 
     echo "starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)"
-    # mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # local version
+    # mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX #-screen_output off # local version
     PFLOTRAN_DIR=/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin
     mpirun -n 16 $PFLOTRAN_DIR/pflotran -output_prefix $OUTPUT_DATASET_RUN_PREFIX -screen_output off # remote version (pcsgs05)
     echo "finished PFLOTRAN simulation at $(date)"
 
-    cp interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
-    cp interim_iso_permeability.txt $OUTPUT_DATASET_RUN_DIR/permeability_iso.txt
-    cp heatpump_inject1.vs $OUTPUT_DATASET_RUN_DIR/heatpump_inject1.vs
+    mv interim_pressure_gradient.txt $OUTPUT_DATASET_RUN_DIR/pressure_gradient.txt
+    mv interim_iso_permeability.txt $OUTPUT_DATASET_RUN_DIR/permeability_iso.txt
+    mv heatpump_inject1.vs $OUTPUT_DATASET_RUN_DIR/heatpump_inject1.vs
+    if [ "$CLA_2HPS" != "false" ];
+    then
+        mv heatpump_inject2.vs $OUTPUT_DATASET_RUN_DIR/heatpump_inject2.vs
+    fi
 
     # # call visualisation
     if [ "$CLA_VISUALISATION" = "vis" ];
@@ -109,6 +130,4 @@ do
 done
 
 mv pflotran.in $OUTPUT_DATASET_DIR/inputs/pflotran_copy.in
-rm interim_pressure_gradient.txt
-rm interim_iso_permeability.txt
 rm -rf {east,west,south,north}.ex heatpump_inject1.vs mesh.uge settings.yaml
