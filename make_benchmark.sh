@@ -10,10 +10,10 @@ CLA_BENCHMARK=true # set to true if you want to produce the benchmark dataset (d
 if $CLA_BENCHMARK;
 then
     echo Benchmark dataset will be generated...
-    CLA_DATAPOINTS=3            #benchmark_4_testcases
+    CLA_DATAPOINTS=300            #benchmark_4_testcases
     CLA_DIMENSIONS=2D
-    CLA_NAME=testBM4HP
-    CLA_VISUALISATION=vis
+    CLA_NAME=benchmark_dataset_2d_300dp_vary_hp_loc
+    CLA_VISUALISATION=no_vis
     CLA_HP_VARIATION=true   # needs to be "false" to not get HP-location-variations
 fi
 
@@ -43,12 +43,13 @@ fi
 
 if [ "$CLA_DIMENSIONS" = "2D" ];
 then
-    cp dummy_dataset_benchmark/settings_2D.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+    cp dummy_dataset_benchmark_squarish/settings_2D.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
 else
-    cp dummy_dataset_benchmark/settings_3D_fine.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+    cp dummy_dataset_benchmark_squarish/settings_3D_fine.yaml $OUTPUT_DATASET_DIR/inputs/settings.yaml
+    # does not exist
 fi
 
-cp dummy_dataset_benchmark/pflotran_iso_perm.in pflotran.in
+cp dummy_dataset_benchmark_squarish/pflotran_iso_perm.in pflotran.in
 
 # make grid files
 python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/
