@@ -3,18 +3,55 @@ import subprocess
 import os
 import scripts.make_general_settings as script_settings
 
-def test_run_bash_pressure_1D_permeability():
-	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
+# def test_run_bash_pressure_1D_permeability():
+# 	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
 
-	subprocess.call("cp unittests/input_pflotran_files/pflotran_vary_perm.in pflotran.in", shell=True)
-	for i in [1,2]:
-		number_vary_pressure = i
-		for j in [1,2]:
-			number_vary_perm = j
-			subprocess.call(f"bash make_dataset.sh {number_vary_pressure} 1D {number_vary_perm} vary 3D test_bash_perm", shell=True)
-			assert _fcount("test_bash_perm") == number_vary_pressure*number_vary_perm + 1, "perm test created the wrong number of datapoints"
-			assert os.path.isfile("test_bash_perm/inputs/settings.yaml"), "settings.yaml not found"
-			os.system("rm -r test_bash_perm")
+# 	subprocess.call("cp unittests/input_pflotran_files/pflotran_vary_perm.in pflotran.in", shell=True)
+# 	for i in [1,2]:
+# 		number_vary_pressure = i
+# 		for j in [1,2]:
+# 			number_vary_perm = j
+# 			subprocess.call(f"bash make_dataset.sh {number_vary_pressure} 1D {number_vary_perm} vary 3D test_bash_perm", shell=True)
+# 			assert _fcount("test_bash_perm") == number_vary_pressure*number_vary_perm + 1, "perm test created the wrong number of datapoints"
+# 			assert os.path.isfile("test_bash_perm/inputs/settings.yaml"), "settings.yaml not found"
+# 			os.system("rm -r test_bash_perm")
+# 	for temp_file in ["pflotran.in", "mesh.uge", "north.ex", "south.ex", "west.ex", "east.ex", "heatpump_inject1.vs"]:
+# 		os.system(f"rm {temp_file}")
+# 	os.system("rm -r __pycache__")
+
+def test_run_make_benchmark():
+	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
+	numbers_datapoints = [1,2]
+	for number_datapoints in numbers_datapoints:
+		subprocess.call(f"bash make_benchmark.sh {number_datapoints} test_bash_perm no_vis false false", shell=True)
+		assert _fcount("test_bash_perm") == number_datapoints + 1, "perm test created the wrong number of datapoints"
+		for file in ["settings.yaml", "permeability_values.txt", "pflotran_copy.in", "pressure_values.txt"]:
+			assert os.path.isfile(f"test_bash_perm/inputs/{file}"), f"{file} not found"
+		os.system("rm -r test_bash_perm")
+		for temp_file in ["pflotran.in", "mesh.uge", "north.ex", "south.ex", "west.ex", "east.ex", "heatpump_inject1.vs"]:
+			os.system(f"rm {temp_file}")
+	os.system("rm -r __pycache__")
+
+def test_run_make_benchmark_hp_vary():
+	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
+	number_datapoints = 2
+	subprocess.call(f"bash make_benchmark.sh {number_datapoints} test_bash_perm no_vis true false", shell=True)
+	assert _fcount("test_bash_perm") == number_datapoints + 1, "perm test created the wrong number of datapoints"
+	for file in ["settings.yaml", "locs_hp_x_1.txt", "locs_hp_y_1.txt", "permeability_values.txt", "pflotran_copy.in", "pressure_values.txt"]:
+		assert os.path.isfile(f"test_bash_perm/inputs/{file}"), f"{file} not found"
+	os.system("rm -r test_bash_perm")
+	for temp_file in ["pflotran.in", "mesh.uge", "north.ex", "south.ex", "west.ex", "east.ex", "heatpump_inject1.vs"]:
+		os.system(f"rm {temp_file}")
+	os.system("rm -r __pycache__")
+
+def test_run_make_benchmark_hp_vary_2hps():
+	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
+	number_datapoints = 2
+	subprocess.call(f"bash make_benchmark.sh {number_datapoints} test_bash_perm no_vis true true", shell=True)
+	assert _fcount("test_bash_perm") == number_datapoints + 1, "perm test created the wrong number of datapoints"
+	for file in ["settings.yaml", "locs_hp_x_1.txt", "locs_hp_y_1.txt", "locs_hp_x_2.txt", "locs_hp_y_2.txt", "permeability_values.txt", "pflotran_copy.in", "pressure_values.txt"]:
+		assert os.path.isfile(f"test_bash_perm/inputs/{file}"), f"{file} not found"
+	os.system("rm -r test_bash_perm")
 	for temp_file in ["pflotran.in", "mesh.uge", "north.ex", "south.ex", "west.ex", "east.ex", "heatpump_inject1.vs"]:
 		os.system(f"rm {temp_file}")
 	os.system("rm -r __pycache__")
