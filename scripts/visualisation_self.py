@@ -7,14 +7,16 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import sys
 import yaml
+from make_general_settings import load_settings
 
 def plot_sim(path_settings:str="try", path_run:str="try/RUN_0", plot_name:str="plot_simulation_results", case:str="side_hp", reshape_bool:bool=True):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
+    path_settings = os.path.join(path_settings, "inputs")
     with h5py.File(path_run+"/pflotran.h5", "r") as file:
         list_to_plot = _make_plottable_and_2D(file, case, reshape_bool, path_settings)
 
     _plot_y(list_to_plot, path_run, name_pic=plot_name, case=case)
-    _plot_isolines(list_to_plot, path_run, name_pic=plot_name, case=case)
+    _plot_isolines(list_to_plot, path_run, name_pic=plot_name, case=case, path_settings=path_settings)
     try:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
     except:
@@ -22,7 +24,7 @@ def plot_sim(path_settings:str="try", path_run:str="try/RUN_0", plot_name:str="p
 
 def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings:str) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
-    dimensions = _get_dimensions(path_settings)
+    dimensions = load_settings(path_settings)["grid"]["ncells"]
     # if dimensions != (20,150,16) and dimensions[2] != 1:
     #     logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
     list_to_plot = []
@@ -62,7 +64,7 @@ def _plot_y(data, path:str, name_pic:str="plot_y_exemplary", case:str="side_hp")
     logging.info(f"Resulting picture is at {pic_file_name}")  
     plt.savefig(pic_file_name)
 
-def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:str="side_hp"):
+def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:str="side_hp", path_settings:str="."):
     # helper function to plot the data
     n_subplots = int(len(data)/4)-1 #7)
     _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(20,3*(n_subplots)))
@@ -72,7 +74,8 @@ def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:
         if data_point["property"] == "Temperature [C]" and data_point["time"] != "   1 Time  1.00000E-01 y":
             plt.sca(axes[index])
             levels = np.arange(10.6, 15.6, 0.25)
-            plt.contourf(data_point["data"][:,:], levels=levels, cmap='RdBu_r',  extent=(0, 1280, 100, 0)) # TODO extent is hardcoded
+            grid_size = load_settings(path_settings)["grid"]["size"]
+            plt.contourf(data_point["data"][:,:], levels=levels, cmap='RdBu_r',  extent=(0, grid_size[1], grid_size[0], 0))
             plt.gca().invert_yaxis()
             plt.xlabel("y [m]")
             plt.ylabel("x [m]")
@@ -93,7 +96,7 @@ def _aligned_colorbar(*args,**kwargs):
 
 def plot_perm(path_settings:str="try_perm", path_run="try_perm/RUN_0", case="top_hp"):
     # plots the permeability field with given view from given path
-    dimensions = _get_dimensions(path_settings)
+    dimensions = load_settings(path_settings)["grid"]["ncells"]
 
     for file in os.listdir(path_run):
         if file.startswith("permeability"):
@@ -111,13 +114,6 @@ def plot_perm(path_settings:str="try_perm", path_run="try_perm/RUN_0", case="top
                 plt.colorbar()
                 plt.show()
                 # break
-
-def _get_dimensions(path:str) -> Tuple[int, int, int]:
-    # read json file for dimensions
-    with open(f"{path}/inputs/settings.yaml", "r") as f:
-        perm_settings = yaml.safe_load(f)
-    dimensions_of_datapoint = perm_settings["grid"]["ncells"]
-    return dimensions_of_datapoint
 
 if __name__ == "__main__":
 
