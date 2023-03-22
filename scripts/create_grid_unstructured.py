@@ -67,13 +67,17 @@ def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None)
 	i,j,k = np.array(loc_hp/cell_widths, int)
 	if k == 0:
 		k = 1
-	cellID = int(i + (j-1)*number_cells[0])
-	if k != 0:
-		cellID += (k-1)*number_cells[0]*number_cells[1]
+		if j == 0:
+			j = 1
+			if i == 0:
+				i = 1
+	cellID = int(i + (j-1)*number_cells[0] + (k-1)*number_cells[0]*number_cells[1])
 	assert cellID > 0, "CellID is negative"
+	assert type(cellID) == int, "CellID is not an integer"
 
 	with open(str(path_to_output)+"/heatpump_inject1.vs", "w") as file:
 		file.write(str(cellID))
+	return cellID # for pytest
 
 def write_SN_files(path_to_output:str, settings:Dict):
 

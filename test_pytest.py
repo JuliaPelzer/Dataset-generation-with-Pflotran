@@ -1,7 +1,9 @@
 # run pytest from unittests folder
 import subprocess
 import os
+import numpy as np
 import scripts.make_general_settings as script_settings
+from scripts.create_grid_unstructured import write_loc_well_file
 
 def test_run_bash_pressure_1D_permeability():
 	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
@@ -53,6 +55,31 @@ def test_create_and_change_settings():
 	assert settings_default == settings_changed, "settings_default and settings_changed are not equal"
 	subprocess.call("rm settings_mini.yaml", shell=True)
 
+def test_loc_well():
+	settings = {"grid":{"ncells":[10,10,10], "size":[200,200,200]}}
+	path_to_output = "."
+	loc_hp = np.array([1, 0, 0])
+	# Fixture
+	true_id = 1
+	# Result
+	result_id = write_loc_well_file(path_to_output, settings, loc_hp)
+	assert true_id == result_id, "wrong id"
+	
+	# Fixture
+	true_id = 11
+	loc_hp = np.array([39, 41, 0])
+	# Result
+	result_id = write_loc_well_file(path_to_output, settings, loc_hp)
+	assert true_id == result_id, "wrong id"
+
+	# Fixture
+	true_id = 1000
+	loc_hp = np.array([200, 200, 200])
+	# Result
+	result_id = write_loc_well_file(path_to_output, settings, loc_hp)
+	assert true_id == result_id, "wrong id"
+
+
 def _fcount(path):
   count = 0
   for f in os.listdir(path):
@@ -62,4 +89,5 @@ def _fcount(path):
   return count
 
 if __name__ == "__main__":
-	test_run_bash_pressure_1D_permeability()
+	# test_run_bash_pressure_1D_permeability()
+	test_loc_well()
