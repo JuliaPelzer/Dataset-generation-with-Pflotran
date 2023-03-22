@@ -58,7 +58,7 @@ def write_mesh_file(path_to_output:str, settings:Dict):
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 
-def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None):
+def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None, idx:int=1):
 	if loc_hp is None:
 		loc_hp = settings["grid"]["loc_hp"]
 	number_cells = settings["grid"]["ncells"]
@@ -75,7 +75,7 @@ def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None)
 	assert cellID > 0, "CellID is negative"
 	assert type(cellID) == int, "CellID is not an integer"
 
-	with open(str(path_to_output)+"/heatpump_inject1.vs", "w") as file:
+	with open(os.path.join(path_to_output, f"heatpump_inject{idx}.vs"), "w") as file:
 		file.write(str(cellID))
 	return cellID # for pytest
 
@@ -167,6 +167,6 @@ if __name__ == "__main__":
 		_set_z_width_in_2d_case(settings)
 	save_settings(settings, path_to_output)
 	write_mesh_file(path_to_output, settings)
-	write_loc_well_file(path_to_output, settings)
 	write_SN_files(path_to_output, settings)
 	write_WE_files(path_to_output, settings)
+	write_loc_well_file(path_to_output, settings)
