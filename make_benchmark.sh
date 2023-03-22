@@ -10,12 +10,12 @@ CLA_BENCHMARK=true # set to true if you want to produce the benchmark dataset (d
 if $CLA_BENCHMARK;
 then
     echo Benchmark dataset will be generated...
-    CLA_DATAPOINTS=2            #300            # benchmark_4_testcases
+    CLA_DATAPOINTS=20            #300            # benchmark_4_testcases
     CLA_DIMENSIONS=2D
-    CLA_NAME=testi   # benchmark_dataset_2d_300dp_vary_hp_loc
+    CLA_NAME=benchmark_dataset_2d_300dp_2hps
     CLA_VISUALISATION=vis
     CLA_HP_VARIATION=true        # needs to be "false" to not get HP-location-variations
-    CLA_2HPS=true                # needs to be "false" to not get HP-location-variations
+    CLA_2HPS=false                # needs to be "false" to not get 2 HPs
 fi
 
 args=("$@")
@@ -23,6 +23,8 @@ if [ ! ${#args[@]} = 0 ]; then
     CLA_DATAPOINTS=${args[0]}
     CLA_NAME=${args[1]}
     CLA_VISUALISATION=${args[2]}
+    CLA_HP_VARIATION=${args[3]}
+    CLA_2HPS=${args[4]}
 fi
 
 echo working at $(date) on folder $(pwd)
