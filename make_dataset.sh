@@ -74,7 +74,7 @@ fi
 python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/ $(pwd)
 
 MIN_VARIATIONS_PRESSURE=$CLA_NUMBER_VARIATIONS_PRESSURE #1 #5 #100  # calc parameters, read them for PRESSURE
-python3 scripts/script_calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_PRESSURE_CASE
+python3 scripts/calc_pressure_variation.py $MIN_VARIATIONS_PRESSURE $OUTPUT_DATASET_DIR/inputs $CLA_PRESSURE_CASE
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
 # number of datapoints can differ from number of wished datapoints in 2D case (see calc_pressure_variation.py)
 
@@ -103,9 +103,9 @@ do
             # calculate pressure files
             if [ "$CLA_PRESSURE_CASE" = "1D" ]; 
             then
-                python3 scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
+                python3 scripts/write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]}
             else # 2D case
-                python3 scripts/script_write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
+                python3 scripts/write_pressure_to_pflotran_in_file.py INFO ${PRESSURE[$i]} ${PRESSURE[$i+1]}
             fi
 
             # create run folder    
@@ -121,7 +121,7 @@ do
             # copy next permeability field file to pflotran.in folder
             if [ "$CLA_PERM_CASE" = "vary" ]; 
             then
-                python3 scripts/script_copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
+                python3 scripts/copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
             fi
         
             echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)

@@ -8,12 +8,13 @@ if __name__ == "__main__":
     param_dataset_size = int(sys.argv[1])
     dataset_folder = sys.argv[2]
     number_of_hps = 1
-    if bool(sys.argv[3]):
+    if sys.argv[3] != "false":
         number_of_hps = 2
 
     # get boundaries of domain
     settings = mgs.load_settings(dataset_folder, file_name="settings")
     grid_size = settings["grid"]["size"]
+    cell_size = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])
 
     for i in range(number_of_hps):
         # choose random position inside domain

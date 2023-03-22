@@ -10,9 +10,9 @@ CLA_BENCHMARK=true # set to true if you want to produce the benchmark dataset (d
 if $CLA_BENCHMARK;
 then
     echo Benchmark dataset will be generated...
-    CLA_DATAPOINTS=20            #300            # benchmark_4_testcases
+    CLA_DATAPOINTS=300            #300            # benchmark_4_testcases
     CLA_DIMENSIONS=2D
-    CLA_NAME=benchmark_dataset_2d_300dp_2hps
+    CLA_NAME=benchmark_dataset_2d_300dp_border
     CLA_VISUALISATION=vis
     CLA_HP_VARIATION=true        # needs to be "false" to not get HP-location-variations
     CLA_2HPS=false                # needs to be "false" to not get 2 HPs
@@ -65,7 +65,7 @@ python3 scripts/create_grid_unstructured.py $OUTPUT_DATASET_DIR/inputs/
 # potentially calc 1 or 2 hp locations
 if [ "$CLA_HP_VARIATION" != "false" ] && [ "$CLA_DATAPOINTS" != "benchmark_4_testcases" ];
 then
-    python3 scripts/script_calc_loc_hp_variation_2d.py $CLA_DATAPOINTS $OUTPUT_DATASET_DIR/inputs $CLA_2HPS
+    python3 scripts/calc_loc_hp_variation_2d.py $CLA_DATAPOINTS $OUTPUT_DATASET_DIR/inputs $CLA_2HPS
     IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_X_1=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_x_1.txt))'
     IFS=$'\r\n' GLOBIGNORE='*' command eval  'HP_Y_1=($(cat ${OUTPUT_DATASET_DIR}/inputs/locs_hp_y_1.txt))'
     if [ "$CLA_2HPS" != "false" ];
@@ -75,7 +75,7 @@ then
     fi
 fi
 
-python3 scripts/script_make_benchmark_testcases.py $OUTPUT_DATASET_DIR/inputs $CLA_DATAPOINTS
+python3 scripts/make_benchmark_testcases.py $OUTPUT_DATASET_DIR/inputs $CLA_DATAPOINTS
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PRESSURE=($(cat ${OUTPUT_DATASET_DIR}/inputs/pressure_values.txt))'
 IFS=$'\r\n' GLOBIGNORE='*' command eval  'PERM=($(cat ${OUTPUT_DATASET_DIR}/inputs/permeability_values.txt))'
 
