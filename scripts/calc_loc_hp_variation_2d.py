@@ -16,10 +16,12 @@ if __name__ == "__main__":
     grid_size = settings["grid"]["size"]
     cell_size = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])
 
+    distance_to_border_in_cells = 5
+    distance_to_border = distance_to_border_in_cells*cell_size
     for i in range(number_of_hps):
         # choose random position inside domain
-        locs_x = np.random.randint(0, grid_size[0], param_dataset_size)
-        locs_y = np.random.randint(0, grid_size[1], param_dataset_size)
+        locs_x = np.random.randint(0+distance_to_border[0], grid_size[0]-distance_to_border[0], param_dataset_size)
+        locs_y = np.random.randint(0+distance_to_border[1], grid_size[1]-distance_to_border[1], param_dataset_size)
 
         # save to file
         with open(os.path.join(dataset_folder, f"locs_hp_x_{i+1}.txt"), "w") as f:
