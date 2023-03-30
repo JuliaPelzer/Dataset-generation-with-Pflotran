@@ -91,7 +91,7 @@ def run_simulation(args):
     
     # clean up
     shutil.move("pflotran.in", f"{output_dataset_dir}/inputs/pflotran_copy.in")
-    for file in ["east.ex", "west.ex", "south.ex", "north.ex", "top.ex", "bottom.ex", "top_cover.txt", "bottom_cover.txt", "heatpump_inject1.vs", "heatpump_inject2.vs", "mesh.uge", "settings.yaml", "interim_pressure_gradient.txt", "interim_permeability_field.h5", "interim_iso_permeability.txt"]:
+    for file in ["east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "heatpump_inject1.vs", "heatpump_inject2.vs", "mesh.uge", "settings.yaml", "interim_pressure_gradient.txt", "interim_permeability_field.h5", "interim_iso_permeability.txt"]:
         try:
             os.remove(file)
         except:
