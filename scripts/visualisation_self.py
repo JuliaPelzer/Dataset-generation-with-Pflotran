@@ -75,17 +75,18 @@ def _plot_isolines(data, path:str, settings, name_pic:str="plot_isolines_exempla
     _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(20,3*(n_subplots)))
     
     index = 0
+    levels = np.arange(10.6, 15.6, 0.25)
+    grid_size = settings["grid"]["size"]
     for data_point in data:
         if data_point["property"] == "Temperature [C]" and data_point["time"] != "   1 Time  1.00000E-01 y":
             plt.sca(axes[index])
-            levels = np.arange(10.6, 15.6, 0.25)
-            grid_size = settings["grid"]["size"]
-            plt.contourf(data_point["data"][:,:], levels=levels, cmap='RdBu_r',  extent=(0, grid_size[1], grid_size[0], 0))
+            plt.contourf(data_point["data"], levels=levels, cmap='RdBu_r',  extent=(0, grid_size[1], grid_size[0], 0))
             plt.gca().invert_yaxis()
+            plottable_time = float(data_point["time"].split(" ")[-2])
+            plt.title(f"{plottable_time} years")
             plt.xlabel("y [m]")
             plt.ylabel("x [m]")
-            plottable_time = float(data_point["time"].split(" ")[-2])
-            _aligned_colorbar(label=f"{plottable_time} years")
+            _aligned_colorbar(label="Temperature [°C]")
             index += 1
     
     pic_file_name = f"{path}/{name_pic}_{case}_isolines"
