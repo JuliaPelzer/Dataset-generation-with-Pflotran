@@ -148,35 +148,6 @@ def write_WE_files(path_to_output:str, settings:Dict):
 	with open(str(path_to_output)+"/west.ex", "w") as file:
 		file.writelines(output_string_west)
 
-def write_TB_files(path_to_output:str, settings:Dict):
-	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-	cell_widths = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])	# Cell width in metres
-	cellXWidth, cellYWidth, _ = cell_widths
-	_, _, zWidth = settings["grid"]["size"]
-
-	if not cellXWidth == cellYWidth:
-		logging.error("Something with create_grid_unstructured.py is wrong")
-	else:
-		faceArea = cellXWidth*cellYWidth
-
-	output_string_top = ["CONNECTIONS " + str(xGrid*yGrid)]
-	output_string_bottom = ["CONNECTIONS " + str(xGrid*yGrid)]
-	zloc_top = zWidth
-	zloc_bottom = 0
-	for j in range(0, yGrid):
-		yloc = (j+0.5)*cellYWidth
-		for i in range(0,xGrid):
-			xloc = (i+0.5)*cellXWidth
-			cellID_top = i+1 + j*xGrid
-			cellID_bottom = i+1 + j*xGrid + (zGrid-1)*xGrid*yGrid
-			output_string_top.append("\n" + str(cellID_top)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc_top)+"  "+str(faceArea))
-			output_string_bottom.append("\n" + str(cellID_bottom)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc_bottom)+"  "+str(faceArea))
-
-	with open(str(path_to_output)+"/top.ex", "w") as file:
-		file.writelines(output_string_top)
-	with open(str(path_to_output)+"/bottom.ex", "w") as file:
-		file.writelines(output_string_bottom)
-
 def _set_z_width_in_2d_case(settings:Dict):
 	# If 2D case: set z-width to average of x and y width
 	cellXWidth = settings["grid"]["size"][0]/np.array(settings["grid"]["ncells"][0])	# Cell width in metres
@@ -196,7 +167,6 @@ def create_all_grid_files(settings, path_to_output:str=".", grid_widths:List[flo
 	write_mesh_file(path_to_output, settings, confined=confined)
 	write_SN_files(path_to_output, settings)
 	write_WE_files(path_to_output, settings)
-	# write_TB_files(path_to_output, settings)
 	write_loc_well_file(path_to_output, settings)
 
 	return settings
