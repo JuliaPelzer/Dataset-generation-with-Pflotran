@@ -30,11 +30,11 @@ def write_mesh_file(path_to_output:str, settings:Dict, confined:bool=False):
 			for i in range(0,xGrid):
 				xloc = (i + 0.5)*cellXWidth
 				output_string.append("\n" + str(cellID_1)+"  "+str(xloc)+"  "+str(yloc)+"  "+str(zloc)+"  "+str(volume))
-				cellID_1 += 1
 				if confined and k == 0:
-					confined_bottom.append("\n" + str(cellID_1))
-				if confined and k == zGrid-1:
-					confined_top.append("\n" + str(cellID_1))
+					confined_bottom.append(str(cellID_1) + "\n")
+				elif confined and k == zGrid-1:
+					confined_top.append(str(cellID_1) + "\n")
+				cellID_1 += 1
 
 	output_string.append("\nCONNECTIONS " + str((xGrid-1)*yGrid*zGrid + xGrid*(yGrid-1)*zGrid + xGrid*yGrid*(zGrid-1)))
 	for k in range(0,zGrid):
@@ -63,9 +63,9 @@ def write_mesh_file(path_to_output:str, settings:Dict, confined:bool=False):
 	with open(str(path_to_output)+"/mesh.uge", "w") as file:
 		file.writelines(output_string)
 	if confined:
-		with open(str(path_to_output)+"/bottom_cover.ex", "w") as file:
+		with open(str(path_to_output)+"/bottom_cover.txt", "w") as file:
 			file.writelines(confined_bottom)
-		with open(str(path_to_output)+"/top_cover.ex", "w") as file:
+		with open(str(path_to_output)+"/top_cover.txt", "w") as file:
 			file.writelines(confined_top)
 
 def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None, idx:int=1):

@@ -39,9 +39,9 @@ def run_simulation(args):
 
     # copy pflotran.in file, which one - depends
     perm_case = "vary" if args.perm_variation else "iso"
-    pflotran_file = f"dummy_dataset_benchmark/pflotran_{perm_case}_perm"
-    filename_extension = "_2hps" if args.two_hps else ""
-    pflotran_file += f"{filename_extension}.in"
+    confined_extension = "_confined" if confined_aquifer else ""
+    hps_extension = "_2hps" if args.two_hps else ""
+    pflotran_file = f"dummy_dataset_benchmark/pflotran_{perm_case}_perm{hps_extension}{confined_extension}.in"
     shutil.copy(pflotran_file, "pflotran.in")
 
     # getting settings
@@ -57,7 +57,7 @@ def run_simulation(args):
     # make benchmark testcases
     pressures, perms = calc_pressure_and_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", args.perm_variation)
     if args.perm_variation:
-        create_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", settings, perms_min_max=perms)
+        create_perm_fields(args.num_datapoints, output_dataset_dir, settings, perms_min_max=perms)
     
     # make run folders
     for run_id in range(len(pressures)): #should only differ in case of benchmark_4_testcases from CLA_DATAPOINTS
@@ -91,19 +91,21 @@ def run_simulation(args):
     
     # clean up
     shutil.move("pflotran.in", f"{output_dataset_dir}/inputs/pflotran_copy.in")
-    for file in ["east.ex", "west.ex", "south.ex", "north.ex", "top.ex", "bottom.ex", "top_cover.ex", "bottom_cover.ex", "heatpump_inject1.vs", "heatpump_inject2.vs", "mesh.uge", "settings.yaml", "interim_pressure_gradient.txt", "interim_permeability_field.h5", "interim_iso_permeability.txt"]:
+    for file in ["east.ex", "west.ex", "south.ex", "north.ex", "top.ex", "bottom.ex", "top_cover.txt", "bottom_cover.txt", "heatpump_inject1.vs", "heatpump_inject2.vs", "mesh.uge", "settings.yaml", "interim_pressure_gradient.txt", "interim_permeability_field.h5", "interim_iso_permeability.txt"]:
         try:
             os.remove(file)
         except:
             continue
+    if args.perm_variation:
+        shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_datapoints", type=int, default=100) #int 100) #str benchmark_4_testcases
+    parser.add_argument("--num_datapoints", type=int, default=1) #int 100) #str benchmark_4_testcases
     parser.add_argument("--dimensions", type=str, default="2D")
-    parser.add_argument("--name", type=str, default="bm_try_confined_no") #benchmark_dataset_2d_100dp_vary_perm")
+    parser.add_argument("--name", type=str, default="test") #benchmark_dataset_2d_100dp_vary_perm")
     parser.add_argument("--visualisation", type=bool, default=True)
     parser.add_argument("--hp_variation", type=bool, default=False)
     parser.add_argument("--two_hps", type=bool, default=False)

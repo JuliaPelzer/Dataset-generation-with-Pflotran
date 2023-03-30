@@ -34,7 +34,7 @@ def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_
 		logging.info(f"Permeability Input: {permeability_iso}")
 		shutil.copy("interim_iso_permeability.txt", os.path.join(output_dataset_dir, f"RUN_{run_id}", "permeability_iso.txt"))
 	else:
-		perm_files_location = output_dataset_dir+"/inputs/permeability_fields"
+		perm_files_location = output_dataset_dir+"/permeability_fields"
 		current_perm_file = return_next_perm_file(perm_files_location, run_id)
 		current_perm_location = os.path.join(perm_files_location, current_perm_file)
 		shutil.copy(current_perm_location, "./interim_permeability_field.h5")
