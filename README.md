@@ -19,6 +19,7 @@ copy `spack.yaml` (pflotran specific) to folder and go there (e.g. "cd test_nn/i
 > need internet access for it
 
 ### next login: 
+`cd ../`
 `. spack/share/spack/setup-env.sh`
 
 go to folder with `spack.yaml` (e.g. test_nn/installs)

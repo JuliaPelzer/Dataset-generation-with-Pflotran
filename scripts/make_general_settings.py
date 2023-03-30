@@ -1,8 +1,9 @@
 import yaml
 from typing import List, Dict
+import os
 
 def load_settings(path:str, file_name="settings") -> Dict:
-	with open(f"{path}/{file_name}.yaml", "r") as file:
+	with open(os.path.join(path, f"{file_name}.yaml"), "r") as file:
 		settings = yaml.safe_load(file)
 	return settings
 

@@ -72,6 +72,22 @@
     CHARACTERISTIC_CURVES cc1
   END
 
+
+  MATERIAL_PROPERTY confining_layer
+    ID 3
+    POROSITY 0.25d0                     #[-]
+    ROCK_DENSITY 2.8d3                  #[kg/m^3]
+    SPECIFIC_HEAT 2.0d3                 #of rock? [J/(kg*K)]
+    THERMAL_CONDUCTIVITY_DRY 0.7        #[W/(K*m)] #TODO check
+    THERMAL_CONDUCTIVITY_WET 1.0        #[W/(K*m)] #TODO check
+    LONGITUDINAL_DISPERSIVITY 1.0       #[m]
+    TRANSVERSE_DISPERSIVITY_H 0.1       #[m]
+    PERMEABILITY                        #[m^2] #TESTCASE
+      PERM_ISO 1.d-14
+    /
+    CHARACTERISTIC_CURVES cc1
+  END
+
   #=========================== characteristic curves ============================
   CHARACTERISTIC_CURVES cc1
     SATURATION_FUNCTION VAN_GENUCHTEN
@@ -119,6 +135,14 @@
   FILE heatpump_inject1.vs
   END
 
+#   REGION top_cover
+#   FILE top_cover.ex
+#   END
+# 
+#   REGION bottom_cover
+#   FILE bottom_cover.ex
+#   END
+
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
     TYPE
@@ -130,15 +154,6 @@
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
     PRESSURE 101325.d0
-    TEMPERATURE 10.6d0 C
-  /
-  
-  FLOW_CONDITION default
-    TYPE
-      FLUX NEUMANN
-      TEMPERATURE DIRICHLET
-    /
-    FLUX 0.d0 m/s
     TEMPERATURE 10.6d0 C
   /
 
@@ -175,16 +190,6 @@
     REGION south
   /
  
-  # BOUNDARY_CONDITION
-  #   FLOW_CONDITION default
-  #   REGION west
-  # /
- # 
-  # BOUNDARY_CONDITION
-  #   FLOW_CONDITION default
-  #   REGION east
-  # /
- 
   SOURCE_SINK heatpump_inject1
     FLOW_CONDITION injection
     REGION heatpump_inject1
@@ -201,6 +206,16 @@
     REGION heatpump_inject1
     MATERIAL gravel_inj
   END
+
+ #  STRATA
+ #    REGION top_cover
+ #    MATERIAL confining_layer
+ #  END
+# 
+ #  STRATA
+ #    REGION bottom_cover
+ #    MATERIAL confining_layer
+ #  END
 
   #=========================== output options ===================================
   OUTPUT

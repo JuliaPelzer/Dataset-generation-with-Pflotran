@@ -6,25 +6,28 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import sys
-import yaml
-from make_general_settings import load_settings
+try:
+    from scripts.make_general_settings import load_settings
+except:
+    from make_general_settings import load_settings
 
-def plot_sim(path_settings:str="try", path_run:str="try/RUN_0", plot_name:str="plot_simulation_results", case:str="side_hp", reshape_bool:bool=True):
+def plot_sim(path_run:str, settings, plot_name:str="plot_simulation_results", case:str="side_hp", reshape_bool:bool=True, confined:bool=False):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
-    path_settings = os.path.join(path_settings, "inputs")
     with h5py.File(path_run+"/pflotran.h5", "r") as file:
-        list_to_plot = _make_plottable_and_2D(file, case, reshape_bool, path_settings)
+        list_to_plot = _make_plottable_and_2D(file, case, reshape_bool, settings, confined=confined)
 
     _plot_y(list_to_plot, path_run, name_pic=plot_name, case=case)
-    _plot_isolines(list_to_plot, path_run, name_pic=plot_name, case=case, path_settings=path_settings)
+    _plot_isolines(list_to_plot, path_run, settings, name_pic=plot_name, case=case,)
     try:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
     except:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][23,9], 4)}")
 
-def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings:str) -> List:
+def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, settings, confined:bool=False) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
-    dimensions = load_settings(path_settings)["grid"]["ncells"]
+    dimensions = settings["grid"]["ncells"]
+    if confined:
+        dimensions = (dimensions[0], dimensions[1], dimensions[2]+2)
     # if dimensions != (20,150,16) and dimensions[2] != 1:
     #     logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
     list_to_plot = []
@@ -38,7 +41,9 @@ def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, path_settings
                     data_dict["data"] = data_dict["data"][9,:,:].T
                 elif case=="top_hp":
                     data_dict["data"] = data_dict["data"][:,:,9]
-                elif case=="2D":
+                elif case=="2D" and confined:
+                    data_dict["data"] = data_dict["data"][:,:,1]
+                elif case=="2D" and not confined:
                     data_dict["data"] = data_dict["data"][:,:,0]
                 elif case=="3D":
                     data_dict["data"] = data_dict["data"][:,:,2]
@@ -64,7 +69,7 @@ def _plot_y(data, path:str, name_pic:str="plot_y_exemplary", case:str="side_hp")
     logging.info(f"Resulting picture is at {pic_file_name}")  
     plt.savefig(pic_file_name)
 
-def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:str="side_hp", path_settings:str="."):
+def _plot_isolines(data, path:str, settings, name_pic:str="plot_isolines_exemplary", case:str="side_hp"):
     # helper function to plot the data
     n_subplots = int(len(data)/4)-1 #7)
     _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(20,3*(n_subplots)))
@@ -74,7 +79,7 @@ def _plot_isolines(data, path:str, name_pic:str="plot_isolines_exemplary", case:
         if data_point["property"] == "Temperature [C]" and data_point["time"] != "   1 Time  1.00000E-01 y":
             plt.sca(axes[index])
             levels = np.arange(10.6, 15.6, 0.25)
-            grid_size = load_settings(path_settings)["grid"]["size"]
+            grid_size = settings["grid"]["size"]
             plt.contourf(data_point["data"][:,:], levels=levels, cmap='RdBu_r',  extent=(0, grid_size[1], grid_size[0], 0))
             plt.gca().invert_yaxis()
             plt.xlabel("y [m]")
