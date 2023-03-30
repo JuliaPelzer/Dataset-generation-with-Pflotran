@@ -83,7 +83,7 @@ len_perm=$CLA_NUMBER_VARIATIONS_PERMEABILITY # calc parameters, read them for PE
 # TODO later set random_bool in settings.yaml to True
 if [ "$CLA_PERM_CASE" = "vary" ]; 
 then
-    python3 scripts/create_permeability_field.py INFO $len_perm $(pwd) $OUTPUT_DATASET_DIR
+    python3 scripts/create_permeability_field.py INFO $len_perm $OUTPUT_DATASET_DIR
 fi
 
 run_id=0
@@ -96,7 +96,7 @@ do
     j=0
     while [ $j -lt $len_perm ];
     do  
-        current_id=-1 #79 # TODO set to -1 if you want to start from the beginning
+        current_id=-1 # TODO set to -1 if you want to start from the beginning
         if [ $j -gt $current_id ];
         then
 
@@ -121,7 +121,7 @@ do
             # copy next permeability field file to pflotran.in folder
             if [ "$CLA_PERM_CASE" = "vary" ]; 
             then
-                python3 scripts/copy_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
+                python3 scripts/write_next_perm_field.py $OUTPUT_DATASET_DIR $j $NAME_OF_RUN
             fi
         
             echo starting PFLOTRAN simulation of $NAME_OF_RUN at $(date)
