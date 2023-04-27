@@ -10,13 +10,13 @@ from scripts.make_benchmark_testcases import calc_pressure_and_perm_fields
 from scripts.create_permeability_field import create_perm_fields
 from scripts.make_general_settings import load_settings
 from scripts.write_benchmark_parameters_input_files import write_parameter_input_files
-from scripts.visualisation_self import plot_sim
+from scripts.visualisation import plot_sim
 
 def run_simulation(args):
 
     logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
     
-    confined_aquifer = True
+    confined_aquifer = False
 
     # dataset generation
     # check whether output folder exists else define
@@ -99,13 +99,24 @@ def run_simulation(args):
     if args.perm_variation:
         shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
 
+def just_visualize(args):
+    output_dataset_dir = args.name
+    settings = load_settings(f"{output_dataset_dir}/inputs")
+    confined_aquifer = False
+
+    for run_id in range(4): # in case of testcases_4
+        name_of_run = f"RUN_{run_id}"
+        output_dataset_run_dir = f"{output_dataset_dir}/{name_of_run}"
+        plot_sim(output_dataset_run_dir, settings, case=args.dimensions, confined=confined_aquifer)
+        logging.info(f"...visualisation of {name_of_run} is done")
+
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_datapoints", type=int, default=1) #int 100) #str benchmark_4_testcases
+    parser.add_argument("--num_datapoints", type=str, default=1) #int 100) #str benchmark_4_testcases
     parser.add_argument("--dimensions", type=str, default="2D")
-    parser.add_argument("--name", type=str, default="test") #benchmark_dataset_2d_100dp_vary_perm")
+    parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
     parser.add_argument("--visualisation", type=bool, default=True)
     parser.add_argument("--hp_variation", type=bool, default=False)
     parser.add_argument("--two_hps", type=bool, default=False)
@@ -114,7 +125,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run_simulation(args)
-
-    # args.hp_variation = True
-    # args.name = "benchmark_dataset_2d_100dp_vary_perm_vary_hp"
-    # run_simulation(args)
+    # just_visualize(args)
