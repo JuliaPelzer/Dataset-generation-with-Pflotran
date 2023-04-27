@@ -15,7 +15,10 @@ from scripts.visualisation import plot_sim
 def run_simulation(args):
 
     logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
-    
+    assert args.number_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
+    if args.number_hps > 0:
+        assert args.hp_variation, f"If number of heatpumps is larger than 0, hp_variation must be True"
+
     confined_aquifer = False
 
     # dataset generation
@@ -40,7 +43,7 @@ def run_simulation(args):
     # copy pflotran.in file, which one - depends
     perm_case = "vary" if args.perm_variation else "iso"
     confined_extension = "_confined" if confined_aquifer else ""
-    hps_extension = "_2hps" if args.two_hps else ""
+    hps_extension = f"_{args.number_hps}hps"
     pflotran_file = f"dummy_dataset_benchmark/pflotran_{perm_case}_perm{hps_extension}{confined_extension}.in"
     shutil.copy(pflotran_file, "pflotran.in")
 
@@ -51,8 +54,7 @@ def run_simulation(args):
 
     # potentially calc 1 or 2 hp locations
     if args.hp_variation:
-        number_of_hps = 2 if args.two_hps else 1
-        locs_hps = calc_loc_hp_variation_2d(args.num_datapoints, f"{output_dataset_dir}/inputs", number_of_hps, settings)
+        locs_hps = calc_loc_hp_variation_2d(args.num_datapoints, f"{output_dataset_dir}/inputs", args.number_hps, settings)
     
     # make benchmark testcases
     pressures, perms = calc_pressure_and_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", args.perm_variation)
@@ -61,20 +63,19 @@ def run_simulation(args):
     
     # make run folders
     for run_id in range(len(pressures)): #should only differ in case of benchmark_4_testcases from CLA_DATAPOINTS
-        name_of_run = f"RUN_{run_id}"
-        output_dataset_run_dir = f"{output_dataset_dir}/{name_of_run}"
+        output_dataset_run_dir = f"{output_dataset_dir}/RUN_{run_id}"
         if not os.path.isdir(output_dataset_run_dir):
             os.mkdir(output_dataset_run_dir)
 
         if not args.hp_variation:
             write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
         else:
-            if args.two_hps:
-                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[1][run_id], locs_hps[2][run_id])
+            if args.number_hps > 0:
+                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[run_id])
             else:
-                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[1][run_id])
+                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
 
-        logging.info(f"Starting PFLOTRAN simulation of {name_of_run} at {datetime.datetime.now()}")
+        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {datetime.datetime.now()}")
         remote = True
         if not remote:
             os.system(f"mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix {output_dataset_run_dir}/pflotran -screen_output off")
@@ -85,8 +86,8 @@ def run_simulation(args):
 
         # call visualisation
         if args.visualisation:
-            plot_sim(output_dataset_run_dir, settings, case=args.dimensions, confined=confined_aquifer)
-            logging.info(f"...visualisation of {name_of_run} is done")
+            plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
+            logging.info(f"...visualisation of RUN {run_id} is done")
 
     
     # clean up
@@ -105,10 +106,9 @@ def just_visualize(args):
     confined_aquifer = False
 
     for run_id in range(4): # in case of testcases_4
-        name_of_run = f"RUN_{run_id}"
-        output_dataset_run_dir = f"{output_dataset_dir}/{name_of_run}"
+        output_dataset_run_dir = f"{output_dataset_dir}/RUN_{run_id}"
         plot_sim(output_dataset_run_dir, settings, case=args.dimensions, confined=confined_aquifer)
-        logging.info(f"...visualisation of {name_of_run} is done")
+        logging.info(f"...visualisation of RUN {run_id} is done")
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
     parser.add_argument("--visualisation", type=bool, default=True)
     parser.add_argument("--hp_variation", type=bool, default=False)
-    parser.add_argument("--two_hps", type=bool, default=False)
+    parser.add_argument("--number_hps", type=int, default=0)
     parser.add_argument("--perm_variation", type=bool, default=False)
 
     args = parser.parse_args()

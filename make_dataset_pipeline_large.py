@@ -51,7 +51,6 @@ def run_simulation(args):
     # potentially calc 1 or 2 hp locations
     if args.hp_variation:
         locs_hps = calc_loc_hp_variation_2d(args.num_datapoints, f"{output_dataset_dir}/inputs", args.number_hps, settings)
-        # locs_hps = locs_hps.T #TODO 
     
     # make benchmark testcases
     pressures, perms = calc_pressure_and_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", args.perm_variation)
@@ -60,22 +59,19 @@ def run_simulation(args):
     
     # make run folders
     for run_id in range(len(pressures)): #should only differ in case of benchmark_4_testcases from CLA_DATAPOINTS
-        name_of_run = f"RUN_{run_id}"
-        output_dataset_run_dir = f"{output_dataset_dir}/{name_of_run}"
+        output_dataset_run_dir = f"{output_dataset_dir}/RUN_{run_id}"
         if not os.path.isdir(output_dataset_run_dir):
             os.mkdir(output_dataset_run_dir)
 
         if not args.hp_variation:
             write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
         else:
-            if args.number_hps == 2:
-                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[1][run_id], locs_hps[2][run_id])
-            elif args.number_hps == 1:
-                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[1][run_id])
+            if args.number_hps > 0:
+                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[run_id])
             else:
                 write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
 
-        logging.info(f"Starting PFLOTRAN simulation of {name_of_run} at {datetime.datetime.now()}")
+        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {datetime.datetime.now()}")
         remote = True
         if not remote:
             os.system(f"mpirun -n 1 $PFLOTRAN_DIR/src/pflotran/pflotran -output_prefix {output_dataset_run_dir}/pflotran -screen_output off")
@@ -87,7 +83,7 @@ def run_simulation(args):
         # call visualisation
         if args.visualisation:
             plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
-            logging.info(f"...visualisation of {name_of_run} is done")
+            logging.info(f"...visualisation of RUN {run_id} is done")
 
     
     # clean up
@@ -106,10 +102,9 @@ def just_visualize(args):
     confined_aquifer = False
 
     for run_id in range(4): # in case of testcases_4
-        name_of_run = f"RUN_{run_id}"
-        output_dataset_run_dir = f"{output_dataset_dir}/{name_of_run}"
+        output_dataset_run_dir = f"{output_dataset_dir}/RUN_{run_id}"
         plot_sim(output_dataset_run_dir, settings, case=args.dimensions, confined=confined_aquifer)
-        logging.info(f"...visualisation of {name_of_run} is done")
+        logging.info(f"...visualisation of RUN {run_id} is done")
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)

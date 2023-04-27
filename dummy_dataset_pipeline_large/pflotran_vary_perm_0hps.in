@@ -120,10 +120,6 @@
   FILE east.ex
   END
 
-  REGION heatpump_inject1
-  FILE heatpump_inject1.vs
-  END
-
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
     TYPE
@@ -175,13 +171,6 @@
     REGION all
     MATERIAL gravel
   END
-
-  # same but different material for hps to get a map with the hp locations alias Material_ID
-  STRATA
-    REGION heatpump_inject1
-    MATERIAL gravel_inj
-  END
-
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE

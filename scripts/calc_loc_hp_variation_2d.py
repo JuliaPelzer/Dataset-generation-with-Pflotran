@@ -10,7 +10,7 @@ except:
 def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder: str, number_of_hps: int, settings):
 
     assert number_of_hps in [1, 2], "number_of_hps must be 1 or 2"
-    locs_hps = {}
+    locs_hps = np.ndarray((number_of_hps, param_dataset_size, 2))
 
     # get boundaries of domain
     grid_size = settings["grid"]["size"]
@@ -29,7 +29,8 @@ def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder: str, numbe
         with open(os.path.join(dataset_folder, f"locs_hp_y_{i+1}.txt"), "w") as f:
             np.savetxt(f, locs_y)  
         
-        locs_hps[i+1] = np.array([locs_x, locs_y]).T
+        locs_hps[i] = np.array([locs_x, locs_y]).T
+    locs_hps = np.swapaxes(locs_hps, 0, 1)
     return locs_hps
     
 

@@ -12,7 +12,7 @@ except:
 	from create_grid_unstructured import write_loc_well_file
 	from write_next_perm_field import return_next_perm_file
 
-def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings = None, loc_hp1: list = None, loc_hp2: list = None):
+def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings = None, loc_hps: np.ndarray = None):
 	path_to_output = "."
 
 	# create pressure gradient file
@@ -40,22 +40,14 @@ def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_
 		shutil.copy(current_perm_location, "./interim_permeability_field.h5")
 		shutil.copy(current_perm_location, os.path.join(output_dataset_dir, f"RUN_{run_id}", current_perm_file))
 	
-	if loc_hp1 is not None:
-		assert settings is not None, "Settings must be provided if loc_hp1 is provided"
-		loc_hp1 = list(loc_hp1)
-		loc_hp1.append(1)
-		logging.info(f"HP1 Position: {loc_hp1}")
-		write_loc_well_file(path_to_output, settings, loc_hp=loc_hp1, idx=1)
-		shutil.copy("heatpump_inject1.vs", os.path.join(output_dataset_dir, f"RUN_{run_id}", "heatpump_inject1.vs"))
-
-		if loc_hp2 is not None:
-			loc_hp2 = list(loc_hp2)
-			loc_hp2.append(1)
-			logging.info(f"HP2 Position: {loc_hp2}")
-			write_loc_well_file(path_to_output, settings, loc_hp=loc_hp2, idx=2)
-			shutil.copy("heatpump_inject2.vs", os.path.join(output_dataset_dir, f"RUN_{run_id}", "heatpump_inject2.vs"))
- 
-
+	if loc_hps is not None:
+		assert settings is not None, "Settings must be provided if loc_hps is provided"
+		for hp_id, loc_hp in enumerate(loc_hps):
+			loc_hp = list(loc_hp)
+			loc_hp.append(1)
+			logging.info(f"HP {hp_id} Position: {loc_hp}")
+			write_loc_well_file(path_to_output, settings, loc_hp=loc_hp, idx=hp_id)
+			shutil.copy(f"heatpump_inject{hp_id}.vs", os.path.join(output_dataset_dir, f"RUN_{run_id}", f"heatpump_inject{hp_id}.vs"))
 
 if __name__ == "__main__":
 	# read input parameters

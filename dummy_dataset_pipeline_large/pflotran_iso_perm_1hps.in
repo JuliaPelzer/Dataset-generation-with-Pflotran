@@ -115,8 +115,8 @@
   FILE east.ex
   END
 
-  REGION heatpump_inject1
-  FILE heatpump_inject1.vs
+  REGION heatpump_inject0
+  FILE heatpump_inject0.vs
   END
 
   #=========================== flow conditions ==================================
@@ -185,9 +185,9 @@
   #   REGION east
   # /
  
-  SOURCE_SINK heatpump_inject1
+  SOURCE_SINK heatpump_inject0
     FLOW_CONDITION injection
-    REGION heatpump_inject1
+    REGION heatpump_inject0
   /
 
   #=========================== stratigraphy couplers ============================
@@ -198,7 +198,7 @@
 
   # same but different material for hps to get a map with the hp locations alias Material_ID
   STRATA
-    REGION heatpump_inject1
+    REGION heatpump_inject0
     MATERIAL gravel_inj
   END
 
