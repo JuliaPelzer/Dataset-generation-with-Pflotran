@@ -18,12 +18,13 @@ def plot_sim(path_run:str, settings, plot_name:str="plot_simulation_results", ca
 
     _plot_y(list_to_plot, path_run, name_pic=plot_name, case=case)
     _plot_isolines(list_to_plot, path_run, settings, name_pic=plot_name, case=case,)
+    _plot_temperature_field(list_to_plot, path_run, settings, name_pic=plot_name)
     try:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
     except:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][23,9], 4)}")
 
-def _make_plottable_and_2D(hdf5_file, case:str, reshape_bool:bool, settings, confined:bool=False) -> List:
+def _make_plottable_and_2D(hdf5_file:h5py.File, case:str, reshape_bool:bool, settings, confined:bool=False) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
     dimensions = settings["grid"]["ncells"]
     if confined:
@@ -94,6 +95,41 @@ def _plot_isolines(data, path:str, settings, name_pic:str="plot_isolines_exempla
     plt.suptitle(f"Isolines of Temperature [°C]")
     # plt.savefig(f"{pic_file_name}.svg")
     plt.savefig(f"{pic_file_name}.png")
+
+
+def _plot_temperature_field(data, path:str, settings, name_pic:str="plot_temp_field_exemplary"):
+    """
+    Plot the temperature field. 
+    copy of other_models/analytical_models/utils_and_visu
+    """
+    n_subplots = int(len(data)/4)-1 #7)
+    _, axes = plt.subplots(n_subplots,1,sharex=True,figsize=(38.4,3*(n_subplots)))
+    
+    index = 0
+    grid_size = settings["grid"]["size"]
+    T_gwf = 10.6
+    T_inj_diff = 5.0
+    for data_point in data:
+        if data_point["property"] == "Temperature [C]" and data_point["time"] != "   1 Time  1.00000E-01 y":
+
+            plt.sca(axes[index])
+            levels = [T_gwf, T_gwf + 1, T_gwf + T_inj_diff]
+            CS = plt.contour(data_point["data"][::-1], levels=levels, cmap='Pastel1',  extent=(0, grid_size[1], grid_size[0], 0))
+            plt.clabel(CS, inline=1, fontsize=10)
+            plt.imshow(data_point["data"], cmap="RdBu_r",extent=(0, grid_size[1], grid_size[0], 0))
+            plt.gca().invert_yaxis()
+            plottable_time = float(data_point["time"].split(" ")[-2])
+            plt.title(f"{plottable_time} years")
+            plt.xlabel("y [m]")
+            plt.ylabel("x [m]")
+            _aligned_colorbar(label="Temperature [°C]")
+            index += 1
+
+    pic_file_name = f"{path}/{name_pic}_combined"
+    logging.info(f"Resulting picture is at {pic_file_name}") 
+    plt.suptitle(f"Temperature field and isolines of {T_gwf}, {T_gwf+1} and {T_gwf+T_inj_diff} °C")
+    plt.savefig(f"{pic_file_name}.png")
+    plt.savefig(f"{pic_file_name}.svg")
 
 def _aligned_colorbar(*args,**kwargs):
     # scales and positions the colorbar

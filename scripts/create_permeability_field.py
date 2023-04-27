@@ -10,7 +10,7 @@ from typing import Dict
 from tqdm import tqdm
 import logging
 from scripts.make_general_settings import load_settings
-from scripts.visualisation_self import _aligned_colorbar
+from scripts.visualisation import _aligned_colorbar
 
 def make_perm_grid(settings:Dict, base:float = 0, perm_min_max:np.array = None):
     length_cells = settings["grid"]["size"] / np.array(settings["grid"]["ncells"])
