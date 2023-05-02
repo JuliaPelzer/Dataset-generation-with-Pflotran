@@ -16,7 +16,7 @@ def run_simulation(args):
 
     logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
     assert args.number_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
-    if args.number_hps > 0:
+    if args.number_hps > 1:
         assert args.hp_variation, f"If number of heatpumps is larger than 0, hp_variation must be True"
 
     confined_aquifer = False
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_datapoints", type=str, default=1) #int 100) #str benchmark_4_testcases
+    parser.add_argument("--num_datapoints", type=int, default=1) #int 100) #str benchmark_4_testcases
     parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
     parser.add_argument("--visualisation", type=bool, default=True)
     parser.add_argument("--hp_variation", type=bool, default=False)
