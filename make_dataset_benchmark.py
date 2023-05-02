@@ -16,7 +16,7 @@ def run_simulation(args):
 
     logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
     assert args.number_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
-    if args.number_hps > 0:
+    if args.number_hps > 1:
         assert args.hp_variation, f"If number of heatpumps is larger than 0, hp_variation must be True"
 
     confined_aquifer = False
@@ -69,11 +69,10 @@ def run_simulation(args):
 
         if not args.hp_variation:
             write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
+        elif args.number_hps > 0:
+            write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[run_id])
         else:
-            if args.number_hps > 0:
-                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[run_id])
-            else:
-                write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
+            raise ValueError("If hp_variation is True, number_hps must be larger than 0")
 
         logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {datetime.datetime.now()}")
         remote = True
@@ -114,7 +113,7 @@ if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_datapoints", type=str, default=1) #int 100) #str benchmark_4_testcases
+    parser.add_argument("--num_datapoints", type=int, default=1) #int 100) #str benchmark_4_testcases
     parser.add_argument("--dimensions", type=str, default="2D")
     parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
     parser.add_argument("--visualisation", type=bool, default=True)
