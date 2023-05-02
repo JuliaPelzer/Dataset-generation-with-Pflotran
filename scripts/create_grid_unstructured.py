@@ -68,7 +68,7 @@ def write_mesh_file(path_to_output:str, settings:Dict, confined:bool=False):
 		with open(str(path_to_output)+"/top_cover.txt", "w") as file:
 			file.writelines(confined_top)
 
-def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None, idx:int=1):
+def write_loc_well_file(path_to_output:str, settings:Dict, loc_hp:np.array=None, idx:int=0):
 	if loc_hp is None:
 		loc_hp = settings["grid"]["loc_hp"]
 	number_cells = settings["grid"]["ncells"]
