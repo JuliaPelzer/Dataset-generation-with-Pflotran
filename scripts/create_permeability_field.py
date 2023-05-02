@@ -65,6 +65,13 @@ def make_perm_grid(settings:Dict, perm_min:float, perm_max:float, base:float = 0
     elif settings["permeability"]["case"]=="perlin_v2":
         # adapted by Manuel Hirche
 
+        # We sample the permeability from 3 dimensional perlin noise that extends indefinetly.
+        # To introduce randomness the starting point of our sampling is drawn from a uniform
+        # distribution. From there we are moving a multiple of our simulation area for every
+        # sample to get non-overlapping fields. The simulation area is scaled to a unit cube so
+        # conveniently we can move by 1 in x directon (in this direction the scaled area 
+        # will be << 1)
+    
         # Scale the simulation area down into a unit cube
         simulation_area_max = max(domain_size)
         assert int(domain_size[0]) == 100 and int(domain_size[1]) == 1280, "Domain size must be 100x1280(x5)"
@@ -94,60 +101,6 @@ def make_perm_grid(settings:Dict, perm_min:float, perm_max:float, base:float = 0
     
     return values
 
-def make_perm_grid_Manuel(settings:Dict, offset, base:float = 0):
-    icells = [np.linspace(1, settings["grid"]["ncells"][i], settings["grid"]["ncells"][i]) for i in (0,1,2)]
-    if settings["permeability"]["case"]=="perlin_noise":
-        
-        grid_dimensions = settings["grid"]["ncells"]
-        simulation_area = settings["grid"]["size"]
-        frequency = settings["permeability"]["frequency"]
-        perm_max = settings["permeability"]["perm_max"]
-        perm_min = settings["permeability"]["perm_min"]
-
-        values = awesome_new_perlin_noise(grid_dimensions, simulation_area, frequency, perm_min, perm_max, offset)
-    
-    return values, icells
-
-def awesome_new_perlin_noise(grid_dimensions, simulation_area, frequency, min_value, max_value, offset):
-
-    # Scale the simulation area down into a unit cube
-    simulation_area_max = max(simulation_area)
-    scale_x = 100.0  / simulation_area_max; 
-    scale_y = 1280.0 / simulation_area_max; 
-    scale_z = 80.0   / simulation_area_max; 
-
-    # Alternatively set scale factor to 1 for all dimensions.
-    # This squishes the noise in two dimensions. Was the old behaviour
-    #scale_x = 1
-    #scale_y = 1
-    #scale_z = 1
-
-    values = np.zeros((grid_dimensions[0], grid_dimensions[1], grid_dimensions[2]))
-
-    for i in range(0, grid_dimensions[0]):
-        for j in range(0, grid_dimensions[1]):
-            for k in range(0, grid_dimensions[2]):
-
-                x = i / grid_dimensions[0] * scale_x + offset[0]
-                y = j / grid_dimensions[1] * scale_y + offset[1]
-
-                x = x * frequency[0]
-                y = y * frequency[1]
-
-                if settings["general"]["dimensions"]==2:
-                    noise_value  = (noise.pnoise2(x,y) + 1.0) / 2.0
-                    values[i,j] = min_value + noise_value * (max_value - min_value)
-                else:
-                    z = k / grid_dimensions[2] * scale_y + offset[2]
-                    z = z * frequency[2]
-                    
-                    # pnoise3 returns values in the range of [-1,1]. We want [0, 1].
-                    noise_value  = (noise.pnoise3(x,y,z) + 1.0) / 2.0
-                    # scale from [0,1] to our perm range
-                    values[i,j,k] = min_value + noise_value * (max_value - min_value)
-
-    return values
-
 def save_perm(filename, ncells, cells, dimensionality:str="3D"):
     if dimensionality == "2D":
         n = ncells[0] * ncells[1]
@@ -167,8 +120,8 @@ def save_perm(filename, ncells, cells, dimensionality:str="3D"):
 
     h5file.close()
 
-# 2d plot of a permeability field
 def plot_perm(cells, filename, case="trigonometric", **imshowargs):
+    # 2d plot of a permeability field
     dimensionality = "2D"
     if dimensionality == "3D":
         fig, axes = plt.subplots(2, 2, figsize=(10, 6))
@@ -197,7 +150,6 @@ def plot_perm(cells, filename, case="trigonometric", **imshowargs):
     
 def create_perm_fields(number_samples:int, folder:str, settings:Dict, plot_bool:bool=False, perms_min_max:np.ndarray=None, filename_extension:str=""):
     # TODO vary frequency
-    
     if not os.path.exists(folder):
         os.mkdir(folder)
     if not os.path.exists(f"{folder}/permeability_fields"):
@@ -237,39 +189,6 @@ def create_perm_fields(number_samples:int, folder:str, settings:Dict, plot_bool:
     logging.info(f"Created {len(bases)} perm-field(s)")
     return cells # for pytest
 
-def create_perm_field_Manuel(number_samples:int, folder:str, settings:Dict, plot_bool:bool=False, filename_extension:str=""):
-    # TODO vary frequency
-    
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-    if not os.path.exists(f"{folder}/permeability_fields"):
-        os.mkdir(f"{folder}/permeability_fields")
-    if not os.path.exists(f"{folder}/inputs"):
-        os.mkdir(f"{folder}/inputs")
-
-    if not settings["general"]["random_bool"]:
-        np.random.seed(settings["general"]["seed_id"])
-
-    # We sample the permeability from 3 dimensional perlin noise that extends indefinetly.
-    # To introduce randomness the starting point of our sampling is drawn from a uniform
-    # distribution. From there we are moving a multiple of our simulation area for every
-    # sample to get non-overlapping fields. The simulation area is scaled to a unit cube so
-    # conveniently we can move by 1 in x directon (in this direction the scaled area 
-    # will be << 1)
-
-    base_offset = np.random.rand(3) * 4242
-    bases = range(number_samples)
-
-    for base in tqdm(bases):
-        cells, _ = make_perm_grid_Manuel(settings, offset=base_offset + [base,0,0])
-        filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
-        save_perm(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"])
-        if plot_bool:
-            plot_perm(cells, folder, case=settings["permeability"]["case"])
-    
-    logging.info("Created perm-field(s)")
-    return cells # for pytest
-    
 def read_and_plot_perm_field(settings:Dict, filename:str):
     # read h5 perm file
     h5file = _edit_perm_file(filename,mode='r')
@@ -316,13 +235,3 @@ if __name__=="__main__":
         plot_bool = False # if plot_bool then runs crash because try to load a png file as perm.h5 file
         # create_perm_field_Manuel(number_samples, folder, settings, plot_bool)
         create_perm_fields(number_samples, output_folder, settings, plot_bool, perms_min_max)
-
-    else:    
-        # just testing perm field creation
-        output_folder = "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/"
-        output_folder += "try_perm"
-        folder_settings = output_folder + "/inputs"
-        settings = load_settings(folder_settings)
-        for file in os.listdir(f"{output_folder}/permeability_fields"):
-            if file.endswith(".h5"):
-                read_and_plot_perm_field(settings, filename=f"{output_folder}/permeability_fields/{file}")
