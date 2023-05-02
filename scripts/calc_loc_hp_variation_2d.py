@@ -16,7 +16,10 @@ def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder: str, numbe
     grid_size = settings["grid"]["size"]
     cell_size = settings["grid"]["size"]/np.array(settings["grid"]["ncells"])
 
-    distance_to_border_in_cells = 5
+    try:
+        distance_to_border_in_cells = settings["grid"]["distance_to_border_in_cells"]
+    except:
+        distance_to_border_in_cells = 5
     distance_to_border = distance_to_border_in_cells*cell_size
     for i in range(number_of_hps):
         # choose random position inside domain

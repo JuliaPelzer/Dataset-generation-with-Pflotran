@@ -7,6 +7,10 @@ grid:
   - 200
   - 120
   - 1
+  distance_to_border_in_cells:
+  - 16
+  - 64
+  - 0
   ncells:
   - 160
   - 256
