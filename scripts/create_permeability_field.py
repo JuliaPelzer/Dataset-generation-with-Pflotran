@@ -12,62 +12,87 @@ import logging
 from scripts.make_general_settings import load_settings
 from scripts.visualisation import _aligned_colorbar
 
-def make_perm_grid(settings:Dict, base:float = 0, perm_min_max:np.array = None):
-    length_cells = settings["grid"]["size"] / np.array(settings["grid"]["ncells"])
-    icells = [np.linspace(1, settings["grid"]["ncells"][i], settings["grid"]["ncells"][i]) for i in (0,1,2)]
-    idx, idy, idz = np.meshgrid(icells[0], icells[1], icells[2], indexing="ij")
-    if perm_min_max is None:
-        perm_min = settings["permeability"]["perm_min"]
-        perm_max = settings["permeability"]["perm_max"]
-    else:
-        perm_min = np.min(perm_min_max)
-        perm_max = np.max(perm_min_max)
+def make_perm_grid(settings:Dict, perm_min:float, perm_max:float, base:float = 0, offset: float = None, freq:float = None):
+    grid_dimensions = settings["grid"]["ncells"]    #[-]
+    domain_size = settings["grid"]["size"]          #[m]
 
     if settings["permeability"]["case"]=="trigonometric":
         # function exemplary
-        def fct_sin(value):
-            return (perm_max - perm_min)/2 * np.sin(value/settings["permeability"]["factor"]) + (perm_max + perm_min)/2
         def fct_cos(value):
             return (perm_max - perm_min)/2 * np.cos(value/settings["permeability"]["factor"]) + (perm_max + perm_min)/2
+        icells = [np.linspace(1, grid_dimensions[i], grid_dimensions[i]) for i in (0,1,2)]
+        idx, idy, idz = np.meshgrid(icells[0], icells[1], icells[2], indexing="ij")
+        length_cells = domain_size / grid_dimensions
         values = (fct_cos(idx*length_cells[1])+fct_cos(idy*length_cells[0])+fct_cos(idz*length_cells[2]))/3  # ORDER X,Y,Z
-    # TODO Überarbeiten mit neuer Settingsstruktur und testen
-    # elif settings["permeability"]["case"]=="rand_interpolate":
-    #     # Interpolation with RegularGridInterpolator from scipy (can do 3D, works on a regular grid)
-    #     nbases = 5
-    #     length_cells_base = settings.size / nbases
-    #     icells_base = [np.linspace(1, settings.ncells[i], nbases) for i in (0,1,2)]
-    #     idx_base, idy_base, idz_base = np.meshgrid(icells_base[0], icells_base[1], icells_base[2], indexing="ij") # ORDER X,Y,Z
+    elif settings["permeability"]["case"]=="rand_interpolate":
+        print("rand_interpolate currently not implemented")
+        """ TODO Überarbeiten mit neuer Settingsstruktur und testen
+        #     # Interpolation with RegularGridInterpolator from scipy (can do 3D, works on a regular grid)
+        #     nbases = 5
+        #     length_cells_base = settings.size / nbases
+        #     icells_base = [np.linspace(1, settings.ncells[i], nbases) for i in (0,1,2)]
+        #     idx_base, idy_base, idz_base = np.meshgrid(icells_base[0], icells_base[1], icells_base[2], indexing="ij") # ORDER X,Y,Z
 
-    #     def fct_rand(shape=[nbases,nbases,nbases]):
-    #         return np.random.uniform(settings.perm_min, settings.perm_max, size=shape)
-    #     values_base = fct_rand()
+        #     def fct_rand(shape=[nbases,nbases,nbases]):
+        #         return np.random.uniform(settings.perm_min, settings.perm_max, size=shape)
+        #     values_base = fct_rand()
 
-    #     test_points = np.array([idx.ravel(), idy.ravel(), idz.ravel()]).T
-    #     interpolator = RegularGridInterpolator(icells_base, values_base)
-    #     method = "linear" # in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
-    #     values = interpolator(test_points, method=method).reshape(settings.ncells[0], settings.ncells[1], settings.ncells[2]).T
+        #     test_points = np.array([idx.ravel(), idy.ravel(), idz.ravel()]).T
+        #     interpolator = RegularGridInterpolator(icells_base, values_base)
+        #     method = "linear" # in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
+        #     values = interpolator(test_points, method=method).reshape(settings.ncells[0], settings.ncells[1], settings.ncells[2]).T
+        """
     elif settings["permeability"]["case"]=="perlin_noise":
         if settings["general"]["dimensions"]==2:
             def perlin_noise(x,y):
                 return noise.pnoise2(x, y, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, base=base)
-            values = np.zeros((settings["grid"]["ncells"][0], settings["grid"]["ncells"][1]))
-            for i in range(0, settings["grid"]["ncells"][0]):
-                for j in range(0, settings["grid"]["ncells"][1]):
-                    freq = settings["permeability"]["frequency"] / np.array(settings["grid"]["ncells"])[0:2]
+            values = np.zeros((grid_dimensions[0], grid_dimensions[1]))
+            for i in range(0, grid_dimensions[0]):
+                for j in range(0, grid_dimensions[1]):
+                    freq = np.array(freq)/ domain_size[0:2]
                     x,y = [i, j] * freq
                     values[i,j] = (perlin_noise(x,y)+1)/2 * (perm_max - perm_min) + perm_min
         else: #3D case
             def perlin_noise(x,y,z):
                 return noise.pnoise3(x, y, z, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, repeatz=1024, base=base)
-            values = np.zeros((settings["grid"]["ncells"][0], settings["grid"]["ncells"][1], settings["grid"]["ncells"][2]))
-            for i in range(0, settings["grid"]["ncells"][0]):
-                for j in range(0, settings["grid"]["ncells"][1]):
-                    for k in range(0, settings["grid"]["ncells"][2]):
-                        freq = settings["permeability"]["frequency"] / np.array(settings["grid"]["ncells"])
+            values = np.zeros((grid_dimensions[0], grid_dimensions[1], grid_dimensions[2]))
+            for i in range(0, grid_dimensions[0]):
+                for j in range(0, grid_dimensions[1]):
+                    for k in range(0, grid_dimensions[2]):
+                        freq = np.array(freq)/ domain_size
                         x,y,z = [i, j, k] * freq
                         values[i,j,k] = (perlin_noise(x,y,z)+1)/2 * (perm_max - perm_min) + perm_min
+    elif settings["permeability"]["case"]=="perlin_v2":
+        # adapted by Manuel Hirche
+
+        # Scale the simulation area down into a unit cube
+        simulation_area_max = max(domain_size)
+        assert int(domain_size[0]) == 100 and int(domain_size[1]) == 1280, "Domain size must be 100x1280(x5)"
+        scale_x = domain_size[0] / simulation_area_max; 
+        scale_y = domain_size[1] / simulation_area_max; 
+        scale_z = domain_size[2] / simulation_area_max; 
+
+        values = np.zeros((grid_dimensions[0], grid_dimensions[1], grid_dimensions[2]))
+        for i in range(0, grid_dimensions[0]):
+            for j in range(0, grid_dimensions[1]):
+                for k in range(0, grid_dimensions[2]):
+                    x = i / grid_dimensions[0] * scale_x + offset[0]
+                    y = j / grid_dimensions[1] * scale_y + offset[1]
+
+                    x = x * freq[0]
+                    y = y * freq[1]
+                    
+                    if settings["general"]["dimensions"]==2:
+                        noise_value  = (noise.pnoise2(x,y) + 1.0) / 2.0
+                        values[i,j] = perm_min + noise_value * (perm_max - perm_min)
+                    else:
+                        z = k / grid_dimensions[2] * scale_z + offset[2]
+                        z = z * freq[2]
+                        # pnoise3 returns values in the range of [-1,1] -> move to [0, 1]
+                        noise_value  = (noise.pnoise3(x,y,z) + 1.0) / 2.0
+                        values[i,j,k] = perm_min + noise_value * (perm_max - perm_min) # scale to perm range
     
-    return values, icells
+    return values
 
 def make_perm_grid_Manuel(settings:Dict, offset, base:float = 0):
     icells = [np.linspace(1, settings["grid"]["ncells"][i], settings["grid"]["ncells"][i]) for i in (0,1,2)]
@@ -92,7 +117,7 @@ def awesome_new_perlin_noise(grid_dimensions, simulation_area, frequency, min_va
     scale_z = 80.0   / simulation_area_max; 
 
     # Alternatively set scale factor to 1 for all dimensions.
-    # This squishes the noise in tow dimensions. Was the old behaviour
+    # This squishes the noise in two dimensions. Was the old behaviour
     #scale_x = 1
     #scale_y = 1
     #scale_z = 1
@@ -161,7 +186,7 @@ def plot_perm(cells, filename, case="trigonometric", **imshowargs):
     else:
         fig, axis = plt.subplots(1, 1, figsize=(10, 6))
         fig.suptitle(f"Permeability field [{case}]")
-        plt.imshow(cells, **imshowargs)
+        plt.imshow(cells[:,:, 0], **imshowargs)
         plt.ylabel("x ")
         plt.xlabel("y")
         # fig.tight_layout()
@@ -172,7 +197,6 @@ def plot_perm(cells, filename, case="trigonometric", **imshowargs):
     
 def create_perm_fields(number_samples:int, folder:str, settings:Dict, plot_bool:bool=False, perms_min_max:np.ndarray=None, filename_extension:str=""):
     # TODO vary frequency
-    # TODO vary offset?
     
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -182,19 +206,31 @@ def create_perm_fields(number_samples:int, folder:str, settings:Dict, plot_bool:
     if not settings["general"]["random_bool"]:
         np.random.seed(settings["general"]["seed_id"])
 
-    # vary bases to get different fields
-    try:
-        bases = sample(range(0, 255), number_samples)
-    except ValueError:
-        print('Number of desired perm-field variations exceeds 255.')
-    
-    bases = tqdm(bases)
-    for idx, base in enumerate(bases):
-        cells, _ = make_perm_grid(settings, base, perms_min_max[idx])
-        size = np.array(settings["grid"]["ncells"])
-        filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
+    if settings["permeability"]["case"] == "perlin_noise":
+        # vary bases to get different fields
+        try:
+            bases = sample(range(0, 255), number_samples)
+        except ValueError:
+            print('Number of desired perm-field variations exceeds 255.')
+    elif settings["permeability"]["case"] == "perlin_v2":
+        bases = range(number_samples)
+    base_offset = np.random.rand(3) * 4242
 
-        save_perm(filename, size, cells, settings["general"]["dimensions"])
+    freq_factor = settings["permeability"]["frequency"] # TODO vary like base
+    
+    for idx, base in enumerate(tqdm(bases)):
+
+        if perms_min_max is None:
+            perm_min = settings["permeability"]["perm_min"]
+            perm_max = settings["permeability"]["perm_max"]
+        else:
+            perm_min = np.min(perms_min_max[idx])
+            perm_max = np.max(perms_min_max[idx])
+            
+        cells = make_perm_grid(settings, perm_min, perm_max, base=base, offset=base_offset+[base,0,0], freq=freq_factor)
+
+        filename = f"{folder}/permeability_fields/permeability_base_{base}{filename_extension}.h5"
+        save_perm(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"])
         if plot_bool:
             plot_perm(cells, filename[:-3], case=settings["permeability"]["case"]) #, vmax=settings["permeability"]["perm_max"], vmin=settings["permeability"]["perm_min"])
 
@@ -255,16 +291,6 @@ def read_and_plot_perm_field(settings:Dict, filename:str):
 
 def _edit_perm_file(filename:str, mode:str="r"):
     return File(filename, mode=mode)
-
-def _random_exclude():
-    """Returns a random number that is not in the excluded range."""
-    exclude_min = 140000
-    exclude_max = 260000
-
-    while True:
-        base = np.random.randint(1, 2**19)
-        if base < exclude_min or base > exclude_max:
-            return base
 
 if __name__=="__main__":
 
