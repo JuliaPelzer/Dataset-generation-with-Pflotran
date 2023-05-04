@@ -9,7 +9,7 @@ import noise
 from typing import Dict
 from tqdm import tqdm
 import logging
-from scripts.make_general_settings import load_settings
+from scripts.make_general_settings import load_yaml
 from scripts.visualisation import _aligned_colorbar
 
 def make_perm_grid(settings:Dict, perm_min:float, perm_max:float, base:float = 0, offset: float = None, freq:float = None):
@@ -74,7 +74,6 @@ def make_perm_grid(settings:Dict, perm_min:float, perm_max:float, base:float = 0
     
         # Scale the simulation area down into a unit cube
         simulation_area_max = max(domain_size)
-        assert int(domain_size[0]) == 100 and int(domain_size[1]) == 1280, "Domain size must be 100x1280(x5)"
         scale_x = domain_size[0] / simulation_area_max; 
         scale_y = domain_size[1] / simulation_area_max; 
         scale_z = domain_size[2] / simulation_area_max; 
@@ -224,7 +223,7 @@ if __name__=="__main__":
         if len(cla_args) > 3:
             output_folder = cla_args[3]
 
-        settings = load_settings(folder_settings)
+        settings = load_yaml(folder_settings)
         # get min and max perm value
         try:
             perms_min_max = np.loadtxt(f"{output_folder}/permeability_values.txt")

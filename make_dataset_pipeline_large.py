@@ -8,16 +8,23 @@ from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.calc_loc_hp_variation_2d import calc_loc_hp_variation_2d
 from scripts.make_benchmark_testcases import calc_pressure_and_perm_fields
 from scripts.create_permeability_field import create_perm_fields
-from scripts.make_general_settings import load_settings
+from scripts.make_general_settings import load_yaml
 from scripts.write_benchmark_parameters_input_files import write_parameter_input_files
 from scripts.visualisation import plot_sim
 
 def run_simulation(args):
+    if args.benchmark:
+        args.num_datapoints = 1
+        args.visualisation = True
+        args.hp_variation = True
+        args.number_hps = 2
+        args.perm_variation = True
+        logging.info(f"Running benchmark testcases with settings: {args}")
 
     logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
     assert args.number_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
     if args.number_hps > 1:
-        assert args.hp_variation, f"If number of heatpumps is larger than 0, hp_variation must be True"
+        assert args.hp_variation, f"If number of heatpumps is larger than 1, hp_variation must be True"
 
     confined_aquifer = False
 
@@ -35,6 +42,8 @@ def run_simulation(args):
 
     # copy settings file
     shutil.copy("dummy_dataset_pipeline_large/settings_2D_large.yaml", f"{output_dataset_dir}/inputs/settings.yaml")
+    if args.benchmark:
+        shutil.copy("dummy_dataset_pipeline_large/benchmark_locs_hps.yaml", f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
 
     # copy pflotran.in file, which one - depends
     perm_case = "vary" if args.perm_variation else "iso"
@@ -44,16 +53,16 @@ def run_simulation(args):
     shutil.copy(pflotran_file, "pflotran.in")
 
     # getting settings
-    settings = load_settings(f"{output_dataset_dir}/inputs")
+    settings = load_yaml(f"{output_dataset_dir}/inputs")
     # make grid files
     settings = create_all_grid_files(settings, confined=confined_aquifer)
 
     # potentially calc 1 or 2 hp locations
     if args.hp_variation:
-        locs_hps = calc_loc_hp_variation_2d(args.num_datapoints, f"{output_dataset_dir}/inputs", args.number_hps, settings)
+        locs_hps = calc_loc_hp_variation_2d(args.num_datapoints, f"{output_dataset_dir}/inputs", args.number_hps, settings, benchmark_bool=args.benchmark)
     
     # make benchmark testcases
-    pressures, perms = calc_pressure_and_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", args.perm_variation)
+    pressures, perms = calc_pressure_and_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", args.perm_variation, benchmark_bool=args.benchmark)
     if args.perm_variation:
         create_perm_fields(args.num_datapoints, output_dataset_dir, settings, perms_min_max=perms)
     
@@ -98,7 +107,7 @@ def run_simulation(args):
 
 def just_visualize(args):
     output_dataset_dir = args.name
-    settings = load_settings(f"{output_dataset_dir}/inputs")
+    settings = load_yaml(f"{output_dataset_dir}/inputs")
     confined_aquifer = False
 
     for run_id in range(4): # in case of testcases_4
@@ -110,9 +119,10 @@ if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_datapoints", type=int, default=1) #int 100) #str benchmark_4_testcases
+    parser.add_argument("--benchmark", type=bool, default=False)
+    parser.add_argument("--num_datapoints", type=int, default=1) #int
     parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
-    parser.add_argument("--visualisation", type=bool, default=True)
+    parser.add_argument("--visualisation", type=bool, default=False)
     parser.add_argument("--hp_variation", type=bool, default=False)
     parser.add_argument("--number_hps", type=int, default=0)
     parser.add_argument("--perm_variation", type=bool, default=False)

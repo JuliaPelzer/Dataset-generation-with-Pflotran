@@ -87,7 +87,7 @@ def test_create_and_change_settings():
 	path="/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth/unittests/"
 
 	settings_changed = script_settings.main_change_grid_size(path, case="", name_file="settings_mini", grid_widths=[200,200,200], number_cells=[10,10,10], frequency=[2,2,2])
-	settings_default = script_settings.load_settings(path, file_name="settings_default_mini")
+	settings_default = script_settings.load_yaml(path, file_name="settings_default_mini")
 
 	assert settings_default == settings_changed, "settings_default and settings_changed are not equal"
 	subprocess.call("rm settings_mini.yaml", shell=True)

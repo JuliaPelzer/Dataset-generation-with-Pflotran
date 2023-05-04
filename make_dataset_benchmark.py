@@ -8,7 +8,7 @@ from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.calc_loc_hp_variation_2d import calc_loc_hp_variation_2d
 from scripts.make_benchmark_testcases import calc_pressure_and_perm_fields
 from scripts.create_permeability_field import create_perm_fields
-from scripts.make_general_settings import load_settings
+from scripts.make_general_settings import load_yaml
 from scripts.write_benchmark_parameters_input_files import write_parameter_input_files
 from scripts.visualisation import plot_sim
 
@@ -48,7 +48,7 @@ def run_simulation(args):
     shutil.copy(pflotran_file, "pflotran.in")
 
     # getting settings
-    settings = load_settings(f"{output_dataset_dir}/inputs")
+    settings = load_yaml(f"{output_dataset_dir}/inputs")
     # make grid files
     settings = create_all_grid_files(settings, confined=confined_aquifer)
 
@@ -101,7 +101,7 @@ def run_simulation(args):
 
 def just_visualize(args):
     output_dataset_dir = args.name
-    settings = load_settings(f"{output_dataset_dir}/inputs")
+    settings = load_yaml(f"{output_dataset_dir}/inputs")
     confined_aquifer = False
 
     for run_id in range(4): # in case of testcases_4

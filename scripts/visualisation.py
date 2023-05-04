@@ -7,9 +7,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import sys
 try:
-    from scripts.make_general_settings import load_settings
+    from scripts.make_general_settings import load_yaml
 except:
-    from make_general_settings import load_settings
+    from make_general_settings import load_yaml
 
 def plot_sim(path_run:str, settings, plot_name:str="plot_simulation_results", case:str="side_hp", reshape_bool:bool=True, confined:bool=False):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
@@ -138,7 +138,7 @@ def _aligned_colorbar(*args,**kwargs):
 
 def plot_perm(path_settings:str="try_perm", path_run="try_perm/RUN_0", case="top_hp"):
     # plots the permeability field with given view from given path
-    dimensions = load_settings(path_settings)["grid"]["ncells"]
+    dimensions = load_yaml(path_settings)["grid"]["ncells"]
 
     for file in os.listdir(path_run):
         if file.startswith("permeability"):

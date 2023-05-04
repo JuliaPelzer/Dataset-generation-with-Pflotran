@@ -3,7 +3,7 @@ import sys
 import os
 import logging
 from typing import Dict, List
-from scripts.make_general_settings import load_settings, change_grid_domain_size, save_settings
+from scripts.make_general_settings import load_yaml, change_grid_domain_size, save_yaml
 
 def write_mesh_file(path_to_output:str, settings:Dict, confined:bool=False):
 	xGrid, yGrid, zGrid = settings["grid"]["ncells"]
@@ -163,7 +163,7 @@ def create_all_grid_files(settings, path_to_output:str=".", grid_widths:List[flo
 	if settings["general"]["dimensions"] == 2:
 		_set_z_width_in_2d_case(settings)
 
-	save_settings(settings, path_to_output)
+	save_yaml(settings, path_to_output)
 	write_mesh_file(path_to_output, settings, confined=confined)
 	write_SN_files(path_to_output, settings)
 	write_WE_files(path_to_output, settings)
@@ -178,7 +178,7 @@ if __name__ == "__main__":
 	path_to_input = cla[1]
 	path_to_output = "."
 
-	settings = load_settings(path_to_input)
+	settings = load_yaml(path_to_input)
 	if len(cla) > 3:
 		path_to_output = cla[2]
 		assert len(cla) >= 9, "Please provide a path to the output folder and the grid widths and number of cells per direction"
@@ -188,4 +188,4 @@ if __name__ == "__main__":
 	else:
 		settings = create_all_grid_files(settings, path_to_output)
 
-	save_settings(settings, path_to_output)
+	save_yaml(settings, path_to_output)
