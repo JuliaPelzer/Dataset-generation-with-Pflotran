@@ -231,6 +231,5 @@ if __name__=="__main__":
             print("No permeability_values.txt file found. Using default ones from settings.")
 
 
-        plot_bool = False # if plot_bool then runs crash because try to load a png file as perm.h5 file
-        # create_perm_field_Manuel(number_samples, folder, settings, plot_bool)
+        plot_bool = True # if plot_bool then runs crash because try to load a png file as perm.h5 file
         create_perm_fields(number_samples, output_folder, settings, plot_bool, perms_min_max)
