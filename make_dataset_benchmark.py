@@ -15,9 +15,9 @@ from scripts.visualisation import plot_sim
 def run_simulation(args):
 
     logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
-    assert args.number_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
-    if args.number_hps > 1:
-        assert args.hp_variation, f"If number of heatpumps is larger than 0, hp_variation must be True"
+    assert args.num_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
+    if args.num_hps > 1:
+        assert args.vary_hp, f"If number of heatpumps is larger than 0, hp_variation must be True"
 
     confined_aquifer = False
 
@@ -34,16 +34,16 @@ def run_simulation(args):
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
     # copy settings file
-    if args.dimensions == "2D":
+    if args.dims == "2D":
         shutil.copy("dummy_dataset_benchmark/settings_2D.yaml", f"{output_dataset_dir}/inputs/settings.yaml")
 
     else:
         shutil.copy("dummy_dataset_benchmark/settings_3D_fine.yaml", f"{output_dataset_dir}/inputs/settings.yaml")
 
     # copy pflotran.in file, which one - depends
-    perm_case = "vary" if args.perm_variation else "iso"
+    perm_case = "vary" if args.vary_perm else "iso"
     confined_extension = "_confined" if confined_aquifer else ""
-    hps_extension = f"_{args.number_hps}hps"
+    hps_extension = f"_{args.num_hps}hps"
     pflotran_file = f"dummy_dataset_benchmark/pflotran_{perm_case}_perm{hps_extension}{confined_extension}.in"
     shutil.copy(pflotran_file, "pflotran.in")
 
@@ -53,13 +53,13 @@ def run_simulation(args):
     settings = create_all_grid_files(settings, confined=confined_aquifer)
 
     # potentially calc 1 or 2 hp locations
-    if args.hp_variation:
-        locs_hps = calc_loc_hp_variation_2d(args.num_datapoints, f"{output_dataset_dir}/inputs", args.number_hps, settings)
+    if args.vary_hp:
+        locs_hps = calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings)
     
     # make benchmark testcases
-    pressures, perms = calc_pressure_and_perm_fields(args.num_datapoints, f"{output_dataset_dir}/inputs", args.perm_variation)
-    if args.perm_variation:
-        create_perm_fields(args.num_datapoints, output_dataset_dir, settings, perms_min_max=perms)
+    pressures, perms = calc_pressure_and_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm)
+    if args.vary_perm:
+        create_perm_fields(args.num_dp, output_dataset_dir, settings, perms_min_max=perms)
     
     # make run folders
     for run_id in range(len(pressures)): #should only differ in case of benchmark_4_testcases from CLA_DATAPOINTS
@@ -67,12 +67,12 @@ def run_simulation(args):
         if not os.path.isdir(output_dataset_run_dir):
             os.mkdir(output_dataset_run_dir)
 
-        if not args.hp_variation:
-            write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation)
-        elif args.number_hps > 0:
-            write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.perm_variation, settings, locs_hps[run_id])
+        if not args.vary_hp:
+            write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.vary_perm)
+        elif args.num_hps > 0:
+            write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.vary_perm, settings, locs_hps[run_id])
         else:
-            raise ValueError("If hp_variation is True, number_hps must be larger than 0")
+            raise ValueError("If hp variation is True, number of hps must be larger than 0")
 
         logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {datetime.datetime.now()}")
         remote = True
@@ -84,7 +84,7 @@ def run_simulation(args):
         logging.info(f"Finished PFLOTRAN simulation at {datetime.datetime.now()}")
 
         # call visualisation
-        if args.visualisation:
+        if args.visu:
             plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
             logging.info(f"...visualisation of RUN {run_id} is done")
 
@@ -96,7 +96,7 @@ def run_simulation(args):
             os.remove(file)
         except:
             continue
-    if args.perm_variation:
+    if args.vary_perm:
         shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
 
 def just_visualize(args):
@@ -106,20 +106,20 @@ def just_visualize(args):
 
     for run_id in range(4): # in case of testcases_4
         output_dataset_run_dir = f"{output_dataset_dir}/RUN_{run_id}"
-        plot_sim(output_dataset_run_dir, settings, case=args.dimensions, confined=confined_aquifer)
+        plot_sim(output_dataset_run_dir, settings, case=args.dims, confined=confined_aquifer)
         logging.info(f"...visualisation of RUN {run_id} is done")
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_datapoints", type=int, default=1) #int 100) #str benchmark_4_testcases
-    parser.add_argument("--dimensions", type=str, default="2D")
+    parser.add_argument("--dims", type=str, default="2D")
+    parser.add_argument("--num_dp", type=int, default=1) #int = 100 # number of datapoints
     parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
-    parser.add_argument("--visualisation", type=bool, default=True)
-    parser.add_argument("--hp_variation", type=bool, default=False)
-    parser.add_argument("--number_hps", type=int, default=0)
-    parser.add_argument("--perm_variation", type=bool, default=False)
+    parser.add_argument("--visu", type=bool, default=False) # visualisation
+    parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
+    parser.add_argument("--num_hps", type=int, default=1)   # number of hp locations
+    parser.add_argument("--vary_perm", type=bool, default=False)    # vary permeability
 
     args = parser.parse_args()
 

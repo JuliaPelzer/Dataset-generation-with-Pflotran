@@ -8,19 +8,19 @@ grid:
   - 120
   - 1
   distance_to_border_in_cells:
-  - 16
-  - 64
+  - 20
+  - 128
   - 0
   ncells:
-  - 160
-  - 256
+  - 160 #320
+  - 256 #512
   - 1
   size:
-  - 800
-  - 1280
+  - 1600
+  - 2560
   - 0
 permeability:
-  case: perlin_noise
+  case: perlin_v2
   factor: 40
   frequency:
   - 2

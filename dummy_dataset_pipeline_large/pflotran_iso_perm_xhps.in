@@ -114,14 +114,8 @@
   REGION east
   FILE east.ex
   END
-
-  REGION heatpump_inject0
-  FILE heatpump_inject0.vs
-  END
-
-  REGION heatpump_inject1
-  FILE heatpump_inject1.vs
-  END
+  
+  EXTERNAL_FILE regions_hps.txt
 
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
@@ -136,16 +130,6 @@
     PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
-  
-  FLOW_CONDITION default
-    TYPE
-      FLUX NEUMANN
-      TEMPERATURE DIRICHLET
-    /
-    FLUX 0.d0 m/s
-    TEMPERATURE 10.6d0 C
-  /
-
   FLOW_CONDITION injection
     TYPE
       RATE SCALED_VOLUMETRIC_RATE VOLUME #PERM
@@ -173,39 +157,21 @@
     FLOW_CONDITION initial
     REGION north
   /
- 
+
   BOUNDARY_CONDITION
     FLOW_CONDITION initial
     REGION south
   /
- 
-  SOURCE_SINK heatpump_inject0
-    FLOW_CONDITION injection
-    REGION heatpump_inject0
-  /
 
-  SOURCE_SINK heatpump_inject1
-    FLOW_CONDITION injection
-    REGION heatpump_inject1
-  /
- 
-
+  EXTERNAL_FILE conditions_hps.txt
   #=========================== stratigraphy couplers ============================
   STRATA
     REGION all
     MATERIAL gravel
   END
-
-  # same but different material for hps to get a map with the hp locations alias Material_ID
-  STRATA
-    REGION heatpump_inject0
-    MATERIAL gravel_inj
-  END
   
-  STRATA
-    REGION heatpump_inject1
-    MATERIAL gravel_inj
-  END
+  # same but different material for hps to get a map with the hp locations alias Material_ID
+  EXTERNAL_FILE strata_hps.txt
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE

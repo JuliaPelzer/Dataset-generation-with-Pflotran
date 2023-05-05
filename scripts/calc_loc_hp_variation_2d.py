@@ -9,7 +9,17 @@ except:
 
 def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder: str, number_of_hps: int, settings, benchmark_bool:bool = False):
 
-    assert number_of_hps in [1, 2], "number_of_hps must be 1 or 2"
+    assert number_of_hps > 0, "no clue what happens if number of hps is 0"
+    with open("regions_hps.txt", "w") as f:
+        for hp in range(number_of_hps):
+            f.write(f"REGION heatpump_inject{hp}\n  FILE heatpump_inject{hp}.vs\nEND\n\n")
+    with open("strata_hps.txt", "w") as f:
+        for hp in range(number_of_hps):
+            f.write(f"STRATA\n  REGION heatpump_inject{hp}\n  MATERIAL gravel_inj\nEND\n\n")
+    with open("conditions_hps.txt", "w") as f:
+        for hp in range(number_of_hps):
+            f.write(f"SOURCE_SINK heatpump_inject{hp}\n  FLOW_CONDITION injection\n  REGION heatpump_inject{hp}\nEND\n\n")
+
     locs_hps = np.ndarray((number_of_hps, param_dataset_size, 2))
     # get boundaries of domain
     grid_size = settings["grid"]["size"]
