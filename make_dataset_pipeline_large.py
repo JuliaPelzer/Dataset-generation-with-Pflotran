@@ -20,7 +20,7 @@ def run_simulation(args):
         args.visu = True
         args.vary_hp = True
         args.num_hps = 2
-        args.vary_perm = True
+        args.vary_perm = False #True
         logging.info(f"Running benchmark testcases with settings: {args}")
 
     if args.num_hps > 1:
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--benchmark", type=bool, default=False)
     parser.add_argument("--num_dp", type=int, default=1) #int = 100 # number of datapoints
-    parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
+    parser.add_argument("--name", type=str, default="default") #benchmark_large_vary_perm_2hps")
     parser.add_argument("--visu", type=bool, default=False) # visualisation
     parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
     parser.add_argument("--num_hps", type=int, default=0)   # number of hp locations
