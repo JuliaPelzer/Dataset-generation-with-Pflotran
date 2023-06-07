@@ -20,9 +20,9 @@ def calc_perm_from_pressure_and_K(num_samples:int):
     permeability_array = hydraulic_conductivity * dynamic_viscosity_water / (rho_water * g)
     return permeability_array
 
-def calc_pressure_and_perm_fields(number_datapoints:Union[int, str], dataset_folder:str, vary_perm_field:bool, benchmark_bool:bool = False):
+def calc_pressure_and_perm_fields(number_datapoints:int, dataset_folder:str, vary_perm_field:bool, benchmark_bool:bool = False):
     
-    if number_datapoints == "benchmark_4_testcases": # benchmark case 1hp, iso perm
+    if number_datapoints == 0: # benchmark case 1hp, iso perm --> 4 datapoints
         pressure_array, permeability_iso_array = benchmark_pressure_perm()
     elif benchmark_bool: # benchmark case 2hps, varying perm
         pressure_array = np.array([-0.0015])

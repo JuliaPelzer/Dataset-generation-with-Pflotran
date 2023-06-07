@@ -18,6 +18,7 @@ def run_simulation(args):
     assert args.num_hps in [0,1,2], f"Number of heatpumps must be 0, 1 or 2 but it is {args.number_hps}"
     if args.num_hps > 1:
         assert args.vary_hp, f"If number of heatpumps is larger than 0, hp_variation must be True"
+    assert (args.num_dp == 0 and args.vary_perm == False and args.vary_hp == False), "If num_dp=0 -> testcases => vary_perm and vary_hp must be False"
 
     confined_aquifer = False
 
@@ -114,7 +115,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dims", type=str, default="2D")
-    parser.add_argument("--num_dp", type=int, default=1) #int = 100 # number of datapoints
+    parser.add_argument("--num_dp", type=int, default=1) #int = 100 # number of datapoints; if 0: testcases (4)
     parser.add_argument("--name", type=str, default="default") #benchmark_dataset_2d_100dp_vary_perm")
     parser.add_argument("--visu", type=bool, default=False) # visualisation
     parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
