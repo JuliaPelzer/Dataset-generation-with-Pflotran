@@ -20,6 +20,7 @@ def run_simulation(args):
         args.num_dp = 1
         args.visu = True
         args.vary_hp = True
+        args.vary_hp_amount = 0
         args.num_hps = 2
         args.vary_perm = False #True
         logging.info(f"Running benchmark testcases with settings: {args}")
@@ -47,7 +48,7 @@ def run_simulation(args):
 
     # copy settings file
     shutil.copy("dummy_dataset_pipeline_large/settings_2D_large.yaml", f"{output_dataset_dir}/inputs/settings.yaml")
-    if args.benchmark:
+    if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
         shutil.copy("dummy_dataset_pipeline_large/benchmark_locs_hps.yaml", f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
 
     # copy pflotran.in file, which one - depends
@@ -64,7 +65,7 @@ def run_simulation(args):
 
     # potentially calc 1 or 2 hp locations
     if args.vary_hp:
-        locs_hps = calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings, benchmark_bool=args.benchmark)
+        locs_hps = calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary = args.vary_hp_amount)
     
     # make benchmark testcases
     pressures, perms = calc_pressure_and_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm, benchmark_bool=args.benchmark)
@@ -111,6 +112,12 @@ def run_simulation(args):
             continue
     if args.vary_perm:
         shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
+    if not args.benchmark:
+        try:
+            os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
+        except:
+            pass
+
 
 def just_visualize(args):
     output_dataset_dir = args.name
@@ -130,8 +137,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_dp", type=int, default=1) #int = 100 # number of datapoints
     parser.add_argument("--name", type=str, default="default") #benchmark_large_vary_perm_2hps")
     parser.add_argument("--visu", type=bool, default=False) # visualisation
-    parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
     parser.add_argument("--num_hps", type=int, default=0)   # number of hp locations
+    parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
+    parser.add_argument("--vary_hp_amount", type=int, default=0) # how many hp locations should be varied
     parser.add_argument("--vary_perm", type=bool, default=False)    # vary permeability
 
     args = parser.parse_args()
