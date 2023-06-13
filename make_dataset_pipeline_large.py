@@ -3,6 +3,7 @@ import logging
 import datetime
 import os
 import shutil
+import yaml
 
 from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.calc_loc_hp_variation_2d import calc_loc_hp_variation_2d
@@ -39,6 +40,10 @@ def run_simulation(args):
     if not os.path.isdir(os.path.join(output_dataset_dir, "inputs")):
         os.mkdir(os.path.join(output_dataset_dir, "inputs"))
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
+
+    # save args as yaml file
+    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as outfile:
+        yaml.dump(vars(args), outfile, default_flow_style=False)
 
     # copy settings file
     shutil.copy("dummy_dataset_pipeline_large/settings_2D_large.yaml", f"{output_dataset_dir}/inputs/settings.yaml")
