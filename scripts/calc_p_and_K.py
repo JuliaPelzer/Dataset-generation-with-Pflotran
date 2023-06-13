@@ -25,8 +25,11 @@ def calc_pressure_and_perm_fields(number_datapoints:int, dataset_folder:str, var
     if number_datapoints == 0: # benchmark case 1hp, iso perm --> 4 datapoints
         pressure_array, permeability_iso_array = benchmark_pressure_perm()
     elif benchmark_bool: # benchmark case 2hps, varying perm
-        pressure_array = np.array([-0.0015])
-        permeability_iso_array = np.array([[9.0193679918450561e-11, 2.038735983690112e-10]])
+        pressure_array = np.array([-0.0016])
+        if vary_perm_field:
+            permeability_iso_array = np.array([[9.0193679918450561e-11, 2.038735983690112e-10]])
+        else:
+            permeability_iso_array = np.array([9e-11])
     else: # normal dataset
         pressure_array = np.random.uniform(-0.0035, -0.0015, number_datapoints)
         permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
