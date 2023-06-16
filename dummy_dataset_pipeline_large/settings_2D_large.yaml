@@ -7,9 +7,10 @@ grid:
   - 200
   - 120
   - 1
-  distance_to_border_in_cells:
-  - 20
-  - 128
+  distance_to_border:
+  - - 575 # [m] x both
+  - - 100 # [m] y lower
+    - 1165 # [m] y upper
   - 0
   ncells:
   - 250

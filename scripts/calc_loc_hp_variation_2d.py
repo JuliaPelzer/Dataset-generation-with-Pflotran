@@ -40,15 +40,25 @@ def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder: str, numbe
 
     if not benchmark_bool:
         try:
-            distance_to_border_in_cells = settings["grid"]["distance_to_border_in_cells"]
+            distance_to_border = settings["grid"]["distance_to_border"]
         except:
-            distance_to_border_in_cells = 5
-        distance_to_border = distance_to_border_in_cells*cell_size
+            distance_to_border = 5
+        print(f"distance to border: {distance_to_border} m, {len(distance_to_border[1])} values")
 
         for i in range(number_of_hps - num_hps_to_vary, number_of_hps):
             # choose random position inside domain
-            locs_x = np.random.randint(0+distance_to_border[0], grid_size[0]-distance_to_border[0], param_dataset_size)
-            locs_y = np.random.randint(0+distance_to_border[1], grid_size[1]-distance_to_border[1], param_dataset_size)
+            try:
+                locs_x = np.random.randint(0+distance_to_border[0][0], grid_size[0]-distance_to_border[0][1], param_dataset_size)
+            except:
+                locs_x = np.random.randint(0+distance_to_border[0][0], grid_size[0]-distance_to_border[0][0], param_dataset_size)
+
+            if len(distance_to_border[1]) == 1:
+                locs_y = np.random.randint(0+distance_to_border[1], grid_size[1]-distance_to_border[1], param_dataset_size)
+            elif len(distance_to_border[1]) == 2:
+                locs_y = np.random.randint(distance_to_border[1][0], grid_size[1]-distance_to_border[1][1], param_dataset_size)
+            else:
+                print("distance to border in y direction must be either one value or two values")
+                sys.exit()
 
             # save to file
             with open(os.path.join(dataset_folder, f"locs_hp_x_{i+1}.txt"), "w") as f:
