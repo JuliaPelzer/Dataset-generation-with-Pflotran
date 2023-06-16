@@ -118,6 +118,8 @@ def run_simulation(args):
         except:
             pass
 
+    logging.info(f"Finished dataset creation at {datetime.datetime.now()}")
+
 
 def just_visualize(args):
     output_dataset_dir = args.name
