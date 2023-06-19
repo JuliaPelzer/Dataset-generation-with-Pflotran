@@ -227,7 +227,7 @@ if __name__ == "__main__":
     parser.add_argument("--vary_hp_amount", type=int, default=0) # how many hp locations should be varied
     parser.add_argument("--vary_perm", type=bool, default=False)    # vary permeability
     parser.add_argument("--id_start", type=int, default=0) # start id
-    parser.add_argument("--id_end", type=int, default=1000) # end id
+    parser.add_argument("--id_end", type=int, default=2) # end id
 
     args = parser.parse_args()
 
