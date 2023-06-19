@@ -39,8 +39,13 @@ def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float,
 	
 	if loc_hps is not None:
 		assert settings is not None, "Settings must be provided if loc_hps is provided"
-		for hp_id, loc_hp in enumerate(loc_hps):
-			curr_loc_hp = list(loc_hp)
+		try:
+			for hp_id, loc_hp in enumerate(loc_hps):
+				curr_loc_hp = list(loc_hp)
+				curr_loc_hp.append(1)
+				write_loc_well_file(destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id)
+		except:
+			curr_loc_hp = list(loc_hps)
 			curr_loc_hp.append(1)
 			write_loc_well_file(destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id)
 
