@@ -101,7 +101,8 @@ def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int):
 
 def run_simulation(args, run_ids: list):
     assert not args.vary_perm, "Parallel version not yet for varying permeability implemented"
-    logging.info(f"Working at {datetime.datetime.now()} on folder {os.getcwd()}")
+    start_time = datetime.datetime.now()
+    logging.info(f"Working at {start_time} on folder {os.getcwd()}")
 
     confined_aquifer=False 
     if args.benchmark:
@@ -117,13 +118,11 @@ def run_simulation(args, run_ids: list):
     # folder for files like pflotran.in, pressure_values.txt and perm_field_parameters.txt, mesh.uge etc.
     output_dataset_dir_general_inputs = pathlib.Path(output_dataset_dir, "inputs")
     if not os.path.isdir(output_dataset_dir_general_inputs):
-        print("tes")
         output_dataset_dir_general_inputs.mkdir(parents=True)
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
         # ONCE PER DATASET: generate set of perms, pressures and hp locations
         settings = make_parameter_set(args, confined_aquifer_bool=confined_aquifer)
-        print("deo")
     else:
         logging.info(f"...{output_dataset_dir}/inputs folder already exists")
 
@@ -156,11 +155,11 @@ def run_simulation(args, run_ids: list):
                 write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm)
 
         os.chdir(output_dataset_run_dir)
-        time_now = datetime.datetime.now()
-        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time_now}")
+        start_sim = datetime.datetime.now()
+        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {start_sim}")
         PFLOTRAN_DIR="/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
-        os.system(f"mpirun -n 16 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran -screen_output off")
-        logging.info(f"Finished PFLOTRAN simulation at {datetime.datetime.now()} after {datetime.datetime.now() - time_now}")
+        os.system(f"mpirun -n 32 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran -screen_output off")
+        logging.info(f"Finished PFLOTRAN simulation at {datetime.datetime.now()} after {datetime.datetime.now() - start_sim}")
 
         # call visualisation
         if args.visu:
@@ -185,7 +184,7 @@ def run_simulation(args, run_ids: list):
         except:
             pass
     
-    logging.info(f"Finished dataset creation at {datetime.datetime.now()}")
+    logging.info(f"Finished dataset creation at {datetime.datetime.now()} after {datetime.datetime.now() - start_time}")
 
 def set_benchmark_args(args):
     args.num_dp = 1
