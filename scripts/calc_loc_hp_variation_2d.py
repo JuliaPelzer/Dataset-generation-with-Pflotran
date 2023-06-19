@@ -32,10 +32,10 @@ def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder_inputs: str
         for i in range(number_of_hps - num_hps_to_vary):
             locs_hps[i] = np.array(hps[i+1])
 
-            if not benchmark_bool:
-                # save to file
-                with open(os.path.join(dataset_folder_inputs, f"locs_hp_{i+1}_fixed.txt"), "w") as f:
-                    np.savetxt(f, locs_hps[i])
+            # if not benchmark_bool:
+            # save to file
+            with open(os.path.join(dataset_folder_inputs, f"locs_hp_{i+1}_fixed.txt"), "w") as f:
+                np.savetxt(f, locs_hps[i])
 
     if not benchmark_bool:
         try:
