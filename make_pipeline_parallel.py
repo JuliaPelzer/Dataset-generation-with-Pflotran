@@ -95,7 +95,8 @@ def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int):
             locs = np.array([x, y]).T
             for id, hp in enumerate(locs):
                 locs_hps[id] = [locs_hps[id], list(hp)]
-
+    if len(np.array(locs_hps).shape) == 2:
+        locs_hps = [locs_hps]
     return np.array(pressures), np.array(perms), np.array(locs_hps)
 
 def run_simulation(args, run_ids: list):
