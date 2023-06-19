@@ -11,23 +11,23 @@ except:
 	from make_general_settings import load_yaml
 	from create_grid_unstructured import write_loc_well_file
 
-def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings = None, loc_hps: np.ndarray = None):
+def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings = None, loc_hps: np.ndarray = None):
+	destination_dir = os.path.join(output_dataset_dir, f"RUN_{run_id}")
 
 	# create pressure gradient file
 	pressure_gradient_x = 0
 	pressure_gradient_y = pressure_grad_y
 	pressure_gradient_z = 0
 	pressure_text = f"    PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
-	destination_file = os.path.join(output_dataset_dir, f"RUN_{run_id}", "pressure_gradient.txt")
+	destination_file = pathlib.Path(destination_dir, "interim_pressure_gradient.txt")
 	with open(destination_file,"w") as file:
 		file.write(pressure_text)
 	logging.info(f"Pressure Input: {pressure_gradient_x}, {pressure_gradient_y}, {pressure_gradient_z}")
 	
 	# create permeability file (iso or field)
 	if not perm_variation:
-		permeability_iso = perm_iso
 		permeability_text = f"    PERM_ISO {permeability_iso}"
-		destination_file = os.path.join(output_dataset_dir, f"RUN_{run_id}", "permeability_iso.txt")
+		destination_file = os.path.join(destination_dir, "interim_iso_permeability.txt")
 		with open(destination_file,"w") as file:
 			file.write(permeability_text)
 		logging.info(f"Permeability Input: {permeability_iso}")
@@ -35,16 +35,14 @@ def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_
 		perm_files_location = pathlib.Path(output_dataset_dir, "permeability_fields")
 		current_perm_file = return_next_perm_file(perm_files_location, run_id)
 		current_perm_location = os.path.join(perm_files_location, current_perm_file)
-		shutil.copy(current_perm_location, os.path.join(output_dataset_dir, f"RUN_{run_id}", current_perm_file))
+		shutil.copy(current_perm_location, os.path.join(destination_dir, current_perm_file))
 	
 	if loc_hps is not None:
 		assert settings is not None, "Settings must be provided if loc_hps is provided"
 		for hp_id, loc_hp in enumerate(loc_hps):
-			loc_hp = list(loc_hp)
-			loc_hp.append(1)
-			logging.info(f"HP {hp_id} Position: {loc_hp}")
-			destination_dir = os.path.join(output_dataset_dir, f"RUN_{run_id}")
-			write_loc_well_file(destination_dir, settings, loc_hp=loc_hp, idx=hp_id)
+			curr_loc_hp = list(loc_hp)
+			curr_loc_hp.append(1)
+			write_loc_well_file(destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id)
 
 # copy next permeability field to the current folder
 def return_next_perm_file(perm_folder:str, index:int):

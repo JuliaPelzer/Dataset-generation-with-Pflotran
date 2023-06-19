@@ -6,11 +6,9 @@ import numpy as np
 try:
 	from scripts.make_general_settings import load_yaml
 	from scripts.create_grid_unstructured import write_loc_well_file
-	from scripts.write_next_perm_field import return_next_perm_file
 except:
 	from make_general_settings import load_yaml
 	from create_grid_unstructured import write_loc_well_file
-	from write_next_perm_field import return_next_perm_file
 
 def write_parameter_input_files(pressure_grad_y: float, perm_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings = None, loc_hps: np.ndarray = None):
 	path_to_output = "."

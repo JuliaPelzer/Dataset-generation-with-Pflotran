@@ -30,18 +30,20 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
     # getting settings
     settings = load_yaml(f"{output_dataset_dir}/inputs")
     # make grid files
-    settings = create_all_grid_files(settings, confined=confined_aquifer_bool)
+    path_interim_pflotran_files = pathlib.Path(f"{output_dataset_dir}/pflotran_inputs")
+    path_interim_pflotran_files.mkdir(parents=True)
+    settings = create_all_grid_files(settings, confined=confined_aquifer_bool, path_to_output=path_interim_pflotran_files)
     save_yaml(settings, f"{output_dataset_dir}/inputs")
 
     # potentially calc 1 or 2 hp locations
     if args.vary_hp:
-        calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary = args.vary_hp_amount)
+        calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", f"{output_dataset_dir}/pflotran_inputs", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary = args.vary_hp_amount)
     
     # make benchmark testcases
     _, perms = calc_pressure_and_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm, benchmark_bool=args.benchmark)
     if args.vary_perm:
         create_perm_fields(args.num_dp, output_dataset_dir, settings, perms_min_max=perms)
-
+        # TODO f"{output_dataset_dir}/inputs" ?
     return settings
     
 def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int):
@@ -52,6 +54,7 @@ def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int):
 
     # load files
     perm_file = "permeability_values.txt"
+    # TODO or vary perm laden
     file = open(f"{origin_folder}/{perm_file}", "r")
     for line_nr, line in enumerate(file):
         if line_nr in run_ids:
@@ -93,10 +96,7 @@ def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int):
             for id, hp in enumerate(locs):
                 locs_hps[id] = [locs_hps[id], list(hp)]
 
-    print(f"pressures {pressures}")
-    print(f"perms {perms}")
-    print(f"locs_hps {locs_hps}")
-    return pressures, perms, locs_hps
+    return np.array(pressures), np.array(perms), np.array(locs_hps)
 
 def run_simulation(args, run_ids: list):
     assert not args.vary_perm, "Parallel version not yet for varying permeability implemented"
@@ -134,55 +134,56 @@ def run_simulation(args, run_ids: list):
     # TODO
     pressures, perms, locs_hps = load_inputs_subset(run_ids, output_dataset_dir_general_inputs, args.num_hps)
     
-    # TODO continue here, check whether format of locs_hps (etc) is correct
-    # # make run folders
-    # for run_id in range(len(pressures)): #should only differ in case of benchmark_4_testcases from CLA_DATAPOINTS
-    #     output_dataset_run_dir = pathlib.Path(f"{output_dataset_dir}/RUN_{run_id}")
-    #     output_dataset_run_dir.mkdir(parents=True, exist_ok=True)
-
-    #     # copy pflotran.in file, which one - depends
-    #     shutil.copy(pflotran_file, f"{output_dataset_run_dir}/pflotran.in")
-    #     os.chdir(output_dataset_run_dir)
-
-    #     if not args.vary_hp:
-    #         write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.vary_perm)
-    #     else:
-    #         if args.num_hps > 0:
-    #             write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.vary_perm, settings, locs_hps[run_id])
-    #         else:
-    #             write_parameter_input_files(pressures[run_id], perms[run_id], output_dataset_dir, run_id, args.vary_perm)
-
-    #     time_now = datetime.datetime.now()
-    #     logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time_now}")
-    #     PFLOTRAN_DIR="/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
-    #     os.system(f"mpirun -n 16 {PFLOTRAN_DIR}/pflotran -output_prefix {output_dataset_run_dir}/pflotran -screen_output off")
-    #     logging.info(f"Finished PFLOTRAN simulation at {datetime.datetime.now()} after {datetime.datetime.now() - time_now}")
-        
-    #     os.chdir("../../")
-
-    #     # call visualisation
-    #     if args.visu:
-    #         plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
-    #         logging.info(f"...visualisation of RUN {run_id} is done")
-
+    # TODO check whether all files erstellt, die gebraucht, aber auch im richtigen Ordner!!
     
-    # # clean up
-    # shutil.move("pflotran.in", f"{output_dataset_dir}/inputs/pflotran_copy.in")
-    # for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt"]:
-    #     shutil.move(file, f"{output_dataset_dir}/inputs/{file}")
-    # for file in ["east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "heatpump_inject1.vs", "heatpump_inject2.vs", "mesh.uge", "settings.yaml", "interim_pressure_gradient.txt", "interim_permeability_field.h5", "interim_iso_permeability.txt"]:
-    #     try:
-    #         os.remove(file)
-    #     except:
-    #         continue
-    # if args.vary_perm:
-    #     shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
-    # if not args.benchmark:
-    #     try:
-    #         os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
-    #     except:
-    #         pass
+    top_level_dir = os.getcwd()
+    # make run folders
+    for run_id in run_ids:
+        output_dataset_run_dir = pathlib.Path(f"{output_dataset_dir}/RUN_{run_id}")
+        # output_dataset_run_dir.mkdir(parents=True)
 
+        # copy pflotran.in file, which one - depends
+        shutil.copytree(f"{output_dataset_dir}/pflotran_inputs", f"{output_dataset_run_dir}") # TODO in special folder? - so later better to remove? or keep or remove all?
+        shutil.copy(pflotran_file, f"{output_dataset_run_dir}/pflotran.in")
+
+        if not args.vary_hp:
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm)
+        else:
+            if args.num_hps > 0:
+                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, settings, locs_hps[run_ids.index(run_id)])
+            else:
+                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm)
+
+        os.chdir(output_dataset_run_dir)
+        time_now = datetime.datetime.now()
+        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time_now}")
+        PFLOTRAN_DIR="/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
+        os.system(f"mpirun -n 16 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran -screen_output off")
+        logging.info(f"Finished PFLOTRAN simulation at {datetime.datetime.now()} after {datetime.datetime.now() - time_now}")
+
+        # call visualisation
+        if args.visu:
+            plot_sim(".", settings, case="2D", confined=confined_aquifer)
+            logging.info(f"...visualisation of RUN {run_id} is done")
+        
+        # clean up
+        shutil.move("pflotran.in", f"../inputs/pflotran_copy.in")
+        for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt", "east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "heatpump_inject1.vs", "heatpump_inject2.vs", "mesh.uge", "settings.yaml", "interim_pressure_gradient.txt", "interim_permeability_field.h5", "interim_iso_permeability.txt"]:
+            try:
+                os.remove(file)
+            except:
+                continue
+
+        os.chdir(top_level_dir)
+
+    if args.vary_perm:
+        shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
+    if not args.benchmark:
+        try:
+            os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
+        except:
+            pass
+    
     logging.info(f"Finished dataset creation at {datetime.datetime.now()}")
 
 def set_benchmark_args(args):
@@ -225,10 +226,12 @@ if __name__ == "__main__":
     parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
     parser.add_argument("--vary_hp_amount", type=int, default=0) # how many hp locations should be varied
     parser.add_argument("--vary_perm", type=bool, default=False)    # vary permeability
+    parser.add_argument("--id_start", type=int, default=0) # start id
+    parser.add_argument("--id_end", type=int, default=1000) # end id
 
     args = parser.parse_args()
 
-    run_ids = [0,1,2]
+    run_ids = list(range(args.id_start, args.id_end))
     run_simulation(args, run_ids)
 
     # just_visualize(args)
