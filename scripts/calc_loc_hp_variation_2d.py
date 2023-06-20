@@ -7,7 +7,7 @@ try:
 except:
     import make_general_settings as mgs
 
-def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder_inputs: str, dataset_folder_interim: str, number_of_hps: int, settings, benchmark_bool:bool = False, num_hps_to_vary: int = 0):
+def write_hp_additional_files(dataset_folder_interim: str, number_of_hps: int, num_hps_to_vary: int = 0):
 
     assert number_of_hps > 0, "no clue what happens if number of hps is 0"
     assert num_hps_to_vary <= number_of_hps, "number of hps to vary must be smaller than number of hps"
@@ -22,6 +22,9 @@ def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder_inputs: str
     with open(f"{dataset_folder_interim}/conditions_hps.txt", "w") as f:
         for hp in range(number_of_hps):
             f.write(f"SOURCE_SINK heatpump_inject{hp}\n  FLOW_CONDITION injection\n  REGION heatpump_inject{hp}\nEND\n\n")
+
+
+def calc_loc_hp_variation_2d(param_dataset_size: int, dataset_folder_inputs: str, number_of_hps: int, settings, benchmark_bool:bool = False, num_hps_to_vary: int = 0):
 
     locs_hps = np.ndarray((number_of_hps, param_dataset_size, 2))
     # get boundaries of domain
