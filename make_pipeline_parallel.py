@@ -1,6 +1,6 @@
 import argparse
 import logging
-import datetime
+import time
 import os
 import shutil
 import yaml
@@ -17,10 +17,6 @@ from scripts.visualisation import plot_sim
 
 def make_parameter_set(args, confined_aquifer_bool: bool = False):
     output_dataset_dir = args.name
-
-    # save args as yaml file
-    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as outfile:
-        yaml.dump(vars(args), outfile, default_flow_style=False)
 
     # copy settings file
     shutil.copy(f"dummy_dataset/settings_2D_{args.domain_category}.yaml", f"{output_dataset_dir}/inputs/settings.yaml")
@@ -46,6 +42,7 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
     if args.vary_perm:
         create_perm_fields(args.num_dp, output_dataset_dir, settings, perms_min_max=perms)
         # TODO f"{output_dataset_dir}/inputs" ?
+
     return settings
     
 def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int, settings: dict=None):
@@ -111,8 +108,10 @@ def load_inputs_subset(run_ids: list, origin_folder: str, num_hp: int, settings:
 
 def run_simulation(args, run_ids: list):
     assert not args.vary_perm, "Parallel version not yet for varying permeability implemented"
-    start_time = datetime.datetime.now()
-    logging.info(f"Working at {start_time} on folder {os.getcwd()}")
+    time_begin = time.perf_counter()
+    timestamp_begin = time.ctime()
+    avg_time_per_sim = 0
+    logging.info(f"Working at {timestamp_begin} on folder {os.getcwd()}")
 
     confined_aquifer=False 
     if args.benchmark:
@@ -165,13 +164,14 @@ def run_simulation(args, run_ids: list):
                 write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm)
 
         os.chdir(output_dataset_run_dir)
-        start_sim = datetime.datetime.now()
-        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {start_sim}")
+        start_sim = time.perf_counter()
+        logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}")
         PFLOTRAN_DIR="/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
         tmp_output = False
         output_extension = " -screen_output off" if not tmp_output else ""
         os.system(f"mpirun -n 32 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran{output_extension}")
-        logging.info(f"Finished PFLOTRAN simulation at {datetime.datetime.now()} after {datetime.datetime.now() - start_sim}")
+        avg_time_per_sim += time.perf_counter() - start_sim
+        logging.info(f"Finished PFLOTRAN simulation at {time.ctime()} after {time.perf_counter() - start_sim}")
 
         # call visualisation
         if args.visu:
@@ -196,7 +196,18 @@ def run_simulation(args, run_ids: list):
         except:
             pass
     
-    logging.info(f"Finished dataset creation at {datetime.datetime.now()} after {datetime.datetime.now() - start_time}")
+    avg_time_per_sim /= len(run_ids)
+    time_end = time.perf_counter()
+    
+    # save args as yaml file
+    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
+        yaml.dump(vars(args), f, default_flow_style=False)
+        f.write(f"timestamp of beginning: {timestamp_begin}\n")
+        f.write(f"timestamp of end: {time.ctime()}\n")
+        f.write(f"duration of whole process including visualisation and clean up in seconds: {(time_end-time_begin)}\n")
+        f.write(f"average time per simulation in seconds: {avg_time_per_sim}\n")
+        
+    logging.info(f"Finished dataset creation at {time.ctime()} after {time.perf_counter() - time_begin}")
 
 def set_benchmark_args(args):
     args.num_dp = 1
