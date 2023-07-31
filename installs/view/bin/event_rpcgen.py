@@ -54,7 +54,7 @@ def TranslateList(mylist, mydict):
 class RpcGenError(Exception):
     """An Exception class for parse errors."""
 
-    def __init__(self, why): # pylint: disable=super-init-not-called
+    def __init__(self, why):  # pylint: disable=super-init-not-called
         self.why = why
 
     def __str__(self):
@@ -97,7 +97,7 @@ class Struct(object):
 
 
 class StructCCode(Struct):
-    """ Knows how to generate C code for a struct """
+    """Knows how to generate C code for a struct"""
 
     def __init__(self, name):
         Struct.__init__(self, name)
@@ -502,7 +502,7 @@ class Entry(object):
             "optreference": self._optpointer and "&" or "",
             "optaddarg": self._optaddarg and ", const %s value" % self._ctype or "",
         }
-        for (k, v) in list(extradict.items()):
+        for k, v in list(extradict.items()):
             mapping[k] = v
 
         return mapping
@@ -1461,7 +1461,6 @@ class EntryArray(Entry):
 
 
 def NormalizeLine(line):
-
     line = CPPCOMMENT_RE.sub("", line)
     line = line.strip()
     line = WHITESPACE_RE.sub(" ", line)
@@ -1829,9 +1828,9 @@ class CCodeGenerator(object):
 class CommandLine(object):
     def __init__(self, argv=None):
         """Initialize a command-line to launch event_rpcgen, as if
-           from a command-line with CommandLine(sys.argv).  If you're
-           calling this directly, remember to provide a dummy value
-           for sys.argv[0]
+        from a command-line with CommandLine(sys.argv).  If you're
+        calling this directly, remember to provide a dummy value
+        for sys.argv[0]
         """
         global QUIETLY
 
