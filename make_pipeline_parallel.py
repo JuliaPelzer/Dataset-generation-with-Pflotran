@@ -14,6 +14,7 @@ from scripts.create_permeability_field import create_perm_fields
 from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.write_benchmark_parameters_input_files_parallel import write_parameter_input_files
 from scripts.visualisation import plot_sim
+from scripts.utils import beep
 
 def make_parameter_set(args, confined_aquifer_bool: bool = False):
     output_dataset_dir = args.name
