@@ -1,11 +1,11 @@
 import os
 import subprocess
-from scripts.create_permeability_field import create_perm_field, read_and_plot_perm_field
-from scripts.make_general_settings import load_settings
+from scripts.create_permeability_field import create_perm_fields, read_and_plot_perm_field
+from scripts.make_general_settings import load_yaml
 
 def test_combi_perm_field_create_and_plot():
-    settings = load_settings("unittests")
-    perm_created = create_perm_field(1, "test", settings)
+    settings = load_yaml("unittests")
+    perm_created = create_perm_fields(1, "test", settings)
 
     # read h5 perm file
     for file in os.listdir(f"test/permeability_fields"):

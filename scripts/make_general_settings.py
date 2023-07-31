@@ -1,12 +1,13 @@
 import yaml
 from typing import List, Dict
+import os
 
-def load_settings(path:str, file_name="settings") -> Dict:
-	with open(f"{path}/{file_name}.yaml", "r") as file:
+def load_yaml(path:str, file_name="settings") -> Dict:
+	with open(os.path.join(path, f"{file_name}.yaml"), "r") as file:
 		settings = yaml.safe_load(file)
 	return settings
 
-def save_settings(settings:Dict, path:str, name_file:str="settings"):
+def save_yaml(settings:Dict, path:str, name_file:str="settings"):
 	with open(f"{path}/{name_file}.yaml", "w") as file:
 		yaml.dump(settings, file)
 
@@ -31,7 +32,7 @@ def change_grid_domain_size(settings:Dict, case:str, grid_widths:List[int]=[100,
 	return settings
 
 def main_change_grid_size(path, case, name_file="settings", **grid_args) -> Dict:
-	settings = load_settings(path)
+	settings = load_yaml(path)
 	settings = change_grid_domain_size(settings, case=case, **grid_args)
-	save_settings(settings, path, name_file)
+	save_yaml(settings, path, name_file)
 	return settings

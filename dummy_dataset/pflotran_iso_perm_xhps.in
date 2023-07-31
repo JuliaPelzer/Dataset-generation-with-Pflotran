@@ -13,7 +13,7 @@
 
   #=========================== times ============================================
   TIME
-    FINAL_TIME 5.0 y
+    FINAL_TIME 27.5 y
     INITIAL_TIMESTEP_SIZE 1.d-5 y
     MAXIMUM_TIMESTEP_SIZE 0.05 y
   /
@@ -40,34 +40,34 @@
   FLUID_PROPERTY
     DIFFUSION_COEFFICIENT 1.d-9 #[m^2/s] #checked
   END
-
+  
   #=========================== material properties ==============================
   MATERIAL_PROPERTY gravel
     ID 1
-    POROSITY 0.25d0                     #[-] #Größenordnung passt
-    TORTUOSITY 0.5d0                    #[-] #Größenordnung passt
-    ROCK_DENSITY 2.8d3                  #[kg/m^3] #checked
-    SPECIFIC_HEAT 4.1d3                 #[J/(kg*K)?] #checked
-    THERMAL_CONDUCTIVITY_DRY 0.7        #[W/(K*m)] #checked
-    THERMAL_CONDUCTIVITY_WET 1.0
-    LONGITUDINAL_DISPERSIVITY 3.1536d0  #[m] # checked
-    PERMEABILITY                        #[m^2] #checked
-      PERM_ISO 1.d-9 
+    POROSITY 0.25d0                     #[-]
+    ROCK_DENSITY 2.8d3                  #[kg/m^3]
+    SPECIFIC_HEAT 2.0d3                 #of rock? [J/(kg*K)]
+    THERMAL_CONDUCTIVITY_DRY 0.65        #[W/(K*m)] #TODO check
+    THERMAL_CONDUCTIVITY_WET 1.0        #[W/(K*m)] #TODO check
+    LONGITUDINAL_DISPERSIVITY 1.0       #[m]
+    TRANSVERSE_DISPERSIVITY_H 0.1       #[m]
+    PERMEABILITY                        #[m^2] #TESTCASE
+      EXTERNAL_FILE interim_iso_permeability.txt
     /
     CHARACTERISTIC_CURVES cc1
   END
 
   MATERIAL_PROPERTY gravel_inj
     ID 2
-    POROSITY 0.25d0                     
-    TORTUOSITY 0.5d0                    
-    ROCK_DENSITY 2.8d3                  
-    SPECIFIC_HEAT 4.1d3                 
-    THERMAL_CONDUCTIVITY_DRY 0.7        
-    THERMAL_CONDUCTIVITY_WET 1.0
-    LONGITUDINAL_DISPERSIVITY 3.1536d0  
-    PERMEABILITY                        
-      PERM_ISO 1.d-9 
+    POROSITY 0.25d0                     #[-]
+    ROCK_DENSITY 2.8d3                  #[kg/m^3]
+    SPECIFIC_HEAT 2.0d3                 #of rock? [J/(kg*K)]
+    THERMAL_CONDUCTIVITY_DRY 0.65        #[W/(K*m)] #TODO check
+    THERMAL_CONDUCTIVITY_WET 1.0        #[W/(K*m)] #TODO check
+    LONGITUDINAL_DISPERSIVITY 1.0       #[m]
+    TRANSVERSE_DISPERSIVITY_H 0.1       #[m]
+    PERMEABILITY                        #[m^2] #TESTCASE
+      EXTERNAL_FILE interim_iso_permeability.txt
     /
     CHARACTERISTIC_CURVES cc1
   END
@@ -114,48 +114,35 @@
   REGION east
   FILE east.ex
   END
-
-  REGION heatpump_inject1
-  FILE heatpump_inject1.vs
-  END
+  
+  EXTERNAL_FILE regions_hps.txt
 
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
     TYPE
-      LIQUID_PRESSURE HYDROSTATIC
+      PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
-    DATUM 50.d0 0.d0 85.d0
+    DATUM 200.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
-    LIQUID_PRESSURE 101325.d0
+    PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
-  
-  FLOW_CONDITION default
-    TYPE
-      LIQUID_FLUX NEUMANN
-      TEMPERATURE DIRICHLET
-    /
-    LIQUID_FLUX 0.d0 m/s
-    TEMPERATURE 10.6d0 C
-  /
-
   FLOW_CONDITION injection
     TYPE
       RATE SCALED_VOLUMETRIC_RATE VOLUME #PERM
       TEMPERATURE DIRICHLET
     /
-    #RATE 4.2 m^3/day
     RATE LIST
       TIME_UNITS d
-      DATA_UNITS m^3/day
+      DATA_UNITS m^3/s
       0.    0.
       38.   0.
-      72.   4.2
+      72.   0.00024
     /
-    TEMPERATURE 15.6d0
+    TEMPERATURE 15.6d0 C
   /
 
   #=========================== condition couplers ===============================
@@ -170,44 +157,26 @@
     FLOW_CONDITION initial
     REGION north
   /
- 
+
   BOUNDARY_CONDITION
     FLOW_CONDITION initial
     REGION south
   /
- 
-  # BOUNDARY_CONDITION
-  #   FLOW_CONDITION default
-  #   REGION west
-  # /
- # 
-  # BOUNDARY_CONDITION
-  #   FLOW_CONDITION default
-  #   REGION east
-  # /
- 
-  SOURCE_SINK heatpump_inject1
-    FLOW_CONDITION injection
-    REGION heatpump_inject1
-  /
 
+  EXTERNAL_FILE conditions_hps.txt
   #=========================== stratigraphy couplers ============================
   STRATA
     REGION all
     MATERIAL gravel
   END
-
+  
   # same but different material for hps to get a map with the hp locations alias Material_ID
-  STRATA
-    REGION heatpump_inject1
-    MATERIAL gravel_inj
-  END
-
+  EXTERNAL_FILE strata_hps.txt
   #=========================== output options ===================================
   OUTPUT
     SNAPSHOT_FILE
       #PERIODIC TIME 0.00001 y BETWEEN 0. y AND 0.00010 y
-      TIMES y 0.1 1.
+      TIMES y 0.1 1. 5.
       FORMAT HDF5 #VTK
       PRINT_COLUMN_IDS
       VARIABLES
