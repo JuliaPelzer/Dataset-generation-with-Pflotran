@@ -1,7 +1,9 @@
 # run pytest from unittests folder
-import subprocess
 import os
+import subprocess
+
 import numpy as np
+
 import scripts.make_general_settings as script_settings
 from scripts.create_grid_unstructured import write_loc_well_file
 

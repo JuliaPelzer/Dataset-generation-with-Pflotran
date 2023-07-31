@@ -1,6 +1,7 @@
 # run pytest from unittests folder
-import subprocess
 import os
+import subprocess
+
 import scripts.make_general_settings as script_settings
 
 

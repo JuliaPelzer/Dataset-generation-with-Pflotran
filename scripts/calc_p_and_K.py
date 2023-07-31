@@ -1,6 +1,7 @@
-import numpy as np
 import sys
 from typing import Union
+
+import numpy as np
 
 
 def benchmark_pressure_perm():

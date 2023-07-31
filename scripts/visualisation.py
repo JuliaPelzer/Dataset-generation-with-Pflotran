@@ -1,11 +1,12 @@
-import os
-import h5py
-import numpy as np
-from typing import Tuple, List
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
+import os
 import sys
+from typing import List, Tuple
+
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 try:
     from scripts.make_general_settings import load_yaml

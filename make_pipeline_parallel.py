@@ -1,25 +1,23 @@
 import argparse
 import logging
-import time
 import os
-import shutil
-import yaml
 import pathlib
-import numpy as np
+import shutil
+import time
 
-from scripts.create_grid_unstructured import create_all_grid_files
-from scripts.calc_loc_hp_variation_2d import (
-    calc_loc_hp_variation_2d,
-    write_hp_additional_files,
-)
+import numpy as np
+import yaml
+
+from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
+                                              write_hp_additional_files)
 from scripts.calc_p_and_K import calc_pressure_and_perm_fields
+from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.create_permeability_field import create_perm_fields
 from scripts.make_general_settings import load_yaml, save_yaml
-from scripts.write_benchmark_parameters_input_files_parallel import (
-    write_parameter_input_files,
-)
-from scripts.visualisation import plot_sim
 from scripts.utils import beep
+from scripts.visualisation import plot_sim
+from scripts.write_benchmark_parameters_input_files_parallel import \
+    write_parameter_input_files
 
 
 def make_parameter_set(args, confined_aquifer_bool: bool = False):

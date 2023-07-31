@@ -1,9 +1,8 @@
 import os
 import subprocess
-from scripts.create_permeability_field import (
-    create_perm_fields,
-    read_and_plot_perm_field,
-)
+
+from scripts.create_permeability_field import (create_perm_fields,
+                                               read_and_plot_perm_field)
 from scripts.make_general_settings import load_yaml
 
 

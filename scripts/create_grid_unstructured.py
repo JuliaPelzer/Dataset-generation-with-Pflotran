@@ -1,9 +1,12 @@
-import numpy as np
-import sys
-import os
 import logging
+import os
+import sys
 from typing import Dict, List
-from scripts.make_general_settings import load_yaml, change_grid_domain_size, save_yaml
+
+import numpy as np
+
+from scripts.make_general_settings import (change_grid_domain_size, load_yaml,
+                                           save_yaml)
 
 
 def write_mesh_file(path_to_output: str, settings: Dict, confined: bool = False):

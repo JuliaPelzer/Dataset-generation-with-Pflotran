@@ -1,6 +1,7 @@
-import numpy as np
 import os
 import sys
+
+import numpy as np
 
 try:
     import scripts.make_general_settings as mgs

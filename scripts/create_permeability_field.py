@@ -1,14 +1,16 @@
-from random import random, seed, sample
-import numpy as np
-import matplotlib.pyplot as plt
+import logging
 import os
 import sys
+from random import random, sample, seed
+from typing import Dict
+
+import matplotlib.pyplot as plt
+import noise
+import numpy as np
 from h5py import *
 from scipy.interpolate import RegularGridInterpolator
-import noise
-from typing import Dict
 from tqdm import tqdm
-import logging
+
 from scripts.make_general_settings import load_yaml
 from scripts.visualisation import _aligned_colorbar
 

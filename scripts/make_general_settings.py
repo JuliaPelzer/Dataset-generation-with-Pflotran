@@ -1,6 +1,7 @@
-import yaml
-from typing import List, Dict
 import os
+from typing import Dict, List
+
+import yaml
 
 
 def load_yaml(path: str, file_name="settings") -> Dict:

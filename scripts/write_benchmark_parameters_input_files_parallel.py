@@ -1,16 +1,17 @@
 import logging
-import sys
-import pathlib
 import os
+import pathlib
 import shutil
+import sys
+
 import numpy as np
 
 try:
-    from scripts.make_general_settings import load_yaml
     from scripts.create_grid_unstructured import write_loc_well_file
+    from scripts.make_general_settings import load_yaml
 except:
-    from make_general_settings import load_yaml
     from create_grid_unstructured import write_loc_well_file
+    from make_general_settings import load_yaml
 
 
 def write_parameter_input_files(
