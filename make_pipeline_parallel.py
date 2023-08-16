@@ -331,18 +331,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--benchmark", type=bool, default=False)
-    parser.add_argument(
-        "--num_dp", type=int, default=1
-    )  # int = 100 # number of datapoints
-    parser.add_argument(
-        "--name", type=str, default="default"
-    )  # benchmark_large_vary_perm_2hps")
+    parser.add_argument("--num_dp", type=int, default=1)  # int = 100 # number of datapoints
+    parser.add_argument("--name", type=str, default="default")  # benchmark_large_vary_perm_2hps")
     parser.add_argument("--visu", type=bool, default=False)  # visualisation
     parser.add_argument("--num_hps", type=int, default=0)  # number of hp locations
     parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
-    parser.add_argument(
-        "--vary_hp_amount", type=int, default=0
-    )  # how many hp locations should be varied
+    parser.add_argument("--vary_hp_amount", type=int, default=0)  # how many hp locations should be varied
     parser.add_argument("--vary_perm", type=bool, default=False)  # vary permeability
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
