@@ -29,11 +29,14 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
         f"{output_dataset_dir}/inputs/settings.yaml",
     )
     if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
-        shutil.copy(
-            "dummy_dataset/benchmark_locs_hps.yaml",
-            f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml",
-        )
-
+        try:
+            shutil.copy(
+                "dummy_dataset/benchmark_locs_hps.yaml",
+                f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml",
+            )
+        except:
+            pass
+            
     # getting settings
     settings = load_yaml(f"{output_dataset_dir}/inputs")
     # make grid files
