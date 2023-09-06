@@ -28,7 +28,7 @@ def run_bm_cases_small():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.domain_category = "small"
-    args.name = "BECHMARK_BOXES"
+    args.name = "BENCHMARK_BOXES"
     args.benchmark = True
     args = set_benchmark_args(args)
     args.num_hps = 1
@@ -102,21 +102,21 @@ def run_bm_cases_small():
             counter += 1
             os.chdir(top_level_dir)
 
-        avg_time_prep /= counter
-        avg_time_sim /= counter
-        avg_time_visu_post /= counter
+    avg_time_prep /= counter
+    avg_time_sim /= counter
+    avg_time_visu_post /= counter
 
-        # save args as yaml file
-        with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
-            yaml.dump(vars(args), f, default_flow_style=False)
-            f.write(f"timestamp of beginning: {timestamp_begin}\n")
-            f.write(f"timestamp of end: {time.ctime()}\n")
-            f.write(f"duration of whole process including visualisation and clean up in seconds: {(time.perf_counter()-time_begin)}\n")
-            f.write(f"duration of general preparation in seconds: {time_general_prep}\n")
-            f.write(f"avg. duration of add. preparation per run in seconds: {avg_time_prep}\n")
-            f.write(f"avg. duration of simulation per run in seconds: {avg_time_sim}\n")
-            f.write(f"avg. duration of visualisation and postprocessing per run in seconds: {avg_time_visu_post}\n")
-            f.write(f"number of runs: {counter}\n")
+    # save args as yaml file
+    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
+        yaml.dump(vars(args), f, default_flow_style=False)
+        f.write(f"timestamp of beginning: {timestamp_begin}\n")
+        f.write(f"timestamp of end: {time.ctime()}\n")
+        f.write(f"duration of whole process including visualisation and clean up in seconds: {(time.perf_counter()-time_begin)}\n")
+        f.write(f"duration of general preparation in seconds: {time_general_prep}\n")
+        f.write(f"avg. duration of add. preparation per run in seconds: {avg_time_prep}\n")
+        f.write(f"avg. duration of simulation per run in seconds: {avg_time_sim}\n")
+        f.write(f"avg. duration of visualisation and postprocessing per run in seconds: {avg_time_visu_post}\n")
+        f.write(f"number of runs: {counter}\n")
 
 def run_bm_cases_large():
     time_begin = time.perf_counter()
@@ -125,7 +125,7 @@ def run_bm_cases_large():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.domain_category = "large"
-    args.name = "BECHMARK_DOMAIN"
+    args.name = "BENCHMARK_DOMAIN"
     args.benchmark = True
     args = set_benchmark_args(args)
     args.vary_hp = False
@@ -202,32 +202,30 @@ def run_bm_cases_large():
             counter += 1
             os.chdir(top_level_dir)
 
-        avg_time_prep /= counter
-        avg_time_sim /= counter
-        avg_time_visu_post /= counter
+    avg_time_prep /= counter
+    avg_time_sim /= counter
+    avg_time_visu_post /= counter
 
-        # save args as yaml file
-        with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
-            yaml.dump(vars(args), f, default_flow_style=False)
-            f.write(f"timestamp of beginning: {timestamp_begin}\n")
-            f.write(f"timestamp of end: {time.ctime()}\n")
-            f.write(f"duration of whole process including visualisation and clean up in seconds: {(time.perf_counter()-time_begin)}\n")
-            f.write(f"duration of general preparation in seconds: {time_general_prep}\n")
-            f.write(f"avg. duration of add. preparation per run in seconds: {avg_time_prep}\n")
-            f.write(f"avg. duration of simulation per run in seconds: {avg_time_sim}\n")
-            f.write(f"avg. duration of visualisation and postprocessing per run in seconds: {avg_time_visu_post}\n")
-            f.write(f"number of runs: {counter}\n")
+    # save args as yaml file
+    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
+        yaml.dump(vars(args), f, default_flow_style=False)
+        f.write(f"timestamp of beginning: {timestamp_begin}\n")
+        f.write(f"timestamp of end: {time.ctime()}\n")
+        f.write(f"duration of whole process including visualisation and clean up in seconds: {(time.perf_counter()-time_begin)}\n")
+        f.write(f"duration of general preparation in seconds: {time_general_prep}\n")
+        f.write(f"avg. duration of add. preparation per run in seconds: {avg_time_prep}\n")
+        f.write(f"avg. duration of simulation per run in seconds: {avg_time_sim}\n")
+        f.write(f"avg. duration of visualisation and postprocessing per run in seconds: {avg_time_visu_post}\n")
+        f.write(f"number of runs: {counter}\n")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--domain", type=str, default="small")
-    case = parser.parse_args()
-
-    if case == "small":
+    domain = "large"
+    
+    if domain == "small":
         run_bm_cases_small()
-    elif case == "large":
+    elif domain == "large":
         run_bm_cases_large()
     else:
-        raise ValueError(f"Unknown case {case}")
+        raise ValueError(f"Unknown case {domain}")
