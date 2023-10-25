@@ -49,7 +49,7 @@ def run_bm_cases_small():
 
     # get benchmark cases
     locs_hps = np.array([settings["grid"]["loc_hp"][0], settings["grid"]["loc_hp"][1]])
-    with open("dummy_dataset/benchmark_pks_2308.yaml", "r") as f:
+    with open("dummy_dataset/benchmark_pks_2308_SMALL.yaml", "r") as f:
         pk_cases = yaml.load(f, Loader=yaml.FullLoader)
 
     time_general_prep = time.perf_counter() - time_begin
