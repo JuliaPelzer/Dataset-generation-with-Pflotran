@@ -63,3 +63,7 @@ builds datasets with definable number of data points; based on one pflotran.in f
 ## How to get vtk output to view in paraview
 - in `pflotran.in` change the following line:
     - `FORMAT VTK` (approx. line 213)
+
+
+# important commits
+- one month after paper submission (Oct. '23): d9b82ff4e4051260af5185dd856529b253edd0b2
