@@ -112,7 +112,7 @@ def load_inputs_subset(
         hp_y = f"locs_hp_y_{hp_id}.txt"
         file_y = pathlib.Path(origin_folder, hp_y)
         if file_fixed.exists():
-            file_fixed = open(f"{origin_folder}/{hp_fixed}", "r")
+            file_fixed = open(origin_folder/hp_fixed, "r")
             # TODO check whether line shift
             for line_nr, line in enumerate(file_fixed):
                 if line_nr in run_ids:
@@ -120,24 +120,23 @@ def load_inputs_subset(
             file_fixed.close()
         elif file_x.exists() and file_y.exists():
             x = []
-            file_x = open(f"{origin_folder}/{hp_x}", "r")
+            file_x = open(origin_folder/hp_x, "r")
             for line_nr, line in enumerate(file_x):
                 if line_nr in run_ids:
                     x.append(float(line))
             file_x.close()
             y = []
-            file_y = open(f"{origin_folder}/{hp_y}", "r")
+            file_y = open(origin_folder/hp_y, "r")
             for line_nr, line in enumerate(file_y):
                 if line_nr in run_ids:
                     y.append(float(line))
             file_y.close()
             locs = np.array([x, y]).T
             for id, hp in enumerate(locs):
-                locs_hps[id] = [locs_hps[id], list(hp)]
+                locs_hps.append(list(hp))
         else:
             # take value from settings.yaml in [m]
             locs_hps.append(settings["grid"]["loc_hp"][0:2])
-
     if len(np.array(locs_hps).shape) == 2:
         locs_hps = [locs_hps]
 
@@ -236,7 +235,7 @@ def run_simulation(args, run_ids: list):
         tmp_output = False
         output_extension = " -screen_output off" if not tmp_output else ""
         os.system(
-            f"mpirun -n 32 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran{output_extension}"
+            f"mpirun -n 64 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran{output_extension}"
         )
         avg_time_per_sim += time.perf_counter() - start_sim
         logging.info(
@@ -250,19 +249,7 @@ def run_simulation(args, run_ids: list):
 
         # clean up
         shutil.move("pflotran.in", f"../inputs/pflotran_copy.in")
-        for file in [
-            "regions_hps.txt",
-            "strata_hps.txt",
-            "conditions_hps.txt",
-            "east.ex",
-            "west.ex",
-            "south.ex",
-            "north.ex",
-            "top_cover.txt",
-            "bottom_cover.txt",
-            "mesh.uge",
-            "settings.yaml",
-        ]:
+        for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt", "east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "mesh.uge", "settings.yaml",]:
             try:
                 os.remove(file)
             except:
@@ -343,7 +330,7 @@ if __name__ == "__main__":
     parser.add_argument("--vary_perm", type=bool, default=False)  # vary permeability
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
-    parser.add_argument("--domain_category", type=str, default="large")  # small / large
+    parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant"], default="large")
 
     args = parser.parse_args()
 
