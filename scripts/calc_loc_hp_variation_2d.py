@@ -62,11 +62,11 @@ def calc_loc_hp_variation_2d(
     if not benchmark_bool:
         try:
             distance_to_border = settings["grid"]["distance_to_border"]
+            print(
+                f"distance to border: {distance_to_border} m, {len(distance_to_border[1])} values"
+            )
         except:
             distance_to_border = 5
-        print(
-            f"distance to border: {distance_to_border} m, {len(distance_to_border[1])} values"
-        )
 
         for i in range(number_of_hps - num_hps_to_vary, number_of_hps):
             # choose random position inside domain
