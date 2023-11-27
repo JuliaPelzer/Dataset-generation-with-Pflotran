@@ -29,13 +29,7 @@ def plot_sim(
         )
 
     _plot_y(list_to_plot, path_run, name_pic=plot_name, case=case)
-    _plot_isolines(
-        list_to_plot,
-        path_run,
-        settings,
-        name_pic=plot_name,
-        case=case,
-    )
+    _plot_isolines(list_to_plot, path_run, settings, name_pic=plot_name, case=case,)
     _plot_temperature_field(list_to_plot, path_run, settings, name_pic=plot_name)
     try:
         logging.info(f"Temperature at HP: {np.round(list_to_plot[11]['data'][9,23],4)}")
