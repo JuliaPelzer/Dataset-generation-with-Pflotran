@@ -186,8 +186,6 @@ def run_simulation(args, run_ids: list):
         run_ids, output_dataset_dir_general_inputs, args.num_hps, settings
     )
 
-    # TODO check whether all files erstellt, die gebraucht, aber auch im richtigen Ordner!!
-
     top_level_dir = os.getcwd()
     # make run folders
     for run_id in run_ids:
@@ -244,8 +242,12 @@ def run_simulation(args, run_ids: list):
 
         # call visualisation
         if args.visu:
-            plot_sim(".", settings, case="2D", confined=confined_aquifer)
-            logging.info(f"...visualisation of RUN {run_id} is done")
+            try:
+                plot_sim(".", settings, case="2D", confined=confined_aquifer)
+                logging.info(f"...visualisation of RUN {run_id} is done")
+            except:
+                logging.info(f"...visualisation of RUN {run_id} failed")
+                beep()
 
         # clean up
         shutil.move("pflotran.in", f"../inputs/pflotran_copy.in")
