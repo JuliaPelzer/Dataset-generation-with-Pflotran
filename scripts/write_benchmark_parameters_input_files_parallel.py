@@ -14,15 +14,7 @@ except:
     from make_general_settings import load_yaml
 
 
-def write_parameter_input_files(
-    pressure_grad_y: float,
-    permeability_iso: float,
-    output_dataset_dir: str,
-    run_id: int,
-    perm_variation: bool = False,
-    settings=None,
-    loc_hps: np.ndarray = None,
-):
+def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings=None, loc_hps: np.ndarray = None, ):
     destination_dir = os.path.join(output_dataset_dir, f"RUN_{run_id}")
 
     # create pressure gradient file
@@ -45,12 +37,10 @@ def write_parameter_input_files(
             file.write(permeability_text)
         logging.info(f"Permeability Input: {permeability_iso}")
     else:
-        perm_files_location = pathlib.Path(output_dataset_dir, "permeability_fields")
+        perm_files_location = pathlib.Path(output_dataset_dir) / "inputs" / "permeability_fields"
         current_perm_file = return_next_perm_file(perm_files_location, run_id)
         current_perm_location = os.path.join(perm_files_location, current_perm_file)
-        shutil.copy(
-            current_perm_location, os.path.join(destination_dir, current_perm_file)
-        )
+        shutil.copy(current_perm_location, os.path.join(destination_dir, current_perm_file))
 
     if loc_hps is not None:
         assert settings is not None, "Settings must be provided if loc_hps is provided"
@@ -58,15 +48,11 @@ def write_parameter_input_files(
             for hp_id, loc_hp in enumerate(loc_hps):
                 curr_loc_hp = list(loc_hp)
                 curr_loc_hp.append(1)
-                write_loc_well_file(
-                    destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id
-                )
+                write_loc_well_file(destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id)
         except:
             curr_loc_hp = list(loc_hps)
             curr_loc_hp.append(1)
-            write_loc_well_file(
-                destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id
-            )
+            write_loc_well_file(destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id)
 
 
 # copy next permeability field to the current folder

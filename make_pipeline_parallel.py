@@ -1,4 +1,5 @@
 import argparse
+import h5py
 import logging
 import os
 import pathlib
@@ -42,11 +43,7 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
     # make grid files
     path_interim_pflotran_files = pathlib.Path(f"{output_dataset_dir}/pflotran_inputs")
     path_interim_pflotran_files.mkdir(parents=True)
-    settings = create_all_grid_files(
-        settings,
-        confined=confined_aquifer_bool,
-        path_to_output=path_interim_pflotran_files,
-    )
+    settings = create_all_grid_files(settings, confined=confined_aquifer_bool, path_to_output=path_interim_pflotran_files,)
     save_yaml(settings, f"{output_dataset_dir}/inputs")
 
     write_hp_additional_files(
@@ -55,50 +52,39 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
 
     # potentially calc 1 or 2 hp locations
     if args.vary_hp:
-        calc_loc_hp_variation_2d(
-            args.num_dp,
-            f"{output_dataset_dir}/inputs",
-            args.num_hps,
-            settings,
-            benchmark_bool=args.benchmark,
-            num_hps_to_vary=args.vary_hp_amount,
-        )
+        calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary=args.vary_hp_amount, )
 
     # make benchmark testcases
-    _, perms = calc_pressure_and_perm_fields(
-        args.num_dp,
-        f"{output_dataset_dir}/inputs",
-        args.vary_perm,
-        benchmark_bool=args.benchmark,
-    )
+    _, perms = calc_pressure_and_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm, benchmark_bool=args.benchmark, )
     if args.vary_perm:
-        create_perm_fields(
-            args.num_dp, output_dataset_dir, settings, perms_min_max=perms
-        )
-        # TODO f"{output_dataset_dir}/inputs" ?
+        create_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, perms_min_max=perms)
 
     return settings
 
 
-def load_inputs_subset(
-    run_ids: list, origin_folder: str, num_hp: int, settings: dict = None
-):
+def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False):
     # initialize lists
     pressures = []
     perms = []
     locs_hps = []
 
     # load files
-    perm_file = "permeability_values.txt"
-    # TODO or vary perm laden
-    file_fixed = open(f"{origin_folder}/{perm_file}", "r")
-    for line_nr, line in enumerate(file_fixed):
-        if line_nr in run_ids:
-            perms.append(float(line))
-    file_fixed.close()
+    if not vary_perm:
+        perm_file = "permeability_values.txt"
+        # TODO or vary perm laden
+        file_fixed = open(origin_folder/perm_file, "r")
+        for line_nr, line in enumerate(file_fixed):
+            if line_nr in run_ids:
+                perms.append(float(line))
+        file_fixed.close()
+    else:
+        for file in (origin_folder/"permeability_fields").iterdir():
+            with h5py.File(file, "r") as f:
+                perms.append(file)
+        pass
 
     pressure_file = "pressure_values.txt"
-    file_fixed = open(f"{origin_folder}/{pressure_file}", "r")
+    file_fixed = open(origin_folder/pressure_file, "r")
     for line_nr, line in enumerate(file_fixed):
         if line_nr in run_ids:
             pressures.append(float(line))
@@ -106,11 +92,11 @@ def load_inputs_subset(
 
     for hp_id in range(1, num_hp + 1):
         hp_fixed = f"locs_hp_{hp_id}_fixed.txt"
-        file_fixed = pathlib.Path(origin_folder, hp_fixed)
+        file_fixed = origin_folder/hp_fixed
         hp_x = f"locs_hp_x_{hp_id}.txt"
-        file_x = pathlib.Path(origin_folder, hp_x)
+        file_x = origin_folder/hp_x
         hp_y = f"locs_hp_y_{hp_id}.txt"
-        file_y = pathlib.Path(origin_folder, hp_y)
+        file_y = origin_folder/hp_y
         if file_fixed.exists():
             file_fixed = open(origin_folder/hp_fixed, "r")
             # TODO check whether line shift
@@ -131,22 +117,20 @@ def load_inputs_subset(
                 if line_nr in run_ids:
                     y.append(float(line))
             file_y.close()
-            locs = np.array([x, y]).T
-            for id, hp in enumerate(locs):
-                locs_hps.append(list(hp))
+            locs_hps.append(np.array([x, y]).T)
         else:
             # take value from settings.yaml in [m]
             locs_hps.append(settings["grid"]["loc_hp"][0:2])
     if len(np.array(locs_hps).shape) == 2:
         locs_hps = [locs_hps]
+    elif len(np.array(locs_hps).shape) == 3:
+        locs_hps = np.array(locs_hps)
+        locs_hps = np.swapaxes(locs_hps, 0, 1)
 
     return np.array(pressures), np.array(perms), np.array(locs_hps)
 
 
 def run_simulation(args, run_ids: list):
-    assert (
-        not args.vary_perm
-    ), "Parallel version not yet for varying permeability implemented"
     time_begin = time.perf_counter()
     timestamp_begin = time.ctime()
     avg_time_per_sim = 0
@@ -157,9 +141,7 @@ def run_simulation(args, run_ids: list):
         args = set_benchmark_args(args)
 
     if args.num_hps > 1:
-        assert (
-            args.vary_hp
-        ), f"If number of heatpumps is larger than 1, vary_hp must be True"
+        assert (args.vary_hp), f"If number of heatpumps is larger than 1, vary_hp must be True"
 
     # check whether output folder exists else define
     output_dataset_dir = pathlib.Path(args.name)
@@ -181,10 +163,7 @@ def run_simulation(args, run_ids: list):
 
     pflotran_file = set_pflotran_file(args, confined_aquifer=confined_aquifer)
 
-    # TODO
-    pressures, perms, locs_hps = load_inputs_subset(
-        run_ids, output_dataset_dir_general_inputs, args.num_hps, settings
-    )
+    pressures, perms, locs_hps = load_inputs_subset(run_ids, output_dataset_dir_general_inputs, args.num_hps, settings, vary_perm = args.vary_perm)
 
     top_level_dir = os.getcwd()
     # make run folders
@@ -192,39 +171,17 @@ def run_simulation(args, run_ids: list):
         output_dataset_run_dir = pathlib.Path(f"{output_dataset_dir}/RUN_{run_id}")
         # output_dataset_run_dir.mkdir(parents=True)
 
-        # copy pflotran.in file, which one - depends
-        shutil.copytree(
-            f"{output_dataset_dir}/pflotran_inputs", f"{output_dataset_run_dir}"
-        )  # TODO in special folder? - so later better to remove? or keep or remove all?
+        # copy respective pflotran.in file
+        shutil.copytree(output_dataset_dir/"pflotran_inputs", output_dataset_run_dir)
         shutil.copy(pflotran_file, f"{output_dataset_run_dir}/pflotran.in")
 
         if not args.vary_hp:
-            write_parameter_input_files(
-                pressures[run_ids.index(run_id)],
-                perms[run_ids.index(run_id)],
-                output_dataset_dir,
-                run_id,
-                args.vary_perm,
-            )
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm,)
         else:
             if args.num_hps > 0:
-                write_parameter_input_files(
-                    pressures[run_ids.index(run_id)],
-                    perms[run_ids.index(run_id)],
-                    output_dataset_dir,
-                    run_id,
-                    args.vary_perm,
-                    settings,
-                    locs_hps[run_ids.index(run_id)],
-                )
+                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, settings, locs_hps[run_ids.index(run_id)], )
             else:
-                write_parameter_input_files(
-                    pressures[run_ids.index(run_id)],
-                    perms[run_ids.index(run_id)],
-                    output_dataset_dir,
-                    run_id,
-                    args.vary_perm,
-                )
+                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, )
 
         os.chdir(output_dataset_run_dir)
         start_sim = time.perf_counter()
@@ -232,13 +189,9 @@ def run_simulation(args, run_ids: list):
         PFLOTRAN_DIR = "/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
         tmp_output = False
         output_extension = " -screen_output off" if not tmp_output else ""
-        os.system(
-            f"mpirun -n 64 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran{output_extension}"
-        )
+        os.system(f"mpirun -n 64 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran{output_extension}")
         avg_time_per_sim += time.perf_counter() - start_sim
-        logging.info(
-            f"Finished PFLOTRAN simulation at {time.ctime()} after {time.perf_counter() - start_sim}"
-        )
+        logging.info(f"Finished PFLOTRAN simulation at {time.ctime()} after {time.perf_counter() - start_sim}")
 
         # call visualisation
         if args.visu:
@@ -260,7 +213,7 @@ def run_simulation(args, run_ids: list):
         os.chdir(top_level_dir)
 
     if args.vary_perm:
-        shutil.rmtree(f"{output_dataset_dir}/permeability_fields")
+        shutil.rmtree(output_dataset_dir/"inputs"/"permeability_fields")
     if not args.benchmark:
         try:
             os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
