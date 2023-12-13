@@ -13,12 +13,12 @@ grid:
     - 1165 # [m] y upper
   - 0
   ncells:
-  - 8000
-  - 8000
+  - 4000
+  - 4000
   - 1
   size:
-  - 40000
-  - 40000
+  - 20000
+  - 20000
   - 0
 permeability:
   case: perlin_v2
