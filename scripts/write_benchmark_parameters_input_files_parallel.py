@@ -15,7 +15,7 @@ except:
 
 
 def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, settings=None, loc_hps: np.ndarray = None, ):
-    destination_dir = os.path.join(output_dataset_dir, f"RUN_{run_id}")
+    destination_dir = pathlib.Path(output_dataset_dir / f"RUN_{run_id}")
 
     # create pressure gradient file
     pressure_gradient_x = 0
@@ -32,15 +32,15 @@ def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float,
     # create permeability file (iso or field)
     if not perm_variation:
         permeability_text = f"    PERM_ISO {permeability_iso}"
-        destination_file = os.path.join(destination_dir, "interim_iso_permeability.txt")
+        destination_file = destination_dir / "interim_iso_permeability.txt"
         with open(destination_file, "w") as file:
             file.write(permeability_text)
         logging.info(f"Permeability Input: {permeability_iso}")
     else:
         perm_files_location = pathlib.Path(output_dataset_dir) / "inputs" / "permeability_fields"
         current_perm_file = return_next_perm_file(perm_files_location, run_id)
-        current_perm_location = os.path.join(perm_files_location, current_perm_file)
-        shutil.copy(current_perm_location, os.path.join(destination_dir, current_perm_file))
+        current_perm_location = perm_files_location / current_perm_file
+        shutil.copy(current_perm_location, destination_dir / "interim_permeability_field.h5")
 
     if loc_hps is not None:
         assert settings is not None, "Settings must be provided if loc_hps is provided"
