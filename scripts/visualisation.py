@@ -101,7 +101,7 @@ def _plot_y(data, path: str, name_pic: str = "plot_y_exemplary", case: str = "si
 
     pic_file_name = f"{path}/{name_pic}_{case}.png"
     logging.info(f"Resulting picture is at {pic_file_name}")
-    plt.savefig(pic_file_name)
+    plt.savefig(pic_file_name, dpi=400)
 
 
 def _plot_isolines(
