@@ -169,7 +169,6 @@ def run_simulation(args, run_ids: list):
     # make run folders
     for run_id in run_ids:
         output_dataset_run_dir = pathlib.Path(f"{output_dataset_dir}/RUN_{run_id}")
-        # output_dataset_run_dir.mkdir(parents=True)
 
         # copy respective pflotran.in file
         shutil.copytree(output_dataset_dir/"pflotran_inputs", output_dataset_run_dir)
