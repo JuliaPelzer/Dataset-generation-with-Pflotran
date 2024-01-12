@@ -21,6 +21,7 @@ def benchmark_pressure_perm():
 def calc_perm_from_pressure_and_K(num_samples: int):
     # permeability values are calculated from the hydraulic conductivity values
     # values: same as in diss.tex (24.2.23)
+    np.random.seed(42)
     K_min, K_max = (1e-4, 5e-2)
     dynamic_viscosity_water = 1e-3
     rho_water = 1000
@@ -54,7 +55,8 @@ def calc_pressure_and_perm_fields(
         else:
             permeability_iso_array = np.array([9e-11]) # 3e-10 Danyal
     else:  # normal dataset
-        pressure_array = np.random.uniform(-0.0035, -0.0015, number_datapoints)
+        np.random.seed(42)
+        pressure_array = np.random.uniform(-0.0030, -0.0030, number_datapoints)
         permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
 
         if vary_perm_field:  # vary perm field case

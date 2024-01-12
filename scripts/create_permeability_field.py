@@ -215,8 +215,8 @@ def create_perm_fields(
     if not os.path.exists(f"{folder}/permeability_fields"):
         os.mkdir(f"{folder}/permeability_fields")
 
-    if not settings["general"]["random_bool"]:
-        np.random.seed(settings["general"]["seed_id"])
+    # if not settings["general"]["random_bool"]:
+    #     np.random.seed(settings["general"]["seed_id"])
 
     if settings["permeability"]["case"] == "perlin_noise":
         # vary bases to get different fields
