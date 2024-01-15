@@ -243,6 +243,10 @@ def create_vary_fields(
             vary_min = np.min(min_max[idx])
             vary_max = np.max(min_max[idx])
 
+        if vary_property == "permeability":
+            vary_min = np.log10(vary_min)
+            vary_max = np.log10(vary_max)
+
         cells = make_grid(
             settings,
             vary_min,
@@ -252,6 +256,9 @@ def create_vary_fields(
             freq=freq_factor,
             vary_property=vary_property,
         )
+
+        if vary_property == "permeability":
+            cells = 10 ** cells
 
         filename = f"{folder}/{vary_property}_fields/{vary_property}_base_{base}{filename_extension}.h5"
         save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
