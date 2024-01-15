@@ -13,7 +13,7 @@ from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
                                               write_hp_additional_files)
 from scripts.calc_p_and_K import calc_pressure_and_perm_fields
 from scripts.create_grid_unstructured import create_all_grid_files
-from scripts.create_permeability_field import create_perm_fields
+from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.utils import beep
 from scripts.visualisation import plot_sim
@@ -55,40 +55,45 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
         calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary=args.vary_hp_amount, )
 
     # make benchmark testcases
-    _, perms = calc_pressure_and_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm, benchmark_bool=args.benchmark, )
+    pressures, perms = calc_pressure_and_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, )
     if args.vary_perm:
-        create_perm_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, perms_min_max=perms)
+        create_vary_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, min_max=perms)
+    if args.vary_pressure:
+        create_vary_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, min_max=pressures, vary_property="pressure")
 
     return settings
 
+def load_iso_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
+    fields = []
+    file_fixed = open(origin_folder/curr_file, "r")
+    for line_nr, line in enumerate(file_fixed):
+        if line_nr in run_ids:
+            fields.append(float(line))
+    file_fixed.close()
 
-def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False):
+    return fields
+
+def load_vary_files(origin_folder: pathlib.Path, fields_folder: str):
+    fields = []
+    for file in (origin_folder/fields_folder).iterdir():
+        with h5py.File(file, "r") as f:
+            fields.append(f)
+    return fields
+
+def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False, vary_pressure: bool = False,):
     # initialize lists
-    pressures = []
-    perms = []
     locs_hps = []
 
     # load files
     if not vary_perm:
-        perm_file = "permeability_values.txt"
-        # TODO or vary perm laden
-        file_fixed = open(origin_folder/perm_file, "r")
-        for line_nr, line in enumerate(file_fixed):
-            if line_nr in run_ids:
-                perms.append(float(line))
-        file_fixed.close()
+        perms = load_iso_files(origin_folder, run_ids, "permeability_values.txt")
     else:
-        for file in (origin_folder/"permeability_fields").iterdir():
-            with h5py.File(file, "r") as f:
-                perms.append(file)
-        pass
+        perms = load_vary_files(origin_folder, "permeability_fields")
 
-    pressure_file = "pressure_values.txt"
-    file_fixed = open(origin_folder/pressure_file, "r")
-    for line_nr, line in enumerate(file_fixed):
-        if line_nr in run_ids:
-            pressures.append(float(line))
-    file_fixed.close()
+    if not vary_pressure:
+        pressures = load_iso_files(origin_folder, run_ids, "pressure_values.txt")
+    else:
+        pressures = load_vary_files(origin_folder, "pressure_fields")
 
     for hp_id in range(1, num_hp + 1):
         hp_fixed = f"locs_hp_{hp_id}_fixed.txt"
@@ -163,7 +168,7 @@ def run_simulation(args, run_ids: list):
 
     pflotran_file = set_pflotran_file(args, confined_aquifer=confined_aquifer)
 
-    pressures, perms, locs_hps = load_inputs_subset(run_ids, output_dataset_dir_general_inputs, args.num_hps, settings, vary_perm = args.vary_perm)
+    pressures, perms, locs_hps = load_inputs_subset(run_ids, output_dataset_dir_general_inputs, args.num_hps, settings, vary_perm=args.vary_perm, vary_pressure=args.vary_pressure,)
 
     top_level_dir = os.getcwd()
     # make run folders
@@ -175,12 +180,12 @@ def run_simulation(args, run_ids: list):
         shutil.copy(pflotran_file, f"{output_dataset_run_dir}/pflotran.in")
 
         if not args.vary_hp:
-            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm,)
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure,)
         else:
             if args.num_hps > 0:
-                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, settings, locs_hps[run_ids.index(run_id)], )
+                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, locs_hps[run_ids.index(run_id)], )
             else:
-                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, )
+                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, vary_pressure_field=args.vary_pressure,)
 
         os.chdir(output_dataset_run_dir)
         start_sim = time.perf_counter()
@@ -199,7 +204,7 @@ def run_simulation(args, run_ids: list):
                 logging.info(f"...visualisation of RUN {run_id} is done")
             except:
                 logging.info(f"...visualisation of RUN {run_id} failed")
-                beep()
+                # beep()
 
         # clean up
         shutil.move("pflotran.in", f"../inputs/pflotran_copy.in")
@@ -253,8 +258,9 @@ def set_pflotran_file(args, confined_aquifer):
     perm_case = "vary" if args.vary_perm else "iso"
     confined_extension = "_confined" if confined_aquifer else ""
     hps_extension = f"_xhps" if args.num_hps >= 1 else f"_{args.num_hps}hps"
+    vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
     pflotran_file = (
-        f"dummy_dataset/pflotran_{perm_case}_perm{hps_extension}{confined_extension}.in"
+        f"dummy_dataset/pflotran_{perm_case}_perm{vary_pressure_extension}{hps_extension}{confined_extension}.in"
     )
     return pflotran_file
 
@@ -282,6 +288,7 @@ if __name__ == "__main__":
     parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
     parser.add_argument("--vary_hp_amount", type=int, default=0)  # how many hp locations should be varied
     parser.add_argument("--vary_perm", type=bool, default=False)  # vary permeability
+    parser.add_argument("--vary_pressure", type=bool, default=False)  # vary pressure
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
     parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant"], default="large")

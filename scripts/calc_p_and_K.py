@@ -21,7 +21,6 @@ def benchmark_pressure_perm():
 def calc_perm_from_pressure_and_K(num_samples: int):
     # permeability values are calculated from the hydraulic conductivity values
     # values: same as in diss.tex (24.2.23)
-    np.random.seed(42)
     K_min, K_max = (1e-4, 5e-2)
     dynamic_viscosity_water = 1e-3
     rho_water = 1000
@@ -42,6 +41,7 @@ def calc_pressure_and_perm_fields(
     number_datapoints: int,
     dataset_folder: str,
     vary_perm_field: bool,
+    vary_pressure_field: bool = False,
     benchmark_bool: bool = False,
 ):
     if number_datapoints == 0:  # benchmark case 1hp, iso perm --> 4 datapoints
@@ -58,16 +58,17 @@ def calc_pressure_and_perm_fields(
         np.random.seed(42)
         pressure_array = np.random.uniform(-0.0030, -0.0030, number_datapoints)
         permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
-
-        if vary_perm_field:  # vary perm field case
+        if vary_perm_field:
             # calc max and min perm values
             perm_iso_array_2 = calc_perm_from_pressure_and_K(len(pressure_array))
-
+            print(permeability_iso_array, perm_iso_array_2)
             # zip the two arrays together
-            perm_iso_array_2 = perm_iso_array_2.reshape(-1, 1)
-            perm_iso_array_1 = permeability_iso_array.reshape(-1, 1)
-            permeability_iso_array = np.concatenate(
-                (perm_iso_array_1, perm_iso_array_2), axis=1
+            permeability_iso_array = np.concatenate((permeability_iso_array.reshape(-1, 1),perm_iso_array_2.reshape(-1, 1)),axis=1)
+
+        if vary_pressure_field:
+            pressure_array_2 = np.random.uniform(-0.0035, -0.0015, number_datapoints)
+            pressure_array = np.concatenate(
+                (pressure_array.reshape(-1, 1), pressure_array_2.reshape(-1, 1)), axis=1
             )
 
     # save pressure and permeability values

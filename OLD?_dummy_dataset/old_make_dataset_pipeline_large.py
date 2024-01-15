@@ -10,7 +10,7 @@ from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
                                               write_hp_additional_files)
 from scripts.calc_p_and_K import calc_pressure_and_perm_fields
 from scripts.create_grid_unstructured import create_all_grid_files
-from scripts.create_permeability_field import create_perm_fields
+from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml
 from scripts.old_write_benchmark_parameters_input_files import \
     write_parameter_input_files
@@ -96,8 +96,8 @@ def run_simulation(args):
         benchmark_bool=args.benchmark,
     )
     if args.vary_perm:
-        create_perm_fields(
-            args.num_dp, output_dataset_dir, settings, perms_min_max=perms
+        create_vary_fields(
+            args.num_dp, output_dataset_dir, settings, min_max=perms
         )
 
     # make run folders
