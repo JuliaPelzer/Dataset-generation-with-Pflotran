@@ -26,13 +26,13 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
 
     # copy settings file
     shutil.copy(
-        f"dummy_dataset/settings_2D_{args.domain_category}.yaml",
+        f"input_files/settings_2D_{args.domain_category}.yaml",
         f"{output_dataset_dir}/inputs/settings.yaml",
     )
     if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
         try:
             shutil.copy(
-                "dummy_dataset/benchmark_locs_hps.yaml",
+                "input_files/benchmark_locs_hps.yaml",
                 f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml",
             )
         except:
@@ -206,40 +206,13 @@ def run_simulation(args, run_ids: list):
                 logging.info(f"...visualisation of RUN {run_id} failed")
                 # beep()
 
-        # clean up
-        shutil.move("pflotran.in", f"../inputs/pflotran_copy.in")
-        for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt", "east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "mesh.uge", "settings.yaml",]:
-            try:
-                os.remove(file)
-            except:
-                continue
-
+        clean_up()
         os.chdir(top_level_dir)
 
-    if args.vary_perm:
-        shutil.rmtree(output_dataset_dir/"inputs"/"permeability_fields")
-    if not args.benchmark:
-        try:
-            os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
-        except:
-            pass
-
+    clean_up_end(args, output_dataset_dir)
     avg_time_per_sim /= len(run_ids)
-    time_end = time.perf_counter()
-
-    # save args as yaml file
-    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
-        yaml.dump(vars(args), f, default_flow_style=False)
-        f.write(f"timestamp of beginning: {timestamp_begin}\n")
-        f.write(f"timestamp of end: {time.ctime()}\n")
-        f.write(
-            f"duration of whole process including visualisation and clean up in seconds: {(time_end-time_begin)}\n"
-        )
-        f.write(f"average time per simulation in seconds: {avg_time_per_sim}\n")
-
-    logging.info(
-        f"Finished dataset creation at {time.ctime()} after {time.perf_counter() - time_begin}"
-    )
+    save_args(args, output_dataset_dir, timestamp_begin, time_begin, time.perf_counter(), avg_time_per_sim)
+    logging.info(f"Finished dataset creation at {time.ctime()} after {time.perf_counter() - time_begin}")
 
 
 def set_benchmark_args(args):
@@ -260,18 +233,48 @@ def set_pflotran_file(args, confined_aquifer):
     hps_extension = f"_xhps" if args.num_hps >= 1 else f"_{args.num_hps}hps"
     vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
     pflotran_file = (
-        f"dummy_dataset/pflotran_{perm_case}_perm{vary_pressure_extension}{hps_extension}{confined_extension}.in"
+        f"input_files/pflotran_{perm_case}_perm{vary_pressure_extension}{hps_extension}{confined_extension}.in"
     )
     return pflotran_file
 
+def clean_up():
+    shutil.move("pflotran.in", f"../inputs/pflotran.in")
+    for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt", "east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "mesh.uge", "settings.yaml",]:
+        try:
+            os.remove(file)
+        except:
+            continue
+    # move all hps into hps folder
+    (pathlib.Path(".") / "hps").mkdir(parents=True, exist_ok=True)
+    for file in pathlib.Path(".").glob("*.vs"):
+        shutil.move(file, "hps")
+
+def clean_up_end(args, output_dataset_dir):
+    if args.vary_perm:
+        shutil.rmtree(output_dataset_dir/"inputs"/"permeability_fields")
+    if not args.benchmark:
+        try:
+            os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
+        except:
+            pass
+
+def save_args(args, output_dataset_dir, timestamp_begin, time_begin, time_end, avg_time_per_sim):
+    # save args as yaml file
+    with open(f"{output_dataset_dir}/inputs/args.yaml", "w") as f:
+        yaml.dump(vars(args), f, default_flow_style=False)
+        f.write(f"timestamp of beginning: {timestamp_begin}\n")
+        f.write(f"timestamp of end: {time.ctime()}\n")
+        f.write(
+            f"duration of whole process including visualisation and clean up in seconds: {(time_end-time_begin)}\n"
+        )
+        f.write(f"average time per simulation in seconds: {avg_time_per_sim}\n")
 
 def just_visualize(args):
-    output_dataset_dir = args.name
-    settings = load_yaml(f"{output_dataset_dir}/inputs")
+    settings = load_yaml(f"{args.name}/inputs")
     confined_aquifer = False
 
     for run_id in range(4):  # in case of testcases_4
-        output_dataset_run_dir = f"{output_dataset_dir}/RUN_{run_id}"
+        output_dataset_run_dir = f"{args.name}/RUN_{run_id}"
         plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
         logging.info(f"...visualisation of RUN {run_id} is done")
 

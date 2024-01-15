@@ -33,7 +33,7 @@ def run_bm_cases_small():
     args = set_benchmark_args(args)
     args.num_hps = 1
     args.vary_hp = False
-    pflotran_file = ("dummy_dataset/pflotran_iso_perm_xhps.in")
+    pflotran_file = ("input_files/pflotran_iso_perm_xhps.in")
     top_level_dir = os.getcwd()
     PFLOTRAN_DIR = "/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
 
@@ -49,7 +49,7 @@ def run_bm_cases_small():
 
     # get benchmark cases
     locs_hps = np.array([settings["grid"]["loc_hp"][0], settings["grid"]["loc_hp"][1]])
-    with open("dummy_dataset/benchmark_pks_2308_SMALL.yaml", "r") as f:
+    with open("input_files/benchmark_pks_2308_SMALL.yaml", "r") as f:
         pk_cases = yaml.load(f, Loader=yaml.FullLoader)
 
     time_general_prep = time.perf_counter() - time_begin
@@ -129,7 +129,7 @@ def run_bm_cases_large():
     args.benchmark = True
     args = set_benchmark_args(args)
     args.vary_hp = False
-    pflotran_file = ("dummy_dataset/pflotran_iso_perm_xhps.in")
+    pflotran_file = ("input_files/pflotran_iso_perm_xhps.in")
     top_level_dir = os.getcwd()
     PFLOTRAN_DIR = "/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
 
@@ -144,11 +144,11 @@ def run_bm_cases_large():
         settings = load_yaml(f"{output_dataset_dir}/inputs")
 
     # get benchmark cases
-    with open("dummy_dataset/benchmark_locs_hps_train_2hps_1fixed.yaml", "r") as f:
+    with open("input_files/benchmark_locs_hps_train_2hps_1fixed.yaml", "r") as f:
         locs_fixed = yaml.load(f, Loader=yaml.FullLoader)
-    with open("dummy_dataset/benchmark_locs_hps_2308.yaml", "r") as f:
+    with open("input_files/benchmark_locs_hps_2308.yaml", "r") as f:
         loc_cases = yaml.load(f, Loader=yaml.FullLoader)
-    with open("dummy_dataset/benchmark_pks_2308.yaml", "r") as f:
+    with open("input_files/benchmark_pks_2308.yaml", "r") as f:
         pk_cases = yaml.load(f, Loader=yaml.FullLoader)
 
     time_general_prep = time.perf_counter() - time_begin
