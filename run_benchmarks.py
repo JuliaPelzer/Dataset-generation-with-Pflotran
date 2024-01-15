@@ -16,7 +16,7 @@ from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.utils import beep
 from scripts.visualisation import plot_sim
-from scripts.write_benchmark_parameters_input_files_parallel import \
+from scripts.write_parameters_input_files_parallel import \
     write_parameter_input_files
 
 from make_pipeline_parallel import *

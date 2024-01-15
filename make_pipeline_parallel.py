@@ -17,7 +17,7 @@ from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.utils import beep
 from scripts.visualisation import plot_sim
-from scripts.write_benchmark_parameters_input_files_parallel import \
+from scripts.write_parameters_input_files_parallel import \
     write_parameter_input_files
 
 
@@ -251,7 +251,7 @@ def clean_up():
 
 def clean_up_end(args, output_dataset_dir):
     if args.vary_perm:
-        shutil.rmtree(output_dataset_dir/"inputs"/"permeability_fields")
+        shutil.rmtree(output_dataset_dir/"inputs/permeability_fields")
     if not args.benchmark:
         try:
             os.remove(f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml")
