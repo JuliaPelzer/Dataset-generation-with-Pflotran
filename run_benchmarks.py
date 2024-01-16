@@ -10,7 +10,7 @@ import yaml
 
 from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
                                               write_hp_additional_files)
-from scripts.calc_p_and_K import calc_pressure_and_perm_fields
+from scripts.calc_p_and_K import calc_pressure_and_perm_values
 from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml, save_yaml
