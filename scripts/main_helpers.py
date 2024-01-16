@@ -135,10 +135,9 @@ def set_pflotran_file(args, confined_aquifer):
     # build pflotran file name
     perm_case = "vary" if args.vary_perm else "iso"
     confined_extension = "_confined" if confined_aquifer else ""
-    hps_extension = f"_xhps" if args.num_hps >= 1 else f"_{args.num_hps}hps"
     vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
     pflotran_file = (
-        f"input_files/pflotran_{perm_case}_perm{vary_pressure_extension}{hps_extension}{confined_extension}.in"
+        f"input_files/pflotran_{perm_case}_perm{vary_pressure_extension}{confined_extension}.in"
     )
     return pflotran_file
 
