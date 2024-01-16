@@ -5,7 +5,7 @@ import os
 import shutil
 
 from scripts.calc_loc_hp_variation_2d import calc_loc_hp_variation_2d
-from scripts.calc_p_and_K import calc_pressure_and_perm_fields
+from scripts.calc_p_and_K import calc_pressure_and_perm_values
 from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml
@@ -75,7 +75,7 @@ def run_simulation(args):
         )
 
     # make benchmark testcases
-    pressures, perms = calc_pressure_and_perm_fields(
+    pressures, perms = calc_pressure_and_perm_values(
         args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm
     )
     if args.vary_perm:
