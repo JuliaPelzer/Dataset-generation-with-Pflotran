@@ -18,7 +18,7 @@ def benchmark_pressure_perm():
     return pressure_array, permeability_iso_array
 
 
-def calc_perm_from_pressure_and_K(num_samples: int):
+def calc_perm_from_pressure_and_K(num_samples: int, random_bool: bool = True):
     # permeability values are calculated from the hydraulic conductivity values
     # values: same as in diss.tex (24.2.23)
     K_min, K_max = (1e-4, 5e-2)
@@ -26,18 +26,16 @@ def calc_perm_from_pressure_and_K(num_samples: int):
     rho_water = 1000
     g = 9.81
 
-    hydraulic_conductivity = 10 ** np.random.uniform(
-        np.log10(K_min), np.log10(K_max), num_samples
-    )  # -1)
-    permeability_array = (
-        hydraulic_conductivity * dynamic_viscosity_water / (rho_water * g)
-    )
+    hydraulic_conductivity = 10 ** np.random.uniform(np.log10(K_min), np.log10(K_max), num_samples)
+    if not random_bool and num_samples == 2: # TODO NOT SAFE
+        hydraulic_conductivity = np.array([K_min, K_max])
+    permeability_array = (hydraulic_conductivity * dynamic_viscosity_water / (rho_water * g))
     # perm logdistributed between 10^-11 and 3*10^-10
     # permeability_array = 10 ** np.random.uniform(-11, np.log10(3*10**(-10)), num_samples) # for Danyal
     return permeability_array
 
 
-def calc_pressure_and_perm_fields(
+def calc_pressure_and_perm_values(
     number_datapoints: int,
     dataset_folder: str,
     vary_perm_field: bool,
@@ -55,15 +53,19 @@ def calc_pressure_and_perm_fields(
         else:
             permeability_iso_array = np.array([9e-11]) # 3e-10 Danyal
     else:  # normal dataset
-        np.random.seed(42)
-        pressure_array = np.random.uniform(-0.0030, -0.0030, number_datapoints)
-        permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
+        only_vary_distribution = True
+        pressure_array = np.array([-0.003,]) * number_datapoints #np.random.uniform(-0.0030, -0.0030, number_datapoints)
+        if not only_vary_distribution:
+            permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
+
         if vary_perm_field:
-            # calc max and min perm values
-            perm_iso_array_2 = calc_perm_from_pressure_and_K(len(pressure_array))
-            print(permeability_iso_array, perm_iso_array_2)
-            # zip the two arrays together
-            permeability_iso_array = np.concatenate((permeability_iso_array.reshape(-1, 1),perm_iso_array_2.reshape(-1, 1)),axis=1)
+            if only_vary_distribution:
+                permeability_iso_array = calc_perm_from_pressure_and_K(2, random_bool=False)
+                permeability_iso_array = np.array([permeability_iso_array,] * len(pressure_array))
+            else:    
+                # calc max and min perm values
+                perm_iso_array_2 = calc_perm_from_pressure_and_K(len(pressure_array))
+                permeability_iso_array = np.concatenate((permeability_iso_array.reshape(-1, 1),perm_iso_array_2.reshape(-1, 1)),axis=1)
 
         if vary_pressure_field:
             pressure_array_2 = np.random.uniform(-0.0035, -0.0015, number_datapoints)

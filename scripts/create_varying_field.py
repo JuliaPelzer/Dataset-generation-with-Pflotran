@@ -159,7 +159,7 @@ def save_vary_field(filename, ncells, cells, dimensionality: str = "3D", vary_pr
     else:
         n = ncells[0] * ncells[1] * ncells[2]
     # create integer array for cell ids
-    iarray = np.arange(n, dtype="u8")
+    iarray = np.arange(n, dtype="i4")
     iarray[:] += 1  # convert to 1-based
     cells_array_flatten = cells.reshape(n, order="F")
 
@@ -205,15 +205,7 @@ def plot_vary_field(cells, filename, case="trigonometric", vary_property:str="pe
     plt.close(fig)
 
 
-def create_vary_fields(
-    number_samples: int,
-    folder: str,
-    settings: Dict,
-    plot_bool: bool = False,
-    min_max: np.ndarray = None,
-    filename_extension: str = "",
-    vary_property: str = "permeability",
-):
+def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bool: bool = False, min_max: np.ndarray = None, filename_extension: str = "", vary_property: str = "permeability", ):
     # TODO vary frequency
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -260,13 +252,48 @@ def create_vary_fields(
         if vary_property == "permeability":
             cells = 10 ** cells
 
+        if vary_property == "pressure":
+            cells = calc_pressure_from_gradient_field(cells, settings)
+
         filename = f"{folder}/{vary_property}_fields/{vary_property}_base_{base}{filename_extension}.h5"
         save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
         if plot_bool:
             plot_vary_field(cells, filename[:-3], case=settings[vary_property]["case"], vary_property=vary_property,)  # , vmax=settings["permeability"]["perm_max"], vmin=settings["permeability"]["perm_min"])
+            
+    # if vary_property == "pressure":
+    #     cells = cells * 0
+    #     filename = f"{folder}/{vary_property}_fields/empty_pressure_field.h5"
+    #     save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
 
-    logging.info(f"Created {len(bases)} perm-field(s)")
+
+    logging.info(f"Created {len(bases)} {vary_property}-field(s)")
     return cells  # for pytest
+
+def calc_pressure_from_gradient_field(gradient_field: np.array, settings: Dict):
+    # calculate pressure field from gradient field
+
+    # scale pressure field to -0.0035 and -0.0015
+    current_min = np.min(gradient_field)
+    current_max = np.max(gradient_field)
+    new_min = settings["pressure"]["min"]
+    new_max = settings["pressure"]["max"]
+    gradient_field = (gradient_field - current_min) / (current_max - current_min) * (new_max - new_min) + new_min
+
+    reference = 101325 # pressure
+    len_cells = np.array(settings["grid"]["size"]) / np.array(settings["grid"]["ncells"])
+    pressure_field = np.zeros_like(gradient_field)
+    pressure_field[:,0] = reference
+    for i in range(1, pressure_field.shape[1]):
+        pressure_field[:,i] = pressure_field[:,i-1] + gradient_field[:,i] * len_cells[1] * 1000
+    pressure_field = pressure_field[::-1]
+    # for i in range(1, pressure_field.shape[0]):
+    #     pressure_field[i,:] = (pressure_field[i-1,:] + gradient_field[i,:] * len_cells[0] + pressure_field[i,:])/2
+    # pressure_field = gradient_field * len_cells[1] + reference
+    import matplotlib.pyplot as plt
+    plt.imshow(pressure_field)
+    plt.colorbar()
+    plt.show()
+    return pressure_field
 
 
 def read_and_plot_vary_field(settings: Dict, filename: str, vary_property: str = "permeability"):
@@ -286,7 +313,7 @@ def read_and_plot_vary_field(settings: Dict, filename: str, vary_property: str =
     elif vary_property == "pressure":
         vary_field_orig = h5file["Pressure"][:]
     vary_field = vary_field_orig.reshape(settings["grid"]["ncells"], order="F")
-    plot_vary_field(vary_field, filename[-10:-3], case=settings["permeability"]["case"], vary_property=vary_property,)
+    plot_vary_field(vary_field, filename[-10:-3], case=settings[vary_property]["case"], vary_property=vary_property,)
 
     h5file.close()
     return vary_field  # for pytest
@@ -313,9 +340,7 @@ if __name__ == "__main__":
         try:
             perms_min_max = np.loadtxt(f"{output_folder}/permeability_values.txt")
         except:
-            print(
-                "No permeability_values.txt file found. Using default ones from settings."
-            )
+            print("No permeability_values.txt file found. Using default ones from settings.")
 
         plot_bool = True  # if plot_bool then runs crash because try to load a png file as perm.h5 file
         create_vary_fields(
