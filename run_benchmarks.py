@@ -18,6 +18,7 @@ from scripts.utils import beep
 from scripts.visualisation import plot_sim
 from scripts.write_parameters_input_files_parallel import \
     write_parameter_input_files
+from scripts.main_helpers import make_output_dir
 
 from make_pipeline_parallel import *
 
@@ -38,12 +39,11 @@ def run_bm_cases_small():
     PFLOTRAN_DIR = "/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
 
     # prepare pflotran sim
-    output_dataset_dir = pathlib.Path(args.name)
-    output_dataset_dir.mkdir(parents=True, exist_ok=True)
+    output_dataset_dir = make_output_dir(args.name)
     output_dataset_dir_general_inputs = pathlib.Path(output_dataset_dir, "inputs")
     if not os.path.isdir(output_dataset_dir_general_inputs):
         output_dataset_dir_general_inputs.mkdir(parents=True)
-        settings = make_parameter_set(args)
+        settings = make_parameter_set(args, output_dataset_dir)
     else:
         settings = load_yaml(f"{output_dataset_dir}/inputs")
 
@@ -134,12 +134,11 @@ def run_bm_cases_large():
     PFLOTRAN_DIR = "/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
 
     # prepare pflotran sim
-    output_dataset_dir = pathlib.Path(args.name)
-    output_dataset_dir.mkdir(parents=True, exist_ok=True)
+    output_dataset_dir = make_output_dir(args.name)
     output_dataset_dir_general_inputs = pathlib.Path(output_dataset_dir, "inputs")
     if not os.path.isdir(output_dataset_dir_general_inputs):
         output_dataset_dir_general_inputs.mkdir(parents=True)
-        settings = make_parameter_set(args)
+        settings = make_parameter_set(args, output_dataset_dir)
     else:
         settings = load_yaml(f"{output_dataset_dir}/inputs")
 

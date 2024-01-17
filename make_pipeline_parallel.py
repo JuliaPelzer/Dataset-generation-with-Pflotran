@@ -25,9 +25,7 @@ def run_simulation(args, run_ids: list):
     if args.num_hps > 1:
         assert (args.vary_hp), f"If number of heatpumps is larger than 1, vary_hp must be True"
 
-    # check whether output folder exists else define
-    output_dataset_dir = pathlib.Path("outputs") / args.name
-    output_dataset_dir.mkdir(parents=True, exist_ok=True)
+    output_dataset_dir = make_output_dir(args.name)
 
     # folder for files like pflotran.in, pressure_values.txt and perm_field_parameters.txt, mesh.uge etc.
     if not os.path.isdir(output_dataset_dir / "inputs"):
@@ -35,7 +33,7 @@ def run_simulation(args, run_ids: list):
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
         # ONCE PER DATASET: generate set of perms, pressures and hp locations
-        settings = make_parameter_set(args, confined_aquifer_bool=confined_aquifer)
+        settings = make_parameter_set(args, output_dataset_dir, confined_aquifer_bool=confined_aquifer)
     else:
         logging.info(f"...{output_dataset_dir}/inputs folder already exists")
 

@@ -17,8 +17,7 @@ from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.visualisation import plot_sim
 
 
-def make_parameter_set(args, confined_aquifer_bool: bool = False):
-    output_dataset_dir = args.name
+def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = False):
 
     # copy settings file
     shutil.copy(
@@ -58,6 +57,13 @@ def make_parameter_set(args, confined_aquifer_bool: bool = False):
         create_vary_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, min_max=pressures, vary_property="pressure")
 
     return settings
+
+def make_output_dir(name: str):
+    output_dataset_dir = pathlib.Path("outputs") 
+    output_dataset_dir.mkdir(parents=True, exist_ok=True)
+    output_dataset_dir = output_dataset_dir / name
+    output_dataset_dir.mkdir(parents=True, exist_ok=True)
+    return output_dataset_dir
 
 def load_iso_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
     fields = []
@@ -184,28 +190,3 @@ def just_visualize(args):
         output_dataset_run_dir = f"{args.name}/RUN_{run_id}"
         plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
         logging.info(f"...visualisation of RUN {run_id} is done")
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--benchmark", type=bool, default=False)
-    parser.add_argument("--num_dp", type=int, default=1)  # int = 100 # number of datapoints
-    parser.add_argument("--name", type=str, default="default")  # benchmark_large_vary_perm_2hps")
-    parser.add_argument("--visu", type=bool, default=False)  # visualisation
-    parser.add_argument("--num_hps", type=int, default=0)  # number of hp locations
-    parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
-    parser.add_argument("--vary_hp_amount", type=int, default=0)  # how many hp locations should be varied
-    parser.add_argument("--vary_perm", type=bool, default=False)  # vary permeability
-    parser.add_argument("--vary_pressure", type=bool, default=False)  # vary pressure
-    parser.add_argument("--id_start", type=int, default=0)  # start id
-    parser.add_argument("--id_end", type=int, default=1)  # end id
-    parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant"], default="large")
-
-    args = parser.parse_args()
-
-    run_ids = list(range(args.id_start, args.id_end))
-    run_simulation(args, run_ids)
-
-    # just_visualize(args)
