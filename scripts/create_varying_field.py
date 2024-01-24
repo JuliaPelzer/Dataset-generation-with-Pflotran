@@ -17,8 +17,8 @@ from scripts.visualisation import _aligned_colorbar
 
 def make_grid(
     settings: Dict,
-    perm_min: float,
-    perm_max: float,
+    aimed_min: float,
+    aimed_max: float,
     base: float = 0,
     offset: float = None,
     freq: float = None,
@@ -30,9 +30,9 @@ def make_grid(
     if settings[vary_property]["case"] == "trigonometric":
         # function exemplary
         def fct_cos(value):
-            return (perm_max - perm_min) / 2 * np.cos(
+            return (aimed_max - aimed_min) / 2 * np.cos(
                 value / settings[vary_property]["factor"]
-            ) + (perm_max + perm_min) / 2
+            ) + (aimed_max + aimed_min) / 2
 
         icells = [
             np.linspace(1, grid_dimensions[i], grid_dimensions[i]) for i in (0, 1, 2)
@@ -82,9 +82,7 @@ def make_grid(
                 for j in range(0, grid_dimensions[1]):
                     freq = np.array(freq) / domain_size[0:2]
                     x, y = [i, j] * freq
-                    values[i, j] = (perlin_noise(x, y) + 1) / 2 * (
-                        perm_max - perm_min
-                    ) + perm_min
+                    values[i, j] = (perlin_noise(x, y) + 1) / 2 * (aimed_max - aimed_min) + aimed_min
         else:  # 3D case
 
             def perlin_noise(x, y, z):
@@ -110,8 +108,8 @@ def make_grid(
                         freq = np.array(freq) / domain_size
                         x, y, z = [i, j, k] * freq
                         values[i, j, k] = (perlin_noise(x, y, z) + 1) / 2 * (
-                            perm_max - perm_min
-                        ) + perm_min
+                            aimed_max - aimed_min
+                        ) + aimed_min
     elif settings[vary_property]["case"] == "perlin_v2":
         # adapted by Manuel Hirche
 
@@ -139,16 +137,19 @@ def make_grid(
                     y = y * freq[1]
 
                     if settings["general"]["dimensions"] == 2:
-                        noise_value = (noise.pnoise2(x, y) + 1.0) / 2.0
-                        values[i, j] = perm_min + noise_value * (perm_max - perm_min)
+                        values[i, j] = noise.pnoise2(x, y)
                     else:
                         z = k / grid_dimensions[2] * scale_z + offset[2]
                         z = z * freq[2]
                         # pnoise3 returns values in the range of [-1,1] -> move to [0, 1]
-                        noise_value = (noise.pnoise3(x, y, z) + 1.0) / 2.0
-                        values[i, j, k] = perm_min + noise_value * (
-                            perm_max - perm_min
-                        )  # scale to perm range
+                        values[i, j, k] = noise.pnoise3(x, y, z)
+        
+        # scale to intended range
+        current_min = np.min(values)
+        current_max = np.max(values)
+
+        values = (values - current_min) / (current_max - current_min)
+        values = values * (aimed_max - aimed_min) + aimed_min
 
     return values
 
