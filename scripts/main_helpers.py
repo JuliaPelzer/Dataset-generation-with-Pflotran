@@ -43,7 +43,7 @@ def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = F
         calc_loc_hp_variation_2d(args.num_dp, output_dataset_dir / "inputs" / "hps", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary=args.vary_hp_amount, )
 
     # make benchmark testcases
-    pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, )
+    pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, only_vary_distribution=args.only_vary_distribution,)
     settings["permeability"]["min"] = np.min(perms)
     settings["permeability"]["max"] = np.max(perms)
     settings["pressure"] = {}

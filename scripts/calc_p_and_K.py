@@ -41,6 +41,7 @@ def calc_pressure_and_perm_values(
     vary_perm_field: bool,
     vary_pressure_field: bool = False,
     benchmark_bool: bool = False,
+    only_vary_distribution:bool = False,
 ):
     if number_datapoints == 0:  # benchmark case 1hp, iso perm --> 4 datapoints
         pressure_array, permeability_iso_array = benchmark_pressure_perm()
@@ -53,10 +54,11 @@ def calc_pressure_and_perm_values(
         else:
             permeability_iso_array = np.array([9e-11]) # 3e-10 Danyal
     else:  # normal dataset
-        only_vary_distribution = True
-        pressure_array = np.array([-0.003,]) * number_datapoints #np.random.uniform(-0.0030, -0.0030, number_datapoints)
         if not only_vary_distribution:
+            pressure_array = np.random.uniform(-0.0030, -0.0030, number_datapoints)
             permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
+        else:
+            pressure_array = np.array([-0.003,]) * number_datapoints
 
         if vary_perm_field:
             if only_vary_distribution:
@@ -74,9 +76,9 @@ def calc_pressure_and_perm_values(
             )
 
     # save pressure and permeability values
-    with open(dataset_folder + "/pressure_values.txt", "w") as pressure_file:
+    with open(dataset_folder / "pressure_values.txt", "w") as pressure_file:
         np.savetxt(pressure_file, pressure_array)
-    with open(dataset_folder + "/permeability_values.txt", "w") as permeability_file:
+    with open(dataset_folder / "permeability_values.txt", "w") as permeability_file:
         np.savetxt(permeability_file, permeability_iso_array)
 
     return pressure_array, permeability_iso_array

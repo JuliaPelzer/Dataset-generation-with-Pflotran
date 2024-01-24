@@ -115,6 +115,7 @@ if __name__ == "__main__":
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
     parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant"], default="large")
+    parser.add_argument("--only_vary_distribution", type=bool, default=False)  # only vary distribution, for perm-field get min+max; for pressure:=0.003
 
     args = parser.parse_args()
 
