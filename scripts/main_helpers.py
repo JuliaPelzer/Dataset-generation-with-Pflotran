@@ -20,41 +20,40 @@ from scripts.visualisation import plot_sim
 def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = False):
 
     # copy settings file
-    shutil.copy(
-        f"input_files/settings_2D_{args.domain_category}.yaml",
-        f"{output_dataset_dir}/inputs/settings.yaml",
-    )
+    shutil.copy(f"input_files/settings_2D_{args.domain_category}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )
     if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
         try:
-            shutil.copy(
-                "input_files/benchmark_locs_hps.yaml",
-                f"{output_dataset_dir}/inputs/benchmark_locs_hps.yaml",
-            )
+            shutil.copy("input_files/benchmark_locs_hps.yaml", output_dataset_dir / "inputs" / "benchmark_locs_hps.yaml",)
         except:
             pass
             
     # getting settings
-    settings = load_yaml(f"{output_dataset_dir}/inputs")
+    settings = load_yaml(output_dataset_dir / "inputs")
     # make grid files
-    path_interim_pflotran_files = pathlib.Path(f"{output_dataset_dir}/pflotran_inputs")
+    path_interim_pflotran_files = output_dataset_dir / "pflotran_inputs"
     path_interim_pflotran_files.mkdir(parents=True)
     settings = create_all_grid_files(settings, confined=confined_aquifer_bool, path_to_output=path_interim_pflotran_files,)
-    save_yaml(settings, f"{output_dataset_dir}/inputs")
+    save_yaml(settings, output_dataset_dir / "inputs")
 
-    write_hp_additional_files(
-        f"{output_dataset_dir}/pflotran_inputs", args.num_hps, args.vary_hp_amount
-    )
+    write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps, args.vary_hp_amount)
 
     # potentially calc 1 or 2 hp locations
     if args.vary_hp:
-        calc_loc_hp_variation_2d(args.num_dp, f"{output_dataset_dir}/inputs", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary=args.vary_hp_amount, )
+        (output_dataset_dir / "inputs" / "hps").mkdir(parents=True, exist_ok=True)
+        calc_loc_hp_variation_2d(args.num_dp, output_dataset_dir / "inputs" / "hps", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary=args.vary_hp_amount, )
 
     # make benchmark testcases
-    pressures, perms = calc_pressure_and_perm_values(args.num_dp, f"{output_dataset_dir}/inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, )
+    pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, )
+    settings["permeability"]["min"] = np.min(perms)
+    settings["permeability"]["max"] = np.max(perms)
+    settings["pressure"] = {}
+    settings["pressure"]["min"] = np.min(pressures)
+    settings["pressure"]["max"] = np.max(pressures)
+
     if args.vary_perm:
-        create_vary_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, min_max=perms)
+        create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
     if args.vary_pressure:
-        create_vary_fields(args.num_dp, f"{output_dataset_dir}/inputs", settings, min_max=pressures, vary_property="pressure")
+        create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
 
     return settings
 
@@ -97,15 +96,16 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
     else:
         pressures = load_vary_files(origin_folder, "pressure_fields")
 
+    origin_hps = origin_folder / "hps"
     for hp_id in range(1, num_hp + 1):
         hp_fixed = f"locs_hp_{hp_id}_fixed.txt"
-        file_fixed = origin_folder/hp_fixed
+        file_fixed = origin_hps/hp_fixed
         hp_x = f"locs_hp_x_{hp_id}.txt"
-        file_x = origin_folder/hp_x
+        file_x = origin_hps/hp_x
         hp_y = f"locs_hp_y_{hp_id}.txt"
-        file_y = origin_folder/hp_y
+        file_y = origin_hps/hp_y
         if file_fixed.exists():
-            file_fixed = open(origin_folder/hp_fixed, "r")
+            file_fixed = open(origin_hps/hp_fixed, "r")
             # TODO check whether line shift
             for line_nr, line in enumerate(file_fixed):
                 if line_nr in run_ids:
@@ -113,13 +113,13 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
             file_fixed.close()
         elif file_x.exists() and file_y.exists():
             x = []
-            file_x = open(origin_folder/hp_x, "r")
+            file_x = open(origin_hps/hp_x, "r")
             for line_nr, line in enumerate(file_x):
                 if line_nr in run_ids:
                     x.append(float(line))
             file_x.close()
             y = []
-            file_y = open(origin_folder/hp_y, "r")
+            file_y = open(origin_hps/hp_y, "r")
             for line_nr, line in enumerate(file_y):
                 if line_nr in run_ids:
                     y.append(float(line))
