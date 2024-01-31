@@ -17,6 +17,7 @@ def run_simulation(args, run_ids: list):
     timestamp_begin = time.ctime()
     avg_time_per_sim = 0
     logging.info(f"Working at {timestamp_begin} on folder {os.getcwd()}")
+    assert_combinations(args, run_ids)
 
     confined_aquifer = False
     if args.benchmark:
@@ -80,11 +81,11 @@ def run_simulation(args, run_ids: list):
                 # beep()
 
         clean_up()
-        os.chdir("../")
+        os.chdir("../../../")
 
-    clean_up_end(args)
+    clean_up_end(args, output_dataset_dir)
     avg_time_per_sim /= len(run_ids)
-    save_args(args, timestamp_begin, time_begin, time.perf_counter(), avg_time_per_sim)
+    save_args(output_dataset_dir, args, timestamp_begin, time_begin, time.perf_counter(), avg_time_per_sim)
     logging.info(f"Finished dataset creation at {time.ctime()} after {time.perf_counter() - time_begin}")
 
 
