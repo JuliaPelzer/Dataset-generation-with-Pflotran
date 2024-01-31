@@ -11,7 +11,7 @@ except:
     from create_grid_unstructured import write_loc_well_file
 
 
-def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, vary_pressure_field:bool=False, settings=None, loc_hps: np.ndarray = None, ):
+def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, vary_pressure_field:bool=False, settings=None, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024):
     destination_dir = output_dataset_dir / f"RUN_{run_id}"
 
     # create pressure gradient file
@@ -45,7 +45,6 @@ def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float,
         shutil.copy(perm_files_location / current_perm_file, destination_dir / "interim_permeability_field.h5")
 
     if loc_hps is not None:
-        assert settings is not None, "Settings must be provided if loc_hps is provided"
         try:
             for hp_id, loc_hp in enumerate(loc_hps):
                 curr_loc_hp = list(loc_hp)
@@ -55,6 +54,27 @@ def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float,
             curr_loc_hp = list(loc_hps)
             curr_loc_hp.append(1)
             write_loc_well_file(destination_dir, settings, loc_hp=curr_loc_hp, idx=hp_id)
+
+    # create injection-temperature file
+    temp_text = f"""TIME_UNITS yr
+DATA_UNITS C
+! <time> <value>
+0.  0.
+38. 0.
+72. {temp[0]}d0""" # TODO for several hps, prettier solution
+    destination_file = destination_dir / "interim_injection_temperature.txt"
+    with open(destination_file, "w") as file:
+        file.write(temp_text)
+    logging.info(f"Temperature Input: {temp}")
+
+    # create injection-rate file
+    rate_text = f"""0.    0.
+38.   0.
+72.   {rate[0]}""" # TODO for several hps, prettier solution
+    destination_file = destination_dir / "interim_injection_rate.txt"
+    with open(destination_file, "w") as file:
+        file.write(rate_text)
+    logging.info(f"Rate Input: {rate}")
 
 
 # copy next permeability field to the current folder

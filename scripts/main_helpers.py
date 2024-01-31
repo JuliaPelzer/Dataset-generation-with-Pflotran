@@ -11,6 +11,7 @@ import yaml
 from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
                                               write_hp_additional_files)
 from scripts.calc_p_and_K import calc_pressure_and_perm_values
+from scripts.calc_hp_parameter_variation import calc_injection_variation
 from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml, save_yaml
@@ -54,6 +55,8 @@ def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = F
         create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
     if args.vary_pressure:
         create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
+    if args.vary_inflow:
+        calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
 
     return settings
 
@@ -81,9 +84,16 @@ def load_vary_files(origin_folder: pathlib.Path, fields_folder: str):
             fields.append(f)
     return fields
 
-def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False, vary_pressure: bool = False,):
-    # initialize lists
-    locs_hps = []
+def load_list_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
+    fields = []
+    with open(origin_folder/curr_file, "r") as file_fixed:
+        for line_nr, line in enumerate(file_fixed):
+            if line_nr in run_ids:
+                print(np.array(line.split(" "), dtype=np.float32))
+                fields.append(np.array(line.split(" "), dtype=np.float32))
+    return fields
+
+def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False, vary_pressure: bool = False, vary_inflow: bool = False):
 
     # load perm files
     if not vary_perm:
@@ -138,7 +148,17 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
         locs_hps = np.array(locs_hps)
         locs_hps = np.swapaxes(locs_hps, 0, 1)
 
-    return np.array(pressures), np.array(perms), np.array(locs_hps)
+    if vary_inflow:
+        temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
+        rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
+    else:
+        try:
+            temp_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["temperature"]
+            rate_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["rate"]
+        except:
+            temp_in = None
+            rate_in = None
+    return np.array(pressures), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
 
 
 def set_pflotran_file(args, confined_aquifer):
@@ -146,8 +166,9 @@ def set_pflotran_file(args, confined_aquifer):
     perm_case = "vary" if args.vary_perm else "iso"
     confined_extension = "_confined" if confined_aquifer else ""
     vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
+    vary_inflow_extension = "_vary_inflow" if args.vary_inflow else ""
     pflotran_file = (
-        f"input_files/pflotran_{perm_case}_perm{vary_pressure_extension}{confined_extension}.in"
+        f"pflotran_{perm_case}_perm{vary_pressure_extension}{vary_inflow_extension}{confined_extension}.in"
     )
     return pflotran_file
 

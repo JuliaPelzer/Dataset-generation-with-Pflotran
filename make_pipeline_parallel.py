@@ -43,7 +43,7 @@ def run_simulation(args, run_ids: list):
 
     pflotran_file = set_pflotran_file(args, confined_aquifer=confined_aquifer)
 
-    pressures, perms, locs_hps = load_inputs_subset(run_ids, output_dataset_dir / "inputs", args.num_hps, settings, vary_perm=args.vary_perm, vary_pressure=args.vary_pressure,)
+    pressures, perms, locs_hps, temp_in, rate_in = load_inputs_subset(run_ids, output_dataset_dir / "inputs", args.num_hps, settings, vary_perm=args.vary_perm, vary_pressure=args.vary_pressure, vary_inflow=args.vary_inflow)
 
     # make run folders
     for run_id in run_ids:
@@ -51,15 +51,12 @@ def run_simulation(args, run_ids: list):
 
         # copy respective pflotran.in file
         shutil.copytree(output_dataset_dir/"pflotran_inputs", output_dataset_run_dir)
-        shutil.copy(pflotran_file, f"{output_dataset_run_dir}/pflotran.in")
+        shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
 
-        if not args.vary_hp:
-            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure,)
+        if args.num_hps > 0 and args.vary_hp:
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, locs_hps[run_ids.index(run_id)], temp=temp_in[run_ids.index(run_id)], rate=rate_in[run_ids.index(run_id)])
         else:
-            if args.num_hps > 0:
-                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, locs_hps[run_ids.index(run_id)], )
-            else:
-                write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, vary_pressure_field=args.vary_pressure,)
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, temp=temp_in[run_ids.index(run_id)], rate=rate_in[run_ids.index(run_id)])
 
         os.chdir(output_dataset_run_dir)
         start_sim = time.perf_counter()
@@ -115,8 +112,9 @@ if __name__ == "__main__":
     parser.add_argument("--vary_pressure", type=bool, default=False)  # vary pressure
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
-    parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant"], default="large")
+    parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant", "small_square"], default="large")
     parser.add_argument("--only_vary_distribution", type=bool, default=False)  # only vary distribution, for perm-field get min+max; for pressure:=0.003
+    parser.add_argument("--vary_inflow", type=bool, default=False)  # vary injection parameters (inflow rate, temperature)
 
     args = parser.parse_args()
 
