@@ -66,7 +66,7 @@ def calc_loc_hp_variation_2d(
                 f"distance to border: {distance_to_border} m, {len(distance_to_border[1])} values"
             )
         except:
-            distance_to_border = 5
+            distance_to_border = [[5], [5,5], 5]
 
         for i in range(number_of_hps - num_hps_to_vary, number_of_hps):
             # choose random position inside domain
@@ -77,11 +77,18 @@ def calc_loc_hp_variation_2d(
                     param_dataset_size,
                 )
             except:
-                locs_x = np.random.randint(
-                    0 + distance_to_border[0][0],
-                    grid_size[0] - distance_to_border[0][0],
-                    param_dataset_size,
-                )
+                try:
+                    locs_x = np.random.randint(
+                        0 + distance_to_border[0][0],
+                        grid_size[0] - distance_to_border[0][0],
+                        param_dataset_size,
+                    )
+                except:
+                    locs_x = np.random.randint(
+                        0 + distance_to_border,
+                        grid_size[0] - distance_to_border,
+                        param_dataset_size,
+                    )
 
             if len(distance_to_border[1]) == 1:
                 locs_y = np.random.randint(
