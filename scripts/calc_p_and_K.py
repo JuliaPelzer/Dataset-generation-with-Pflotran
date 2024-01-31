@@ -45,6 +45,7 @@ def calc_pressure_and_perm_values(
 ):
     if number_datapoints == 0:  # benchmark case 1hp, iso perm --> 4 datapoints
         pressure_array, permeability_iso_array = benchmark_pressure_perm()
+    
     elif benchmark_bool:  # benchmark case 2hps, varying perm
         pressure_array = np.array([-0.0016]) # -0.0020 Danyal
         if vary_perm_field:
@@ -55,10 +56,16 @@ def calc_pressure_and_perm_values(
             permeability_iso_array = np.array([9e-11]) # 3e-10 Danyal
     else:  # normal dataset
         if not only_vary_distribution:
-            pressure_array = np.random.uniform(-0.0030, -0.0030, number_datapoints)
-            permeability_iso_array = calc_perm_from_pressure_and_K(len(pressure_array))
+            const_perm_pressure = False
+            if const_perm_pressure:
+                pressure_array = np.array([-0.003,] * number_datapoints)
+                permeability_iso_array = np.array([1e-10,] * number_datapoints)
+                print(pressure_array, permeability_iso_array, number_datapoints)
+            else:
+                pressure_array = np.random.uniform(-0.0035, -0.0015, number_datapoints)
+                permeability_iso_array = calc_perm_from_pressure_and_K(number_datapoints)
         else:
-            pressure_array = np.array([-0.003,]) * number_datapoints
+            pressure_array = np.array([-0.003,] * number_datapoints)
 
         if vary_perm_field:
             if only_vary_distribution:
