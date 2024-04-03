@@ -28,3 +28,6 @@ permeability:
   - 4
   max: 3.0e-10 #danyal #5.09683995922528e-09 #testcases   #old:6.65e-09
   min: 1.0193679918450561e-11 #testcases #old:1.36e-12
+injection:
+  temperature: 15.6
+  rate: 0.00024
