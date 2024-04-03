@@ -130,10 +130,10 @@
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
     TYPE
-      PRESSURE DIRICHLET
+      LIQUID_PRESSURE DIRICHLET
       TEMPERATURE DIRICHLET
     /
-    PRESSURE DATASET pressure
+    LIQUID_PRESSURE DATASET pressure
     TEMPERATURE 10.6d0 C
   /
   FLOW_CONDITION injection

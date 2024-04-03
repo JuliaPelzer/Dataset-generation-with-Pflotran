@@ -127,27 +127,27 @@
   #=========================== flow conditions ==================================
   FLOW_CONDITION sides
     TYPE
-      PRESSURE HYDROSTATIC
+      LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
-    PRESSURE 101325.d0
+    LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
 
   FLOW_CONDITION initial
     TYPE
-      PRESSURE HYDROSTATIC
+      LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
-    PRESSURE 101325.d0
+    LIQUID_PRESSURE 101325.d0
     TEMPERATURE DATASET Temperature
   /
   

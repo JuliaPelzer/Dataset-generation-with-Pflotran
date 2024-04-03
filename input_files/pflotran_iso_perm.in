@@ -15,7 +15,7 @@
   TIME
     FINAL_TIME 27.5 y
     INITIAL_TIMESTEP_SIZE 1.d-5 y
-    MAXIMUM_TIMESTEP_SIZE 0.05 y
+    MAXIMUM_TIMESTEP_SIZE 1.0 y
   /
 
   REFERENCE_PRESSURE 101325. #[Pa]
@@ -120,14 +120,14 @@
   #=========================== flow conditions ==================================
   FLOW_CONDITION initial
     TYPE
-      PRESSURE HYDROSTATIC
+      LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE interim_pressure_gradient.txt
     /
-    PRESSURE 101325.d0
+    LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
   FLOW_CONDITION injection !influx starting at day 72
