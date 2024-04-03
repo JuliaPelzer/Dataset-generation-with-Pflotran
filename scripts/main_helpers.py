@@ -192,10 +192,6 @@ def clean_up():
         shutil.move(file, hps_dir / file)
 
 def clean_up_end(args, output_dataset_dir: pathlib.Path):
-    if args.vary_perm:
-        shutil.rmtree(output_dataset_dir / "inputs" / "permeability_fields")
-    if args.vary_pressure:
-        shutil.rmtree(output_dataset_dir / "inputs" / "pressure_fields")
     if not args.benchmark:
         try:
             os.remove(output_dataset_dir / "inputs" / "benchmark_locs_hps.yaml")
