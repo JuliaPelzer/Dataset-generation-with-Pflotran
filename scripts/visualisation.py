@@ -14,14 +14,7 @@ except:
     from make_general_settings import load_yaml
 
 
-def plot_sim(
-    path_run: str,
-    settings,
-    plot_name: str = "plot_simulation_results",
-    case: str = "side_hp",
-    reshape_bool: bool = True,
-    confined: bool = False,
-):
+def plot_sim(path_run: str, settings, plot_name: str = "plot_simulation_results", case: str = "side_hp", reshape_bool: bool = True, confined: bool = False,):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
     with h5py.File(path_run + "/pflotran.h5", "r") as file:
         list_to_plot = _make_plottable_and_2D(
