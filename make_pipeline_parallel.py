@@ -33,7 +33,7 @@ def run_simulation(args, run_ids: list):
         (output_dataset_dir / "inputs").mkdir(parents=True)
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
-        # ONCE PER DATASET: generate set of perms, pressures and hp locations
+        # ONCE PER DATASET: generate set of perms, pressures and hp locations; and make grid files
         settings = make_parameter_set(args, output_dataset_dir, confined_aquifer_bool=confined_aquifer)
     else:
         logging.info(f"...{output_dataset_dir}/inputs folder already exists")
@@ -61,10 +61,9 @@ def run_simulation(args, run_ids: list):
         os.chdir(output_dataset_run_dir)
         start_sim = time.perf_counter()
         logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}")
-        PFLOTRAN_DIR = "/home/pelzerja/pelzerja/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/pflotran-3.0.2-toidqfdeqa4a5fbnn5yz4q7hm4adb6n3/bin"
         tmp_output = False
         output_extension = " -screen_output off" if not tmp_output else ""
-        os.system(f"mpirun -n 64 {PFLOTRAN_DIR}/pflotran -output_prefix pflotran{output_extension}")
+        os.system(f"mpirun -n 2 pflotran -output_prefix pflotran{output_extension}")
         avg_time_per_sim += time.perf_counter() - start_sim
         logging.info(f"Finished PFLOTRAN simulation at {time.ctime()} after {time.perf_counter() - start_sim}")
 
@@ -115,8 +114,10 @@ if __name__ == "__main__":
     parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant", "small_square"], default="large")
     parser.add_argument("--only_vary_distribution", type=bool, default=False)  # only vary distribution, for perm-field get min+max; for pressure:=0.003
     parser.add_argument("--vary_inflow", type=bool, default=False)  # vary injection parameters (inflow rate, temperature)
-
+    
     args = parser.parse_args()
+    with open("outputs/args.txt", "w") as f:
+        f.write(str(args))
 
     run_ids = list(range(args.id_start, args.id_end))
     run_simulation(args, run_ids)
