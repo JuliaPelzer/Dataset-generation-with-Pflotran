@@ -19,7 +19,7 @@ def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float,
         pressure_gradient_x = 0
         pressure_gradient_y = pressure_grad_y
         pressure_gradient_z = 0
-        pressure_text = f"    PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
+        pressure_text = f"    LIQUID_PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
         destination_file = destination_dir / "interim_pressure_gradient.txt"
         with open(destination_file, "w") as file:
             file.write(pressure_text)
