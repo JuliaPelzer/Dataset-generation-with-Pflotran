@@ -179,7 +179,9 @@ def assert_combinations(args, run_ids: list):
     assert args.num_dp >= len(run_ids), f"number of datapoints must be smaller than number of run ids"
 
 def clean_up():
-    shutil.move("pflotran.in", f"../inputs/pflotran.in")
+    try:
+        shutil.move("pflotran.in", f"../inputs/pflotran.in")
+    except: ... # exists already in inputs
     for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt", "east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "mesh.uge", "settings.yaml",]:
         try:
             os.remove(file)
