@@ -63,7 +63,7 @@ def run_simulation(args, run_ids: list):
         PFLOTRAN_DIR = os.environ["PFLOTRAN_DIR"]
         os.system(f"mpirun -n 60 {PFLOTRAN_DIR}/bin/pflotran -output_prefix pflotran{output_extension}")
         avg_time_per_sim += time.perf_counter() - start_sim
-        logging.info(f"Finished PFLOTRAN simulation at {time.ctime()} after {time.perf_counter() - start_sim}")
+        logging.info(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds")
 
         # call visualisation
         if args.visu:
