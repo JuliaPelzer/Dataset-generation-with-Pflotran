@@ -1,13 +1,10 @@
 import argparse
-import h5py
 import logging
 import os
-import pathlib
 import shutil
 import time
 
 from scripts.make_general_settings import load_yaml
-from scripts.utils import beep
 from scripts.visualisation import plot_sim
 from scripts.write_parameters_input_files_parallel import write_parameter_input_files
 from scripts.main_helpers import *
@@ -75,7 +72,6 @@ def run_simulation(args, run_ids: list):
                 logging.info(f"...visualisation of RUN {run_id} is done")
             except:
                 logging.info(f"...visualisation of RUN {run_id} failed")
-                # beep()
 
         clean_up()
         os.chdir("../../../")
