@@ -20,7 +20,7 @@ from scripts.write_parameters_input_files_parallel import \
     write_parameter_input_files
 from scripts.main_helpers import make_output_dir
 
-from make_pipeline_parallel import *
+from main_dataset_generation import *
 
 def run_bm_cases_small():
     time_begin = time.perf_counter()
