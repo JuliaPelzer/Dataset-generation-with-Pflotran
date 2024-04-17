@@ -5,24 +5,35 @@
 - bash 5.0.17 or newer (tested with this version)
 
 ## How to install Pflotran using spack:
-`git clone -c feature.manyFiles=true https://github.com/spack/spack.git`
+`git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git ~/spack`
 
-`. spack/share/spack/setup-env.sh`
+`cd ~/spack`
 
-copy `spack.yaml` (pflotran specific) to folder and go there (e.g. "cd test_nn/installs/")
+in destination folder for venv (cd DESTINATION):
 
-`spack env activate .`
+`. share/spack/setup-env.sh`
 
-`spack install` / `spack install pflotran`
+`spack install python`
+
+`spack install py-pip`
+
+`pip install -r requirements.txt`
+
+`spack install petsc`
+
+`spack install pflotran`
+
+copy (petsc and) pflotran, (python, pip) link to ~/.bashrc.my
 
 > **Note**
 > need internet access for it
 
 ### next login: 
-`cd ../`
-`. spack/share/spack/setup-env.sh`
+`cd ~/spack`
 
-go to folder with `spack.yaml` (e.g. test_nn/installs)
+`. share/spack/setup-env.sh`
+
+go to folder with `spack.yaml`  (destination folder, e.g. test_nn/installs)
 
 `spack env activate .` 
 
