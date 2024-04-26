@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import time
+from pathlib import Path
 
 from scripts.make_general_settings import load_yaml
 from scripts.visualisation import plot_sim
@@ -113,6 +114,7 @@ if __name__ == "__main__":
     parser.add_argument("--vary_inflow", type=bool, default=False)  # vary injection parameters (inflow rate, temperature)
     
     args = parser.parse_args()
+    Path("outputs").mkdir(parents=True, exist_ok=True)
     with open("outputs/args.txt", "w") as f:
         f.write(str(args))
 
