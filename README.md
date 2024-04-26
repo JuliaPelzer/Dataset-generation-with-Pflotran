@@ -39,6 +39,11 @@ go to folder with `spack.yaml`  (destination folder, e.g. test_nn/installs)
 
 `spack install pflotran`
 
+# zum ersten Mal aufrufen
+1. install petsc, pflotran and its requirements (see `requirements.txt`)
+2. define environment variable `PFLOTRAN_DIR` that points to the pflotran installation directory
+3. run "python main_dataset_generation.py --num_hps 1 --domain small --visu True" to generate a small dataset with one heat pump and visualizations to test the set up
+
 # Phd_simulation_groundtruth
 builds datasets with definable number of data points; based on one pflotran.in file, varying pressure gradients in external `.txt` file (and varying permeability fields based on `perlin_noise` in external `.h5` files)
 
