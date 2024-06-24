@@ -168,6 +168,17 @@
     REGION south
   /
 
+  # boundary conditions
+  BOUNDARY_CONDITION
+    FLOW_CONDITION initial
+    REGION west
+  /
+
+  BOUNDARY_CONDITION
+    FLOW_CONDITION initial
+    REGION east
+  /
+
   EXTERNAL_FILE conditions_hps.txt
   #=========================== stratigraphy couplers ============================
   STRATA
