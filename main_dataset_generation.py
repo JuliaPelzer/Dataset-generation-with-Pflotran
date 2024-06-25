@@ -27,8 +27,8 @@ def run_simulation(args, run_ids: list):
     output_dataset_dir = make_output_dir(args.name)
 
     # folder for files like pflotran.in, pressure_values.txt and perm_field_parameters.txt, mesh.uge etc.
-    if not os.path.isdir(output_dataset_dir / "inputs"):
-        (output_dataset_dir / "inputs").mkdir(parents=True)
+    if (output_dataset_dir / "inputs").exists() == False:
+        (output_dataset_dir / "inputs").mkdir(parents=True, exist_ok=True)
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
         # ONCE PER DATASET: generate set of perms, pressures and hp locations; and make grid files
@@ -37,7 +37,7 @@ def run_simulation(args, run_ids: list):
         logging.info(f"...{output_dataset_dir}/inputs folder already exists")
 
         # get settings
-        settings = load_yaml(f"{output_dataset_dir}/inputs")
+        settings = load_yaml(output_dataset_dir/"inputs")
 
     pflotran_file = set_pflotran_file(args, confined_aquifer=confined_aquifer)
 
