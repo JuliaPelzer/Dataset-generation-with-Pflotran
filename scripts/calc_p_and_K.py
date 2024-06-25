@@ -34,6 +34,14 @@ def calc_perm_from_K(num_samples: int, random_bool: bool = True):
     # permeability_array = 10 ** np.random.uniform(-11, np.log10(3*10**(-10)), num_samples) # for Danyal
     return permeability_array
 
+def calc_perm_from_K_2(hydraulic_conductivity: Union[float, np.ndarray]):
+    # viscosity approximately 7.5 e6 at temp= 10°C and a density of 1000 kg m-3
+    v_w=7.5E06 # source Fabian: https://gitlab.lrz.de/geo.kw-coders/nn_pflotran/-/blob/main/assign_initial_conditions.py
+
+    # perm = K / v_w
+    permeability_array = hydraulic_conductivity / v_w
+    return permeability_array
+
 
 def calc_pressure_and_perm_values(
     number_datapoints: int,

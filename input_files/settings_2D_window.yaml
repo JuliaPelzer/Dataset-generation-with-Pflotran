@@ -1,0 +1,27 @@
+general:
+  random_bool: True
+  seed_id: 2907
+  dimensions: 2
+grid:
+  loc_hp: # Location of the heatpump in metres
+  - 161
+  - 111
+  - 1
+  distance_to_border:
+  - - 575 # [m] x both
+  - - 100 # [m] y lower
+    - 1165 # [m] y upper
+  - 0
+  ncells:
+  - 64
+  - 1280
+  - 1
+  size: #[m]
+  - 320
+  - 6400
+  - 0
+permeability:
+  case: realistic_window
+injection:
+  temperature: 15.6
+  rate: 0.00024
