@@ -11,14 +11,19 @@ except:
     from create_grid_unstructured import write_loc_well_file
 
 
-def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, vary_pressure_field:bool=False, settings=None, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024):
+def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, vary_pressure_field:bool=False, settings=None, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024, turn_p_grad:bool=False):
     destination_dir = output_dataset_dir / f"RUN_{run_id}"
 
     # create pressure gradient file
     if not vary_pressure_field:
-        pressure_gradient_x = 0
-        pressure_gradient_y = pressure_grad_y
-        pressure_gradient_z = 0
+        if not turn_p_grad:
+            pressure_gradient_x = 0
+            pressure_gradient_y = pressure_grad_y
+            pressure_gradient_z = 0
+        else:
+            pressure_gradient_x = pressure_grad_y
+            pressure_gradient_y = 0
+            pressure_gradient_z = 0
         pressure_text = f"    LIQUID_PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
         destination_file = destination_dir / "interim_pressure_gradient.txt"
         with open(destination_file, "w") as file:
