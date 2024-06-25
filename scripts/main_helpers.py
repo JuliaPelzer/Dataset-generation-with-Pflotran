@@ -20,7 +20,12 @@ from scripts.visualisation import plot_sim
 def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = False):
 
     # copy settings file
-    shutil.copy(f"input_files/settings_2D_{args.domain_category}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )
+    if "3D" in args.domain_category:
+        # args.domain_category =  # rm 3D
+        settings_name = f"settings_3D_{args.domain_category}"
+    else:
+        settings_name = f"settings_2D_{args.domain_category}"
+    shutil.copy(f"input_files/{settings_name}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )
     if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
         try:
             shutil.copy("input_files/benchmark_locs_hps.yaml", output_dataset_dir / "inputs" / "benchmark_locs_hps.yaml",)

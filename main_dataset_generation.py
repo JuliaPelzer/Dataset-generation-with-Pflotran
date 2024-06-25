@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("--turn_p_grad", default=False)
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
-    parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant", "small_square"], default="large")
+    parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant", "small_square", "small_3D"], default="large")
     parser.add_argument("--only_vary_distribution", type=bool, default=False)  # only vary distribution, for perm-field get min+max; for pressure:=0.003
     parser.add_argument("--vary_inflow", type=bool, default=False)  # vary injection parameters (inflow rate, temperature)
     
