@@ -1,8 +1,7 @@
 *.code-workspace
 outputs/
 input_files/real_Munich_input_fields/originals/
-input_files/real_Munich_input_fields/epsg_25832/schotterebene.gpkg
-
+input_files/real_Munich_input_fields/epsg_25832/
 run_*.sh
 
 # Pflotran files
