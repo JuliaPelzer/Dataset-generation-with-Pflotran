@@ -14,12 +14,10 @@ except:
     from make_general_settings import load_yaml
 
 
-def plot_sim(path_run: str, settings, plot_name: str = "plot_simulation_results", case: str = "side_hp", reshape_bool: bool = True, confined: bool = False,):
+def plot_sim(path_run: str, settings, plot_name: str = "plot_simulation_results", case: str = "side_hp", reshape_bool: bool = True):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
     with h5py.File(path_run + "/pflotran.h5", "r") as file:
-        list_to_plot = _make_plottable_and_2D(
-            file, case, reshape_bool, settings, confined=confined
-        )
+        list_to_plot = _make_plottable_and_2D(file, case, reshape_bool, settings)
 
     _plot_y(list_to_plot, path_run, name_pic=plot_name, case=case)
     _plot_isolines(list_to_plot, path_run, settings, name_pic=plot_name, case=case,)
@@ -32,19 +30,9 @@ def plot_sim(path_run: str, settings, plot_name: str = "plot_simulation_results"
         )
 
 
-def _make_plottable_and_2D(
-    hdf5_file: h5py.File,
-    case: str,
-    reshape_bool: bool,
-    settings,
-    confined: bool = False,
-) -> List:
+def _make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, settings) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
     dimensions = settings["grid"]["ncells"]
-    if confined:
-        dimensions = (dimensions[0], dimensions[1], dimensions[2] + 2)
-    # if dimensions != (20,150,16) and dimensions[2] != 1:
-    #     logging.warning(f"Dimensions are {dimensions}, view is only optimized for dimensions 20x150x16 and size 100mx750mx80m")
     list_to_plot = []
     for time in hdf5_file.keys():
         if not time in [
@@ -67,9 +55,7 @@ def _make_plottable_and_2D(
                     data_dict["data"] = data_dict["data"][9, :, :].T
                 elif case == "top_hp":
                     data_dict["data"] = data_dict["data"][:, :, 9]
-                elif case == "2D" and confined:
-                    data_dict["data"] = data_dict["data"][:, :, 1]
-                elif case == "2D" and not confined:
+                elif case == "2D":
                     data_dict["data"] = data_dict["data"][:, :, 0]
                 elif case == "3D":
                     data_dict["data"] = data_dict["data"][:, :, 2]

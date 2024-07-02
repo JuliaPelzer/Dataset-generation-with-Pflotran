@@ -17,7 +17,6 @@ def run_simulation(args, run_ids: list):
     logging.info(f"Working at {timestamp_begin} on folder {os.getcwd()}")
     assert_combinations(args, run_ids)
 
-    confined_aquifer = False
     if args.benchmark:
         args = set_benchmark_args(args)
 
@@ -32,14 +31,14 @@ def run_simulation(args, run_ids: list):
         logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
         # ONCE PER DATASET: generate set of perms, pressures and hp locations; and make grid files
-        settings = make_parameter_set(args, output_dataset_dir, confined_aquifer_bool=confined_aquifer)
+        settings = make_parameter_set(args, output_dataset_dir)
     else:
         logging.info(f"...{output_dataset_dir}/inputs folder already exists")
 
         # get settings
         settings = load_yaml(output_dataset_dir/"inputs")
 
-    pflotran_file = set_pflotran_file(args, confined_aquifer=confined_aquifer)
+    pflotran_file = set_pflotran_file(args)
 
     pressures, perms, locs_hps, temp_in, rate_in = load_inputs_subset(run_ids, output_dataset_dir / "inputs", args.num_hps, settings, vary_perm=args.vary_perm, vary_pressure=args.vary_pressure, vary_inflow=args.vary_inflow)
 
@@ -69,7 +68,7 @@ def run_simulation(args, run_ids: list):
         # call visualisation
         if args.visu:
             try:
-                plot_sim(".", settings, case="2D", confined=confined_aquifer)
+                plot_sim(".", settings, case="2D")
                 logging.info(f"...visualisation of RUN {run_id} is done")
             except:
                 logging.info(f"...visualisation of RUN {run_id} failed")

@@ -17,7 +17,7 @@ from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.visualisation import plot_sim
 
 
-def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = False):
+def make_parameter_set(args, output_dataset_dir):
 
     # copy settings file
     if "3D" in args.domain_category:
@@ -37,7 +37,7 @@ def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = F
     # make grid files
     path_interim_pflotran_files = output_dataset_dir / "pflotran_inputs"
     path_interim_pflotran_files.mkdir(parents=True, exist_ok=True)
-    settings = create_all_grid_files(settings, confined=confined_aquifer_bool, path_to_output=path_interim_pflotran_files,)
+    settings = create_all_grid_files(settings, path_to_output=path_interim_pflotran_files,)
 
     write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps, args.vary_hp_amount) # region_hps, strata_hps, condition_hps.txt
 
@@ -172,14 +172,13 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
     return np.array(pressures), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
 
 
-def set_pflotran_file(args, confined_aquifer):
+def set_pflotran_file(args):
     # build pflotran file name
     perm_case = "vary" if args.vary_perm else "iso"
-    confined_extension = "_confined" if confined_aquifer else ""
     vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
     vary_inflow_extension = "_vary_inflow" if args.vary_inflow else ""
     pflotran_file = (
-        f"pflotran_{perm_case}_perm{vary_pressure_extension}{vary_inflow_extension}{confined_extension}.in"
+        f"pflotran_{perm_case}_perm{vary_pressure_extension}{vary_inflow_extension}.in"
     )
     return pflotran_file
 
@@ -224,9 +223,8 @@ def save_args(output_dataset_dir, args, timestamp_begin, time_begin, time_end, a
 
 def just_visualize(args):
     settings = load_yaml(f"{args.name}/inputs")
-    confined_aquifer = False
 
     for run_id in range(4):  # in case of testcases_4
         output_dataset_run_dir = f"{args.name}/RUN_{run_id}"
-        plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
+        plot_sim(output_dataset_run_dir, settings, case="2D")
         logging.info(f"...visualisation of RUN {run_id} is done")
