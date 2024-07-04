@@ -11,15 +11,6 @@ BCs:
 - bottom:
     - no flow  (default)
     - no energy flux  (default)
-- left:
-    - pressure hydrostatic, acc. to dataset
-    - temperature dirichlet, 10.6°C
-- right:
-    - pressure hydrostatic, acc. to dataset
-    - temperature dirichlet, 10.6°C
-- front:
-    - pressure hydrostatic, acc. to dataset
-    - temperature dirichlet, 10.6°C
-- end: 
+- left/right/front/end or north/south/east/west:
     - pressure hydrostatic, acc. to dataset
     - temperature dirichlet, 10.6°C
