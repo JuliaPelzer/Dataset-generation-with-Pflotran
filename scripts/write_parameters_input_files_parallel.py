@@ -16,7 +16,7 @@ def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float,
 
     # create pressure gradient file
     if not vary_pressure_field:
-        if not turn_p_grad:
+        if turn_p_grad:
             pressure_gradient_x = 0
             pressure_gradient_y = pressure_grad_y
             pressure_gradient_z = 0
