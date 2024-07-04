@@ -1,5 +1,5 @@
 general:
-  random_bool: false
+  random_bool: True
   seed_id: 2907
   dimensions: 2
 grid:
@@ -21,7 +21,7 @@ grid:
   - 12800
   - 0
 permeability:
-  case: perlin_v2
+  case: realistic_window
   factor: 40
   frequency:
   - 18

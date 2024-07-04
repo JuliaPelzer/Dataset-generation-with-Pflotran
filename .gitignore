@@ -1,5 +1,8 @@
 *.code-workspace
 outputs/
+input_files/real_Munich_input_fields/
+scripts/test_perlinnoise.ipynb
+scripts/open_h5.ipynb
 
 # Pflotran files
 *.vtk
