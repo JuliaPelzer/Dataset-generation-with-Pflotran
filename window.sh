@@ -1,0 +1,2 @@
+#!/bin/sh
+python main_dataset_generation.py --domain_ca giant --name dataset_window_giant_3dp --num_hps 100 --vary_hp True --vary_hp_amount 100 --num_dp 3 --id_start 0 --id_end 3 --visu True --vary_perm True

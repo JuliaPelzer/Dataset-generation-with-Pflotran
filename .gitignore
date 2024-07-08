@@ -1,6 +1,8 @@
 *.code-workspace
 outputs/
-input_files/real_Munich_input_fields/
+input_files/real_Munich_input_fields/originals/
+input_files/real_Munich_input_fields/epsg_25832/
+run_*.sh
 scripts/test_perlinnoise.ipynb
 scripts/open_h5.ipynb
 

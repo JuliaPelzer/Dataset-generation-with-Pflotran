@@ -1,8 +1,10 @@
 import logging
 import os
 import sys
+import pathlib
 from random import random, sample, seed
-from typing import Dict
+from typing import Dict, List
+import yaml
 
 import matplotlib.pyplot as plt
 import noise
@@ -11,19 +13,13 @@ from h5py import *
 from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
 
+from scripts.get_clipped_inputs import get_all_clipped_inputs
+from scripts.calc_p_and_K import calc_perm_from_K_2
 from scripts.make_general_settings import load_yaml
 from scripts.visualisation import _aligned_colorbar
 
 
-def make_grid(
-    settings: Dict,
-    aimed_min: float,
-    aimed_max: float,
-    base: float = 0,
-    offset: float = None,
-    freq: float = None,
-    vary_property: str = "permeability",
-):
+def make_grid(settings: Dict, aimed_min: float, aimed_max: float, base: float = 0, offset: float = None, freq: float = None, vary_property: str = "permeability",):
     grid_dimensions = settings["grid"]["ncells"]  # [-]
     domain_size = settings["grid"]["size"]  # [m]
 
@@ -66,15 +62,7 @@ def make_grid(
         if settings["general"]["dimensions"] == 2:
 
             def perlin_noise(x, y):
-                return noise.pnoise2(
-                    x,
-                    y,
-                    octaves=1,
-                    persistence=0.5,
-                    lacunarity=2.0,
-                    repeatx=1024,
-                    repeaty=1024,
-                    base=base,
+                return noise.pnoise2(x, y, octaves=1, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, base=base,
                 )
 
             values = np.zeros((grid_dimensions[0], grid_dimensions[1]))
@@ -207,11 +195,8 @@ def plot_vary_field(cells, filename, case="trigonometric", vary_property:str="pe
 
 
 def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bool: bool = False, min_max: np.ndarray = None, filename_extension: str = "", vary_property: str = "permeability", ):
-    # TODO vary frequency
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-    if not os.path.exists(f"{folder}/{vary_property}_fields"):
-        os.mkdir(f"{folder}/{vary_property}_fields")
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{vary_property}_fields").mkdir(parents=True, exist_ok=True)
 
     # if not settings["general"]["random_bool"]:
     #     np.random.seed(settings["general"]["seed_id"])
@@ -226,6 +211,7 @@ def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bo
         bases = range(number_samples)
     base_offset = np.random.rand(3) * 4242
 
+    # TODO vary frequency
     freq_factor = settings[vary_property]["frequency"]  # TODO vary like base
 
     for idx, base in enumerate(tqdm(bases)):
@@ -269,6 +255,63 @@ def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bo
 
     logging.info(f"Created {len(bases)} {vary_property}-field(s)")
     return cells  # for pytest
+
+def create_realistic_window(settings: Dict, num_dp: int, dest_folder: pathlib.Path):
+    dest_folder.mkdir(parents=True, exist_ok=True)
+    vary_property = "permeability"
+    (dest_folder / f"{vary_property}_fields").mkdir(parents=True, exist_ok=True)
+
+    # also varies perm, even though args.vary_perm might be False
+    inputs_path = pathlib.Path("input_files/real_Munich_input_fields/epsg_25832/")
+    current_resolution = yaml.safe_load(open(inputs_path / "resolution.yaml"))
+    window_size_meters = [settings["grid"]["size"][0], settings["grid"]["size"][1]] # 2D
+    window_size_cells = [int(window_size_meters[0] / current_resolution), int(window_size_meters[1] / current_resolution)]
+    # cut fields
+    start_positions, windows_cond, windows_drawdown = get_all_clipped_inputs( inputs_path, num_dp, window_size_cells, settings["general"],)
+    # calc perm from K
+    windows_perm = calc_perm_from_K_2(windows_cond)
+
+    # interpolate to grid : data resolution 20 -> aimed resolution e.g. 5
+    perms_on_new_grid = interpolateToGrid(settings, num_dp, window_size_meters, window_size_cells, windows_perm)
+
+    # save
+    for i in range(num_dp):
+        base = i
+        cells = perms_on_new_grid[i]
+        filename = f"{dest_folder}/{vary_property}_fields/{vary_property}_base_{base}.h5"
+        save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
+    
+    # save start_positions
+    np.savetxt(dest_folder / "start_positions_in_meters.txt", start_positions*current_resolution)
+
+    return perms_on_new_grid
+
+def interpolateToGrid(settings:Dict, num_dp:int, window_shape_meters:List[int], window_shape_cells:List[int], windows_perm:np.array):
+    new_grid = np.zeros((num_dp, settings["grid"]["ncells"][0], settings["grid"]["ncells"][1]))
+    for i in range(num_dp):
+        interpolated_window = RegularGridInterpolator(
+                (np.linspace(0, window_shape_meters[0], window_shape_cells[0]),
+                 np.linspace(0, window_shape_meters[1], window_shape_cells[1])),
+                values = windows_perm[i],
+                method = "slinear",
+                bounds_error = True,
+            )
+        x = np.linspace(0, settings["grid"]["size"][0], settings["grid"]["ncells"][0])
+        y = np.linspace(0, settings["grid"]["size"][1], settings["grid"]["ncells"][1])
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        new_grid[i] = interpolated_window((X, Y))
+
+        # import matplotlib.pyplot as plt
+        # plt.figure()
+        # plt.subplot(2,1, 1)
+        # plt.imshow(windows_perm[i])
+        # plt.colorbar()
+        # plt.subplot(2, 1, 2)
+        # plt.imshow(new_grid[i])
+        # plt.colorbar()
+        # plt.show()
+
+    return new_grid
 
 def calc_pressure_from_gradient_field(gradient_field: np.array, settings: Dict):
     # calculate pressure field from gradient field

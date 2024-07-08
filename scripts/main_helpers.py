@@ -1,4 +1,3 @@
-import argparse
 import h5py
 import logging
 import os
@@ -13,15 +12,20 @@ from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
 from scripts.calc_p_and_K import calc_pressure_and_perm_values
 from scripts.calc_hp_parameter_variation import calc_injection_variation
 from scripts.create_grid_unstructured import create_all_grid_files
-from scripts.create_varying_field import create_vary_fields
+from scripts.create_varying_field import create_vary_fields, create_realistic_window
 from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.visualisation import plot_sim
 
 
-def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = False):
+def make_parameter_set(args, output_dataset_dir):
 
     # copy settings file
-    shutil.copy(f"input_files/settings_2D_{args.domain_category}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )
+    if "3D" in args.domain_category:
+        # args.domain_category =  # rm 3D
+        settings_name = f"settings_3D_{args.domain_category}"
+    else:
+        settings_name = f"settings_2D_{args.domain_category}"
+    shutil.copy(f"input_files/{settings_name}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )
     if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
         try:
             shutil.copy("input_files/benchmark_locs_hps.yaml", output_dataset_dir / "inputs" / "benchmark_locs_hps.yaml",)
@@ -32,10 +36,10 @@ def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = F
     settings = load_yaml(output_dataset_dir / "inputs")
     # make grid files
     path_interim_pflotran_files = output_dataset_dir / "pflotran_inputs"
-    path_interim_pflotran_files.mkdir(parents=True)
-    settings = create_all_grid_files(settings, confined=confined_aquifer_bool, path_to_output=path_interim_pflotran_files,)
+    path_interim_pflotran_files.mkdir(parents=True, exist_ok=True)
+    settings = create_all_grid_files(settings, path_to_output=path_interim_pflotran_files,)
 
-    write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps, args.vary_hp_amount)
+    write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps, args.vary_hp_amount) # region_hps, strata_hps, condition_hps.txt
 
     # optional: calc 1 or more hp locations
     if args.vary_hp:
@@ -44,19 +48,26 @@ def make_parameter_set(args, output_dataset_dir, confined_aquifer_bool: bool = F
 
     # calc pressure and perm values
     pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, only_vary_distribution=args.only_vary_distribution,)
-    settings["permeability"]["min"] = float(np.min(perms))
-    settings["permeability"]["max"] = float(np.max(perms))
     settings["pressure"] = {}
     settings["pressure"]["min"] = float(np.min(pressures))
     settings["pressure"]["max"] = float(np.max(pressures))
+
+    if settings["permeability"]["case"] == "realistic_window": 
+        assert args.vary_perm == True, "vary_perm not combinable with realistic_window"
+        perms = create_realistic_window(settings, args.num_dp, output_dataset_dir / "inputs")
+        # and overwrite min, max perm values
+
+    settings["permeability"]["min"] = float(np.min(perms))
+    settings["permeability"]["max"] = float(np.max(perms))
     save_yaml(settings, output_dataset_dir / "inputs")
 
-    if args.vary_perm:
-        create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
-    if args.vary_pressure:
-        create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
-    if args.vary_inflow:
-        calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
+    if not settings["permeability"]["case"] == "realistic_window":
+        if args.vary_perm:
+            create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
+        if args.vary_pressure:
+            create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
+        if args.vary_inflow:
+            calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
 
     return settings
 
@@ -161,14 +172,13 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
     return np.array(pressures), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
 
 
-def set_pflotran_file(args, confined_aquifer):
+def set_pflotran_file(args):
     # build pflotran file name
     perm_case = "vary" if args.vary_perm else "iso"
-    confined_extension = "_confined" if confined_aquifer else ""
     vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
     vary_inflow_extension = "_vary_inflow" if args.vary_inflow else ""
     pflotran_file = (
-        f"pflotran_{perm_case}_perm{vary_pressure_extension}{vary_inflow_extension}{confined_extension}.in"
+        f"pflotran_{perm_case}_perm{vary_pressure_extension}{vary_inflow_extension}.in"
     )
     return pflotran_file
 
@@ -213,9 +223,8 @@ def save_args(output_dataset_dir, args, timestamp_begin, time_begin, time_end, a
 
 def just_visualize(args):
     settings = load_yaml(f"{args.name}/inputs")
-    confined_aquifer = False
 
     for run_id in range(4):  # in case of testcases_4
         output_dataset_run_dir = f"{args.name}/RUN_{run_id}"
-        plot_sim(output_dataset_run_dir, settings, case="2D", confined=confined_aquifer)
+        plot_sim(output_dataset_run_dir, settings, case="2D")
         logging.info(f"...visualisation of RUN {run_id} is done")

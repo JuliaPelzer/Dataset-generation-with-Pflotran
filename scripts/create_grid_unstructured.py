@@ -9,17 +9,12 @@ from scripts.make_general_settings import (change_grid_domain_size, load_yaml,
                                            save_yaml)
 
 
-def write_mesh_file(path_to_output: str, settings: Dict, confined: bool = False):
+def write_mesh_file(path_to_output: str, settings: Dict):
     xGrid, yGrid, zGrid = settings["grid"]["ncells"]
     cell_widths = settings["grid"]["size"] / np.array(
         settings["grid"]["ncells"]
     )  # Cell width in metres
     cellXWidth, cellYWidth, cellZWidth = cell_widths
-
-    if confined:
-        zGrid += 2
-        confined_top = []
-        confined_bottom = []
 
     volume = cellXWidth * cellYWidth * cellZWidth
     if cellXWidth == cellYWidth and cellXWidth == cellZWidth:
@@ -49,10 +44,6 @@ def write_mesh_file(path_to_output: str, settings: Dict, confined: bool = False)
                     + "  "
                     + str(volume)
                 )
-                if confined and k == 0:
-                    confined_bottom.append(str(cellID_1) + "\n")
-                elif confined and k == zGrid - 1:
-                    confined_top.append(str(cellID_1) + "\n")
                 cellID_1 += 1
 
     output_string.append(
@@ -127,12 +118,6 @@ def write_mesh_file(path_to_output: str, settings: Dict, confined: bool = False)
 
     with open(str(path_to_output) + "/mesh.uge", "w") as file:
         file.writelines(output_string)
-    if confined:
-        with open(str(path_to_output) + "/bottom_cover.txt", "w") as file:
-            file.writelines(confined_bottom)
-        with open(str(path_to_output) + "/top_cover.txt", "w") as file:
-            file.writelines(confined_top)
-
 
 def write_loc_well_file(
     path_to_output: str, settings: Dict, loc_hp: np.array = None, idx: int = 0
@@ -280,13 +265,7 @@ def _set_z_width_in_2d_case(settings: Dict):
     settings["grid"]["size"][2] = float(cellZWidth)
 
 
-def create_all_grid_files(
-    settings,
-    path_to_output: str = ".",
-    grid_widths: List[float] = None,
-    number_cells: List[int] = None,
-    confined: bool = False,
-):
+def create_all_grid_files(settings, path_to_output: str = ".", grid_widths: List[float] = None, number_cells: List[int] = None):
     if grid_widths is not None and number_cells is not None:
         settings = change_grid_domain_size(
             settings, case="", grid_widths=grid_widths, number_cells=number_cells
@@ -296,7 +275,7 @@ def create_all_grid_files(
         _set_z_width_in_2d_case(settings)
 
     save_yaml(settings, path_to_output)
-    write_mesh_file(path_to_output, settings, confined=confined)
+    write_mesh_file(path_to_output, settings)
     write_SN_files(path_to_output, settings)
     write_WE_files(path_to_output, settings)
     write_loc_well_file(path_to_output, settings)
