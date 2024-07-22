@@ -40,7 +40,7 @@ def run_simulation(args, run_ids: list):
 
     pflotran_file = set_pflotran_file(args)
 
-    pressures, perms, locs_hps, temp_in, rate_in = load_inputs_subset(run_ids, output_dataset_dir / "inputs", args.num_hps, settings, vary_perm=args.vary_perm, vary_pressure=args.vary_pressure, vary_inflow=args.vary_inflow)
+    pressures, perms, locs_hps, temp_in, rate_in, pressure_angles = load_inputs_subset(run_ids, output_dataset_dir / "inputs", args, settings)
 
     # make run folders
     for run_id in run_ids:
@@ -51,9 +51,9 @@ def run_simulation(args, run_ids: list):
         shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
 
         if args.num_hps > 0 and args.vary_hp:
-            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, locs_hps[run_ids.index(run_id)], temp=temp_in[run_ids.index(run_id)], rate=rate_in[run_ids.index(run_id)], turn_p_grad=args.turn_p_grad)
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, locs_hps[run_ids.index(run_id)], temp=temp_in[run_ids.index(run_id)], rate=rate_in[run_ids.index(run_id)], p_angle=pressure_angles[run_ids.index(run_id)])
         else:
-            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, temp=temp_in[run_ids.index(run_id)], rate=rate_in[run_ids.index(run_id)], turn_p_grad=args.turn_p_grad)
+            write_parameter_input_files(pressures[run_ids.index(run_id)], perms[run_ids.index(run_id)], output_dataset_dir, run_id, args.vary_perm, args.vary_pressure, settings, temp=temp_in[run_ids.index(run_id)], rate=rate_in[run_ids.index(run_id)], p_angle=pressure_angles[run_ids.index(run_id)])
 
         os.chdir(output_dataset_run_dir)
         start_sim = time.perf_counter()
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--vary_hp_amount", type=int, default=0)  # how many hp locations should be varied
     parser.add_argument("--vary_perm", type=bool, default=False)  # vary permeability
     parser.add_argument("--vary_pressure", type=bool, default=False)  # vary pressure
-    parser.add_argument("--turn_p_grad", default=False)
+    parser.add_argument("--vary_angle", type=bool, default=False)  # vary angle of p-gradient
     parser.add_argument("--id_start", type=int, default=0)  # start id
     parser.add_argument("--id_end", type=int, default=1)  # end id
     parser.add_argument("--domain_category", type=str, choices=["large", "small", "medium", "giant", "small_square", "small_3D"], default="large")

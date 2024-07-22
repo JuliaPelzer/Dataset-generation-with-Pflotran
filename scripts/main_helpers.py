@@ -1,3 +1,4 @@
+import argparse 
 import h5py
 import logging
 import os
@@ -6,10 +7,11 @@ import shutil
 import time
 import numpy as np
 import yaml
+import random
 
 from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
                                               write_hp_additional_files)
-from scripts.calc_p_and_K import calc_pressure_and_perm_values
+from scripts.calc_p_and_K import calc_pressure_and_perm_values, calc_p_angle_variation
 from scripts.calc_hp_parameter_variation import calc_injection_variation
 from scripts.create_grid_unstructured import create_all_grid_files
 from scripts.create_varying_field import create_vary_fields, create_realistic_window
@@ -17,7 +19,7 @@ from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.visualisation import plot_sim
 
 
-def make_parameter_set(args, output_dataset_dir):
+def make_parameter_set(args:argparse.Namespace, output_dataset_dir):
 
     # copy settings file
     if "3D" in args.domain_category:
@@ -68,6 +70,8 @@ def make_parameter_set(args, output_dataset_dir):
             create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
         if args.vary_inflow:
             calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
+        if args.vary_angle:
+            calc_p_angle_variation(args.num_dp, output_dataset_dir / "inputs")
 
     return settings
 
@@ -104,25 +108,41 @@ def load_list_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
                 fields.append(np.array(line.split(" "), dtype=np.float32))
     return fields
 
-def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False, vary_pressure: bool = False, vary_inflow: bool = False):
+def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, args: argparse.Namespace, settings: dict = None):
 
     # load perm files
-    if not vary_perm:
+    if not args.vary_perm:
         perms = load_iso_files(origin_folder, run_ids, "permeability_values.txt")
     else:
         perms = load_vary_files(origin_folder, "permeability_fields")
 
     # load pressure files
-    if not vary_pressure:
+    if not args.vary_pressure:
         pressures = load_iso_files(origin_folder, run_ids, "pressure_values.txt")
     else:
         pressures = load_vary_files(origin_folder, "pressure_fields")
+
+    if not args.vary_angle:
+        pressure_angles = np.array([0]*len(run_ids))
+    else:
+        pressure_angles = load_iso_files(origin_folder, run_ids, "pressure_angles_rad.txt")
+
+    if args.vary_inflow:
+        temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
+        rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
+    else:
+        try:
+            temp_in = np.ones([len(run_ids), args.num_hps]) * settings["injection"]["temperature"]
+            rate_in = np.ones([len(run_ids), args.num_hps]) * settings["injection"]["rate"]
+        except:
+            temp_in = None
+            rate_in = None
 
     # initialize lists
     locs_hps = []
     # load hp files
     origin_hps = origin_folder / "hps"
-    for hp_id in range(1, num_hp + 1):
+    for hp_id in range(1, args.num_hps + 1):
         hp_fixed = f"locs_hp_{hp_id}_fixed.txt"
         file_fixed = origin_hps/hp_fixed
         hp_x = f"locs_hp_x_{hp_id}.txt"
@@ -158,18 +178,7 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
     elif len(np.array(locs_hps).shape) == 3:
         locs_hps = np.array(locs_hps)
         locs_hps = np.swapaxes(locs_hps, 0, 1)
-
-    if vary_inflow:
-        temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
-        rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
-    else:
-        try:
-            temp_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["temperature"]
-            rate_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["rate"]
-        except:
-            temp_in = None
-            rate_in = None
-    return np.array(pressures), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
+    return np.array(pressures), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in), np.array(pressure_angles)
 
 
 def set_pflotran_file(args):

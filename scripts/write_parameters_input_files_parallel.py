@@ -11,25 +11,24 @@ except:
     from create_grid_unstructured import write_loc_well_file
 
 
-def write_parameter_input_files(pressure_grad_y: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, vary_pressure_field:bool=False, settings=None, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024, turn_p_grad:bool=False):
+def write_parameter_input_files(p_gradient: float, permeability_iso: float, output_dataset_dir: str, run_id: int, perm_variation: bool = False, vary_pressure_field:bool=False, settings=None, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024, p_angle:float=0):
     destination_dir = output_dataset_dir / f"RUN_{run_id}"
 
     # create pressure gradient file
     if not vary_pressure_field:
-        if turn_p_grad:
-            pressure_gradient_x = 0
-            pressure_gradient_y = pressure_grad_y
-            pressure_gradient_z = 0
-        else:
-            pressure_gradient_x = pressure_grad_y
-            pressure_gradient_y = 0
-            pressure_gradient_z = 0
-        pressure_text = f"    LIQUID_PRESSURE {pressure_gradient_x} {pressure_gradient_y} {pressure_gradient_z}"
+        p_gradient = np.array([0, p_gradient])
+        p_gradient_z = 0
+        
+        if p_angle != 0:
+            rotation_matrix = np.array([[np.cos(p_angle), -np.sin(p_angle)], [np.sin(p_angle), np.cos(p_angle)]])
+            p_gradient = np.dot(rotation_matrix, p_gradient)
+
+        pressure_text = f"    LIQUID_PRESSURE {p_gradient[0]} {p_gradient[1]} {p_gradient_z}"
         destination_file = destination_dir / "interim_pressure_gradient.txt"
         with open(destination_file, "w") as file:
             file.write(pressure_text)
         logging.info(
-            f"Pressure Input: {pressure_gradient_x}, {pressure_gradient_y}, {pressure_gradient_z}"
+            f"Pressure Input: {p_gradient[0]}, {p_gradient[1]}, {p_gradient_z}"
         )
     else:
         pressure_files_location = output_dataset_dir / "inputs" / "pressure_fields"

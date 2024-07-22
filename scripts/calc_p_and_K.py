@@ -97,3 +97,9 @@ def calc_pressure_and_perm_values(
         np.savetxt(permeability_file, permeability_iso_array)
 
     return pressure_array, permeability_iso_array
+
+def calc_p_angle_variation(number_datapoints: int, dataset_folder: str):
+    p_angle_array = np.random.uniform(0, 2*np.pi, number_datapoints)
+    with open(dataset_folder / "pressure_angles_rad.txt", "w") as p_angle_file:
+        np.savetxt(p_angle_file, p_angle_array)
+    return p_angle_array
