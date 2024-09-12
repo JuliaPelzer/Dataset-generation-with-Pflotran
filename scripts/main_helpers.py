@@ -7,69 +7,8 @@ import time
 import numpy as np
 import yaml
 
-from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
-                                              write_hp_additional_files)
-from scripts.calc_p_and_K import calc_pressure_and_perm_values
-from scripts.calc_hp_parameter_variation import calc_injection_variation
-from scripts.create_grid_unstructured import create_all_grid_files
-from scripts.create_varying_field import create_vary_fields, create_realistic_window
-from scripts.make_general_settings import load_yaml, save_yaml
+from scripts.make_general_settings import load_yaml
 from scripts.visualisation import plot_sim
-
-
-def make_parameter_set(args, output_dataset_dir):
-
-    # copy settings file
-    if "3D" in args.domain_category:
-        # args.domain_category =  # rm 3D
-        settings_name = f"settings_3D_{args.domain_category}"
-    else:
-        settings_name = f"settings_2D_{args.domain_category}"
-    shutil.copy(f"input_files/{settings_name}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )
-    if args.benchmark or (args.num_hps - args.vary_hp_amount > 0):
-        try:
-            shutil.copy("input_files/benchmark_locs_hps.yaml", output_dataset_dir / "inputs" / "benchmark_locs_hps.yaml",)
-        except:
-            pass
-            
-    # getting settings
-    settings = load_yaml(output_dataset_dir / "inputs")
-    # make grid files
-    path_interim_pflotran_files = output_dataset_dir / "pflotran_inputs"
-    path_interim_pflotran_files.mkdir(parents=True, exist_ok=True)
-    settings = create_all_grid_files(settings, path_to_output=path_interim_pflotran_files,)
-
-    write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps, args.vary_hp_amount) # region_hps, strata_hps, condition_hps.txt
-
-    # optional: calc 1 or more hp locations
-    if args.vary_hp:
-        (output_dataset_dir / "inputs" / "hps").mkdir(parents=True, exist_ok=True)
-        calc_loc_hp_variation_2d(args.num_dp, output_dataset_dir / "inputs" / "hps", args.num_hps, settings, benchmark_bool=args.benchmark, num_hps_to_vary=args.vary_hp_amount, )
-
-    # calc pressure and perm values
-    pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, only_vary_distribution=args.only_vary_distribution,)
-    settings["pressure"] = {}
-    settings["pressure"]["min"] = float(np.min(pressures))
-    settings["pressure"]["max"] = float(np.max(pressures))
-
-    if settings["permeability"]["case"] == "realistic_window": 
-        assert args.vary_perm == True, "vary_perm not combinable with realistic_window"
-        perms = create_realistic_window(settings, args.num_dp, output_dataset_dir / "inputs")
-        # and overwrite min, max perm values
-
-    settings["permeability"]["min"] = float(np.min(perms))
-    settings["permeability"]["max"] = float(np.max(perms))
-    save_yaml(settings, output_dataset_dir / "inputs")
-
-    if not settings["permeability"]["case"] == "realistic_window":
-        if args.vary_perm:
-            create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
-        if args.vary_pressure:
-            create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
-        if args.vary_inflow:
-            calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
-
-    return settings
 
 def make_output_dir(name: str):
     output_dataset_dir = pathlib.Path("outputs") 
@@ -104,23 +43,20 @@ def load_list_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
                 fields.append(np.array(line.split(" "), dtype=np.float32))
     return fields
 
-def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None, vary_perm: bool = False, vary_pressure: bool = False, vary_inflow: bool = False):
+def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None):
 
     # load perm files
-    if not vary_perm:
-        perms = load_iso_files(origin_folder, run_ids, "permeability_values.txt")
-    else:
-        perms = load_vary_files(origin_folder, "permeability_fields")
-
+    perms = load_vary_files(origin_folder, "permeability_fields")
     # load pressure files
-    if not vary_pressure:
-        pressures = load_iso_files(origin_folder, run_ids, "pressure_values.txt")
-    else:
-        pressures = load_vary_files(origin_folder, "pressure_fields")
+    pressure_grads = load_iso_files(origin_folder, run_ids, "pressure_gradients.txt")
+    # load temp_in
+    temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
+    # load rate_in
+    rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
 
-    # initialize lists
+
+    # load hp locations
     locs_hps = []
-    # load hp files
     origin_hps = origin_folder / "hps"
     for hp_id in range(1, num_hp + 1):
         hp_fixed = f"locs_hp_{hp_id}_fixed.txt"
@@ -158,35 +94,15 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
     elif len(np.array(locs_hps).shape) == 3:
         locs_hps = np.array(locs_hps)
         locs_hps = np.swapaxes(locs_hps, 0, 1)
-
-    if vary_inflow:
-        temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
-        rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
-    else:
-        try:
-            temp_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["temperature"]
-            rate_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["rate"]
-        except:
-            temp_in = None
-            rate_in = None
-    return np.array(pressures), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
-
-
-def set_pflotran_file(args):
-    # build pflotran file name
-    perm_case = "vary" if args.vary_perm else "iso"
-    vary_pressure_extension = "_vary_pressure" if args.vary_pressure else ""
-    vary_inflow_extension = "_vary_inflow" if args.vary_inflow else ""
-    pflotran_file = (
-        f"pflotran_{perm_case}_perm{vary_pressure_extension}{vary_inflow_extension}.in"
-    )
-    return pflotran_file
+    
+    return np.array(pressure_grads), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
 
 def assert_combinations(args, run_ids: list):
     # vary inflow only combinable with iso perm and pressure
-    if args.vary_inflow:
-        assert (args.vary_perm == False) and (args.vary_pressure == False) and (args.vary_hp==False), f"vary_inflow only combinable with iso perm and pressure and 1hp"
     assert args.num_dp >= len(run_ids), f"number of datapoints must be smaller than number of run ids"
+
+    if args.num_hps > 1:
+        assert (args.vary_hp), f"If number of heatpumps is larger than 1, vary_hp must be True"
 
 def clean_up():
     try:

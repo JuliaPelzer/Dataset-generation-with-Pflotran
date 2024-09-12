@@ -57,10 +57,10 @@
     POROSITY 0.25d0                     #[-]
     ROCK_DENSITY 2.8d3                  #[kg/m^3]
     SPECIFIC_HEAT 2.0d3                 #of rock? [J/(kg*K)]
-    THERMAL_CONDUCTIVITY_DRY 0.65        #[W/(K*m)] #TODO check
+    THERMAL_CONDUCTIVITY_DRY 0.65       #[W/(K*m)] #TODO check
     THERMAL_CONDUCTIVITY_WET 1.0        #[W/(K*m)] #TODO check
-    LONGITUDINAL_DISPERSIVITY 10       #[m]
-    TRANSVERSE_DISPERSIVITY_H 1       #[m]
+    LONGITUDINAL_DISPERSIVITY 10        #[m]
+    TRANSVERSE_DISPERSIVITY_H 1         #[m]
     PERMEABILITY                        #[m^2] #TESTCASE
       DATASET perm
     /

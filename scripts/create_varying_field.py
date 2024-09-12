@@ -87,9 +87,7 @@ def make_grid(settings: Dict, aimed_min: float, aimed_max: float, base: float = 
                     base=base,
                 )
 
-            values = np.zeros(
-                (grid_dimensions[0], grid_dimensions[1], grid_dimensions[2])
-            )
+            values = np.zeros((grid_dimensions[0], grid_dimensions[1], grid_dimensions[2]))
             for i in range(0, grid_dimensions[0]):
                 for j in range(0, grid_dimensions[1]):
                     for k in range(0, grid_dimensions[2]):
@@ -226,15 +224,7 @@ def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bo
             vary_min = np.log10(vary_min)
             vary_max = np.log10(vary_max)
 
-        cells = make_grid(
-            settings,
-            vary_min,
-            vary_max,
-            base=base,
-            offset=base_offset + [base, 0, 0],
-            freq=freq_factor,
-            vary_property=vary_property,
-        )
+        cells = make_grid(settings,vary_min,vary_max,base=base,offset=base_offset + [base, 0, 0],freq=freq_factor,vary_property=vary_property,)
 
         if vary_property == "permeability":
             cells = 10 ** cells
@@ -256,35 +246,35 @@ def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bo
     logging.info(f"Created {len(bases)} {vary_property}-field(s)")
     return cells  # for pytest
 
-def create_realistic_window(settings: Dict, num_dp: int, dest_folder: pathlib.Path):
-    dest_folder.mkdir(parents=True, exist_ok=True)
-    vary_property = "permeability"
-    (dest_folder / f"{vary_property}_fields").mkdir(parents=True, exist_ok=True)
+# def create_realistic_window(settings: Dict, num_dp: int, dest_folder: pathlib.Path):
+#     dest_folder.mkdir(parents=True, exist_ok=True)
+#     vary_property = "permeability"
+#     (dest_folder / f"{vary_property}_fields").mkdir(parents=True, exist_ok=True)
 
-    # also varies perm, even though args.vary_perm might be False
-    inputs_path = pathlib.Path("input_files/real_Munich_input_fields/epsg_25832/")
-    current_resolution = yaml.safe_load(open(inputs_path / "resolution.yaml"))
-    window_size_meters = [settings["grid"]["size"][0], settings["grid"]["size"][1]] # 2D
-    window_size_cells = [int(window_size_meters[0] / current_resolution), int(window_size_meters[1] / current_resolution)]
-    # cut fields
-    start_positions, windows_cond, windows_drawdown = get_all_clipped_inputs( inputs_path, num_dp, window_size_cells, settings["general"],)
-    # calc perm from K
-    windows_perm = calc_perm_from_K_2(windows_cond)
+#     # also varies perm, even though args.vary_perm might be False
+#     inputs_path = pathlib.Path("input_files/real_Munich_input_fields/epsg_25832/")
+#     current_resolution = yaml.safe_load(open(inputs_path / "resolution.yaml"))
+#     window_size_meters = [settings["grid"]["size"][0], settings["grid"]["size"][1]] # 2D
+#     window_size_cells = [int(window_size_meters[0] / current_resolution), int(window_size_meters[1] / current_resolution)]
+#     # cut fields
+#     start_positions, windows_cond, windows_drawdown = get_all_clipped_inputs( inputs_path, num_dp, window_size_cells, settings["general"],)
+#     # calc perm from K
+#     windows_perm = calc_perm_from_K_2(windows_cond)
 
-    # interpolate to grid : data resolution 20 -> aimed resolution e.g. 5
-    perms_on_new_grid = interpolateToGrid(settings, num_dp, window_size_meters, window_size_cells, windows_perm)
+#     # interpolate to grid : data resolution 20 -> aimed resolution e.g. 5
+#     perms_on_new_grid = interpolateToGrid(settings, num_dp, window_size_meters, window_size_cells, windows_perm)
 
-    # save
-    for i in range(num_dp):
-        base = i
-        cells = perms_on_new_grid[i]
-        filename = f"{dest_folder}/{vary_property}_fields/{vary_property}_base_{base}.h5"
-        save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
+#     # save
+#     for i in range(num_dp):
+#         base = i
+#         cells = perms_on_new_grid[i]
+#         filename = f"{dest_folder}/{vary_property}_fields/{vary_property}_base_{base}.h5"
+#         save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
     
-    # save start_positions
-    np.savetxt(dest_folder / "start_positions_in_meters.txt", start_positions*current_resolution)
+#     # save start_positions
+#     np.savetxt(dest_folder / "start_positions_in_meters.txt", start_positions*current_resolution)
 
-    return perms_on_new_grid
+#     return perms_on_new_grid
 
 def interpolateToGrid(settings:Dict, num_dp:int, window_shape_meters:List[int], window_shape_cells:List[int], windows_perm:np.array):
     new_grid = np.zeros((num_dp, settings["grid"]["ncells"][0], settings["grid"]["ncells"][1]))
