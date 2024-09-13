@@ -12,7 +12,7 @@ def load_geotiff(file_path):
         img = img.squeeze()
     return np.array(img)
 
-def load_properties_after_R_prep(data_path: Path) -> dict:
+def load_properties_after_R_prep(data_path: Path) -> tuple[dict[str, np.ndarray], int]:
     properties = {"dtw": "Depth_to_water_20m_resolution.tif",
                   "drawdown": "Drawdown_20m_resolution.tif", # max. Pumprate des Förderbrunnens an der Stelle #TODO Einheit
                   "hydraulic_conductivity": "Hydraulic_conductivity_20m_resolution.tif",# [m/s]
@@ -47,6 +47,6 @@ def interpolate_properties(property_fields:Dict[str,np.array]) -> Dict[str, Regu
     # make property continuous through interpolation
     interpolators = {}
     for key in property_fields.keys():
-        x,y = np.arange(property_fields[key].shape[0]), np.arange(property_fields[key].shape[1])
+        x,y = np.arange(property_fields[key].shape[0]), np.arange(property_fields[key].shape[1]) # accelerate: rausziehen aus for-loop
         interpolators[key] = RegularGridInterpolator((x,y), property_fields[key], bounds_error=False, fill_value=None)
     return interpolators

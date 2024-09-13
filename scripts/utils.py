@@ -1,4 +1,6 @@
 import os
+from time import time
+from functools import wraps
 
 
 def beep(case: str = "end"):
@@ -8,3 +10,14 @@ def beep(case: str = "end"):
     if case == "end":
         freq = 640  # Hz
         os.system(f"play -nq -t alsa synth {duration} sine {freq}")
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print('func:%r took: %2.4f sec' % \
+          (f.__name__, te-ts))
+        return result
+    return wrap
