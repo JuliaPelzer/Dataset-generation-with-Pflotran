@@ -140,11 +140,8 @@ def make_grid(settings: Dict, aimed_min: float, aimed_max: float, base: float = 
     return values
 
 
-def save_vary_field(filename, ncells, cells, dimensionality: str = "3D", vary_property:str = "permeability"):
-    if dimensionality == "2D":
-        n = ncells[0] * ncells[1]
-    else:
-        n = ncells[0] * ncells[1] * ncells[2]
+def save_vary_field(filename, ncells, cells, vary_property:str = "permeability"):
+    n = np.product(ncells).astype(int)
     # create integer array for cell ids
     iarray = np.arange(n, dtype="i4")
     iarray[:] += 1  # convert to 1-based
@@ -158,6 +155,8 @@ def save_vary_field(filename, ncells, cells, dimensionality: str = "3D", vary_pr
         dataset_name = "Permeability"
     elif vary_property == "pressure":
         dataset_name = "Pressure"
+    else:
+        dataset_name = vary_property
     h5file.create_dataset(dataset_name, data=cells_array_flatten)
 
     h5file.close()
@@ -233,7 +232,7 @@ def create_vary_fields(number_samples: int, folder: str, settings: Dict, plot_bo
             cells = calc_pressure_from_gradient_field(cells, settings)
 
         filename = f"{folder}/{vary_property}_fields/{vary_property}_base_{base}{filename_extension}.h5"
-        save_vary_field(filename, settings["grid"]["ncells"], cells, settings["general"]["dimensions"], vary_property=vary_property,)
+        save_vary_field(filename, settings["grid"]["ncells"], cells, vary_property=vary_property,)
         if plot_bool:
             plot_vary_field(cells, filename[:-3], case=settings[vary_property]["case"], vary_property=vary_property,)  # , vmax=settings["permeability"]["perm_max"], vmin=settings["permeability"]["perm_min"])
             
