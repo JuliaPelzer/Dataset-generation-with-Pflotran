@@ -28,7 +28,7 @@ def run_simulation(args, run_ids: list):
 
     # ONCE PER DATASET: generate set of perms, pressures and hp locations; and make grid files
     if args.realistic:
-        settings = make_realistic_windowed_parameter_set(args, output_dataset_dir, len(run_ids))
+        settings = make_realistic_windowed_parameter_set(args, output_dataset_dir, args.num_dp)
     else:
         settings = make_parameter_set(args, output_dataset_dir)
     # else: # TODO eikommentieren

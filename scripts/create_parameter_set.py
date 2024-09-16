@@ -4,6 +4,7 @@ import numpy as np
 import pathlib
 import shutil
 import yaml
+from scripts.utils import timing
 
 from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
                                               write_hp_additional_files)
@@ -108,6 +109,7 @@ def prepare_settings(args, output_dataset_dir):
 
     return settings
 
+@timing
 def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_path:pathlib.Path, number_of_simulations:int):
     settings = prepare_settings(args, destination_path)
 
@@ -122,9 +124,9 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
     start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], settings["general"])
     print("Number of start positions:", len(start_positions_in_orig_cells))
 
-    valid_start_ids = [] # e.g. [(1508, 2031), (1967, 1825), (1914, 2197), (1803, 3142), (731, 2271)]
+    valid_start_ids = []
     current_number_valid_windows = 0
-    for i, start_pos in enumerate([[1883, 1241]]): #start_positions_in_orig_cells): 
+    for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]]
         try:
             # 2. Größe Box [in cells] bestimmen: 100x100 median oder manuell, e.g. window_shape = np.array([int(12800/20), int(12800/20/2)])
             window_shape = make_window_shape(settings["grid"]["size [m]"], orig_resolution, properties_full, start_pos)
@@ -158,12 +160,13 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
             # TODO check again (Sept)
             bcs_hh, hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
 
-            # interpolate in boxes acc. to new resolution, based on coords (in cells of orig resolution) "window_rotated" and values "wondow_properties"
+            # 7. interpolate in boxes acc. to new resolution, based on coords (in cells of orig resolution) "window_rotated" and values "wondow_properties"
             desti_resolution = settings["grid"]["resolution"]
             window_desti_cells = tuple(np.meshgrid(np.arange(0, window_shape[0],
                                                        step=desti_resolution/orig_resolution),
                                              np.arange(0, window_shape[1],
                                                        step=desti_resolution/orig_resolution)))
+            # alternative: load mesh.uge and somehow evaluate at those positions
             # window_orig_cells = tuple(np.meshgrid(np.arange(0, window_shape[0]),
             #                                  np.arange(0, window_shape[1])))
             interpolators = interpolate_properties(window_properties)
@@ -188,11 +191,13 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
                 # plt.savefig("test_orig.png")
                 # exit()
             
-            # 7. store values (and visualize)
-            # TODO save box_properties_20 and start, rotation_angle_degree
-            # use function "save_vary_field in create_varying_field.py"
-            # save_vary_field(filename, ncells=window_shape_in_orig_cells, cells, dims, vary_property="permeability")
-            # [plot_img(property, name, resolution) for name, property in box_properties_20.items()]
+            # 8. store values (and visualize)
+            ncells = window_shape[...] * orig_resolution / desti_resolution
+            filename = destination_path / f"RUN_{current_number_valid_windows}"
+            filename.mkdir(parents=True, exist_ok=True)
+            save_yaml({"start position [m]": [start_pos[0]*orig_resolution, start_pos[1]*orig_resolution], "rotation angle [°]": float(rotation_angle_degree), "orig resolution [m]": orig_resolution}, filename, "realistic_params", {"allow_unicode":True})
+            for key, field in window_desti_values.items():
+                save_vary_field(filename/f"{key}.h5", ncells, field, vary_property=key)
 
             current_number_valid_windows += 1
             valid_start_ids.append(start_pos)
