@@ -44,7 +44,7 @@ def check_validity_window(data:np.ndarray, window:Tuple[np.ndarray,np.ndarray]) 
     """ window is still in cell "coords" of original data """
 
     # check that window within data range
-    if np.any(window[0] < 0) or np.any(window[1] < 0) or np.any(window[0] >= data.shape[0]) or np.any(window[1] >= data.shape[1]):
+    if np.any(window[0] < 0) or np.any(window[1] < 0) or np.any(window[0] >= data.shape[1]) or np.any(window[1] >= data.shape[0]):
         print("WARNING: window out of range")
         return False #, None
 
