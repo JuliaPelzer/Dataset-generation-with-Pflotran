@@ -88,19 +88,6 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
             # TODO add 3rd dim
             window_desti_values = interpolate_windows(orig_resolution, window_shape, window_properties, desti_resolution, cells)
 
-            # print(window_rotated_cells[0][0,0]-int(window_rotated_cells[0][0,0]), window_rotated_cells[1][0,0]-int(window_rotated_cells[1][0,0]), window_rotated_cells[0][-1,0]-int(window_rotated_cells[0][0,0]), window_rotated_cells[1][-1,0]-int(window_rotated_cells[1][0,0]))
-            # plt.figure()
-            # plt.subplot(1,2, 1)
-            # plt.imshow(window_desti_values["dtw"].reshape((64,128),order="F").T, origin="lower")
-            # plt.subplot(1,2, 2)
-            # plt.imshow(properties_full["dtw"][int(window_rotated_cells[0][0,0]):int(window_rotated_cells[0][0,0])+50, int(window_rotated_cells[1][0,0])-50:int(window_rotated_cells[1][0,0])+50], origin="lower")
-            # plt.scatter(window_rotated_cells[0][0,0]-int(window_rotated_cells[0][0,0]), window_rotated_cells[1][0,0]-int(window_rotated_cells[1][0,0])+50,  label="start")
-            # plt.scatter(window_rotated_cells[0][0,-1]-int(window_rotated_cells[0][0,0]), window_rotated_cells[1][0,-1]-int(window_rotated_cells[1][0,0])+50, label="corner1")
-            # plt.scatter(window_rotated_cells[0][-1,0]-int(window_rotated_cells[0][0,0]), window_rotated_cells[1][-1,0]-int(window_rotated_cells[1][0,0])+50, label="corner2")
-            # plt.scatter(window_rotated_cells[0][-1,-1]-int(window_rotated_cells[0][0,0]), window_rotated_cells[1][-1,-1]-int(window_rotated_cells[1][0,0])+50, label="end")
-            # plt.legend()
-            # plt.show()
-
             # 11. calc and store BCs (hydraulic head)
             # TODO use mesh.uge/ BCs!
             bcs_hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
