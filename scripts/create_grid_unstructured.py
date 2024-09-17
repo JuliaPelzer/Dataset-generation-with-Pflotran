@@ -17,6 +17,7 @@ def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
     volume = faceArea * resolution
 
     output_string = [f"CELLS {xGrid * yGrid * zGrid}"]
+    cells = np.ndarray((xGrid*yGrid*zGrid, 4))
     cellID_1 = 1
     for k in range(0, zGrid):
         zloc = (k + 0.5) * resolution
@@ -25,6 +26,7 @@ def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
             for i in range(0, xGrid):
                 xloc = (i + 0.5) * resolution
                 output_string.append(f"\n{cellID_1}  {xloc}  {yloc}  {zloc}  {volume}")
+                cells[cellID_1-1] = [cellID_1, xloc, yloc, zloc]
                 cellID_1 += 1
 
     output_string.append(f"\nCONNECTIONS {(xGrid - 1) * yGrid * zGrid+ xGrid * (yGrid - 1) * zGrid+ xGrid * yGrid * (zGrid - 1)}")
@@ -50,6 +52,8 @@ def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
 
     with open(path_to_output / "mesh.uge", "w") as file:
         file.writelines(output_string)
+
+    return cells
 
 def write_loc_well_file(path_to_output: pathlib.Path, settings: Dict, loc_hp: np.array = None, idx: int = 0):
     resolution = settings["grid"]["resolution"] # Cell width in metres
@@ -153,9 +157,9 @@ def write_TB_files(path_to_output: pathlib.Path, settings: Dict):
 
 
 def create_mesh_files(path_to_output: pathlib.Path, settings: Dict):
-    write_mesh_file(path_to_output, settings)
+    cells = write_mesh_file(path_to_output, settings)
     write_SN_files(path_to_output, settings)
     write_WE_files(path_to_output, settings)
     # write_TB_files(path_to_output, settings)
 
-    return settings
+    return cells

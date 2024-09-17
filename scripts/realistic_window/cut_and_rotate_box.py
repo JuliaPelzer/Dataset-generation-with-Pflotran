@@ -1,12 +1,7 @@
-from scipy.interpolate import RegularGridInterpolator
 import numpy as np
-from typing import List, Dict, Tuple
+from typing import Tuple
 
-from scripts.utils import timing
 
-# rotated_box_values = data[rotated_box_coords[::-1]]
-# rotated_box_values = rotated_box_values[::-1,::-1]
-   
 def cut_out_values(data:np.ndarray, rotated_box_cells: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:  
     cells_x = rotated_box_cells[0].flatten()
     cells_y = rotated_box_cells[1].flatten()

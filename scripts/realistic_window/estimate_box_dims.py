@@ -31,9 +31,9 @@ def make_window_shape(window_shape_in_meters: Union[None, np.array], resolution:
     this function estimates the size of the simulation box in cells if no window_shape is given manually"""
     if window_shape_in_meters is None:
         window_shape_in_meters = estimate_box_size(properties_full, start, method="LAHM")
-        print("estim. size of window in meters", window_shape_in_meters)
+        print(f"estimated window size: {window_shape_in_meters} [m]")
     else:
-        print("manually set window size to", window_shape_in_meters, "[m]")
+        print(f"manually set window size: {window_shape_in_meters} [m]")
         
     # convert to cells
     window_shape = np.array([window_shape_in_meters[0]/resolution, window_shape_in_meters[1]/resolution]) 
@@ -44,7 +44,7 @@ def make_window_shape(window_shape_in_meters: Union[None, np.array], resolution:
             window_shape[i] = 2
             print(f"WARNING: window_shape too small (zero in one direction) -> set to 2 cells")
    
-    print("size of box", window_shape, "[orig. cells]")
+    # print("size of box", window_shape, "[orig. cells]")
     return window_shape
 
 def estimate_box_rotation(direction_field: np.ndarray, start: Tuple[int,int], window_shape: np.ndarray[int, int]) -> float:
