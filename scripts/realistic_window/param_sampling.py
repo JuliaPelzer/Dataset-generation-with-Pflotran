@@ -32,7 +32,7 @@ def random_thresholded_v_tech(v_dd:float):
     return np.random.uniform(lower_limit, v_dd * 1E-3)
 
 def slice_box(field: np.ndarray, start_pos: np.ndarray, field_size: np.array = np.array([100,100])):
-    field = field[start_pos[0]-int(field_size[0]/2):start_pos[0]+int(field_size[0]/2), start_pos[1]-int(field_size[1]/2):start_pos[1]+int(field_size[1]/2)]
+    field = field[start_pos[1]-int(field_size[1]/2):start_pos[1]+int(field_size[1]/2), start_pos[0]-int(field_size[0]/2):start_pos[0]+int(field_size[0]/2)]
 
     # falls alle Werte in der Box nan sind - dann jump einfach zu nächsten potentiellen Startpunkt ausprobieren
     if np.isnan(field).all():
