@@ -5,11 +5,11 @@ from scripts.realistic_window.param_sampling import sample_median, random_delta_
 from scripts.realistic_window.lahm.analytical_model_lahm import estimate_plume_shapeparams_lahm
 from scripts.realistic_window.tap import estimate_plume_shapeparams_tap
 
-def estimate_box_size(properties:dict[str,np.ndarray], start: Tuple[int,int], sample_size:np.ndarray[int,int] = np.array([100,100]), safety_factor:float = 1.0, method: str = "TAP"):
+def estimate_box_size(properties:dict[str,np.ndarray], center: Tuple[int,int], sample_size:np.ndarray[int,int] = np.array([100,100]), safety_factor:float = 1.0, method: str = "TAP"):
     # sample_size is in number of cells in orig-data
-    v_d = sample_median(properties["darcy_velocity"], start, sample_size) # Darcy vel [m/s]
-    b = sample_median(properties["thickness"], start, sample_size) # Aquifer thickness [m]
-    v_dd = sample_median(properties["drawdown"], start, sample_size) # max-drawdown # TODO Einheitsumrechnung -> SI-Einheiten
+    v_d = sample_median(properties["darcy_velocity"], center, sample_size) # Darcy vel [m/s]
+    b = sample_median(properties["thickness"], center, sample_size) # Aquifer thickness [m]
+    v_dd = sample_median(properties["drawdown"], center, sample_size) # max-drawdown # TODO Einheitsumrechnung -> SI-Einheiten
     delta_t = random_delta_t() # delta of injection temperature, groundwater temperature in [K]
     v_tech = random_thresholded_v_tech(v_dd) # [m^3/s]  #TODO schiefe Verteilung?
     # print("sampled props", "vd", v_d, "b", b, "vdd", v_dd, "deltaT", delta_t, "vtech", v_tech)
@@ -26,17 +26,17 @@ def estimate_box_size(properties:dict[str,np.ndarray], start: Tuple[int,int], sa
     box_shape = safety_factor * np.array([plume_len, plume_width])
     return box_shape
 
-def make_window_shape(window_shape: Union[None, np.array], resolution: int, properties_full: np.ndarray, start: Tuple[int,int]) -> np.ndarray[int, int]:
+def make_window_shape(window_shape_in_meters: Union[None, np.array], resolution: int, properties_full: np.ndarray, start: Tuple[int,int]) -> np.ndarray[int, int]:
     """
     this function estimates the size of the simulation box in cells if no window_shape is given manually"""
-    if window_shape is None:
-        window_shape = estimate_box_size(properties_full, start, method="LAHM")
-        print("estim. size of simulation box in meters", window_shape)
+    if window_shape_in_meters is None:
+        window_shape_in_meters = estimate_box_size(properties_full, start, method="LAHM")
+        print("estim. size of window in meters", window_shape_in_meters)
     else:
-        print("manually set window_shape", window_shape, "[m]")
+        print("manually set window size to", window_shape_in_meters, "[m]")
         
     # convert to cells
-    window_shape = np.array([window_shape[0]/resolution, window_shape[1]/resolution]) 
+    window_shape = np.array([window_shape_in_meters[0]/resolution, window_shape_in_meters[1]/resolution]) 
     window_shape = window_shape.astype(int)
 
     for i in range(2):
