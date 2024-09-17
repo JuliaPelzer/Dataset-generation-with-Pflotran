@@ -18,7 +18,6 @@ def cut_out_values(data:np.ndarray, rotated_box_cells: Tuple[np.ndarray, np.ndar
 
 def calc_rotated_box(start:Tuple[int, int], window_shape:Tuple[int, int], rotation_in_degree:float) -> Tuple[np.ndarray, np.ndarray]:
     '''returns rotated (x,y) cell-coordinates as meshgrid(s)'''
-    #TODO check, dass 100% aligned
     original_orientation_degree = 90
     rotation_in_rad = np.deg2rad(rotation_in_degree + original_orientation_degree)
     # create box as rectangle with coordinates
@@ -56,17 +55,3 @@ def check_validity_window(data:np.ndarray, window:Tuple[np.ndarray,np.ndarray]) 
         return False #, box
     else:
         return True #, box
-
-def cut_bcs_hh(tok:np.array, gwgl:np.array) -> Dict[str, np.ndarray]:
-    tok_min = np.nanmin(tok)
-    bcs = {}
-
-    bcs["inflow"] = gwgl[0,:] - tok_min
-    bcs["outflow"] = gwgl[-1,:] - tok_min
-    bcs["top"] = gwgl[:,-1] - tok_min
-    bcs["bottom"] = gwgl[:,0] - tok_min
-
-    # sample
-    hydraulic_head = gwgl[0,:] - gwgl[-1,:]
-
-    return bcs, hydraulic_head

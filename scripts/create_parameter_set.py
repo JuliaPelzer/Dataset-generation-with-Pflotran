@@ -10,29 +10,19 @@ from scripts.make_general_settings import load_yaml, save_yaml
 from scripts.realistic_window.load_and_align_tiffs import load_properties_after_R_prep
 from scripts.realistic_window.interpolate import interpolate_windows
 from scripts.realistic_window.estimate_box_dims import make_window_shape, estimate_box_rotation, calc_box_height_from_TOK_n_GWGL
-from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rotated_box, check_validity_window, cut_bcs_hh
+from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rotated_box, check_validity_window
+from scripts.realistic_window.boundary_conditions import cut_bcs_hh, save_bcs
 from scripts.realistic_window.param_sampling import get_start_positions
 from scripts.create_varying_field import save_vary_field
-from scripts.create_grid_unstructured import make_mesh_files
+from scripts.create_grid_unstructured import create_mesh_files
 
-def prepare_settings(args, output_dataset_dir):
-    # 0. preparation
-    # copy settings file
-    settings_name = f"settings_{args.dims}D_window_{args.domain_category}"
-    shutil.copy(f"input_files/{settings_name}.yaml", output_dataset_dir / "inputs" / "settings.yaml", )  
-    # get settings
-    settings = load_yaml(output_dataset_dir / "inputs")
-    return settings
 
 @timing
 def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_path:pathlib.Path, settings: Dict, number_of_simulations:int):
 
-    # 1. load full maps
+    # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
     orig_data_path = pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/input_files/real_Munich_input_fields/prepared_with_R")
-    # destination_path = pathlib.Path("../test_dataset_manual_window")
-    # destination_path = pathlib.Path("../test_dataset_automatic_window")
-    properties_full, orig_resolution = load_properties_after_R_prep(data_path=orig_data_path)
-    # properties_full: 1px (=1cell) = 20m (=orig_resolution)
+    properties_full, orig_resolution = load_properties_after_R_prep(data_path=orig_data_path) 
 
     # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
     start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], settings["general"])
@@ -43,13 +33,14 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
     # while not enough windows:
     for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]]
         try:
-            # 3. define window_shape (or load) [in cells]: 100x100 median or manually, e.g. np.array([int(12800/20), int(12800/20/2)])
+            # 3. estimate window_shape [in cells] or load / manually, e.g. np.array([int(12800/20), int(12800/20/2)])
+            # TODO take pump parameters as input
             window_shape = make_window_shape(settings["grid"]["size [m]"], orig_resolution, properties_full, start_pos)
            
             # 4. define rotation angle
             #TODO check, dass 100% aligned
             rotation_angle_degree = estimate_box_rotation(properties_full["darcy_dir"], start_pos, window_shape)
-            print(f"Rotation: {rotation_angle_degree} [°]")
+            print(f"Estimated rotation: {rotation_angle_degree} [°]")
 
             # 5. coords of rotated window
             window_rotated_cells = calc_rotated_box(start_pos, window_shape, rotation_angle_degree)
@@ -86,11 +77,14 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
             else:
                 ncells = np.append(ncells, 1)
             ncells = ncells.astype(int)
-            settings["grid"]["size [m]"].append(ncells[2] * desti_resolution)
-            settings["grid"]
+            if len(settings["grid"]["size [m]"]) == 2:
+                settings["grid"]["size [m]"].append(int(ncells[2] * desti_resolution))
+            else:
+                settings["grid"]["size [m]"][2] = int(ncells[2] * desti_resolution)
             print(settings["grid"]["size [m]"])
             save_yaml(settings, filename)
-            settings = make_mesh_files(args, filename, settings)
+
+            settings = create_mesh_files(filename, settings)
 
             # 10. interpolate cut out data to mesh (e.g. new resolution)
             # based on coords (in cells of orig resolution)
@@ -98,33 +92,12 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
             # TODO add 3rd dim
             window_desti_values = interpolate_windows(orig_resolution, window_shape, window_properties, desti_resolution)
 
-            # 11. calc BCs, HH, ...? # TODO Fabian hydraulic head
-            bcs_hh, hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
-            # print(hydraulic_head, gwgl[:,0]-gwgl[:,-1])
+            # 11. calc and store BCs (hydraulic head)
+            # TODO check north is north etc
+            bcs_hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
+            save_bcs(filename, bcs_hh)
 
-            # plt.subplot(1,3,1)
-            # plt.imshow(properties_full["darcy_dir"][start_pos[0]:start_pos[0]+100,start_pos[1]:start_pos[1]+100], origin="lower")
-            # plt.title("Darcy dir")
-            # plt.colorbar()
-            # plt.scatter(window_rotated_cells[0][0,0]-start_pos[0], window_rotated_cells[1][0,0]-start_pos[1], label="start")
-            # plt.scatter(window_rotated_cells[0][15,0]-start_pos[0], window_rotated_cells[1][15,0]-start_pos[1], label="middle")
-            # plt.scatter(window_rotated_cells[0][15,31]-start_pos[0], window_rotated_cells[1][15,31]-start_pos[1], label="end")
-            # plt.legend()
-            # plt.subplot(1,3,2)
-            # plt.title("GWGL")
-            # plt.imshow(properties_full["gwgl"][start_pos[0]:start_pos[0]+100,start_pos[1]:start_pos[1]+100], origin="lower")
-            # plt.colorbar()
-            # plt.scatter(window_rotated_cells[0][0,0]-start_pos[0], window_rotated_cells[1][0,0]-start_pos[1], label="start")
-            # plt.scatter(window_rotated_cells[0][15,0]-start_pos[0], window_rotated_cells[1][15,0]-start_pos[1], label="middle")
-            # plt.scatter(window_rotated_cells[0][15,31]-start_pos[0], window_rotated_cells[1][15,31]-start_pos[1], label="end")
-            # plt.legend()
-            # plt.subplot(1,3,3)
-            # plt.title("GWGL")
-            # plt.imshow(window_properties["gwgl"], origin="lower")
-            # plt.colorbar()
-            # plt.plot(0,0)
-            # plt.scatter([0,]*window_properties["gwgl"].shape[0], np.arange(0,window_properties["gwgl"].shape[0]), c=window_properties["gwgl"][:,0])
-            # plt.show()
+            print(f"median {np.median(window_properties['darcy_dir'])}")
             
             # 12. store interpolated data and unique params to RUN-dir
             save_yaml({"start position [m]": [start_pos[0]*orig_resolution, start_pos[1]*orig_resolution], "rotation angle [°]": float(rotation_angle_degree), "orig resolution [m]": orig_resolution}, filename, "realistic_params", {"allow_unicode":True})
