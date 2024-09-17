@@ -2,8 +2,6 @@ import rasterio
 import numpy as np
 import yaml
 from pathlib import Path
-from scipy.interpolate import RegularGridInterpolator
-from typing import Dict
 
 # load geoTIFF files
 def load_geotiff(file_path):
@@ -42,11 +40,3 @@ def align_holes(data:dict) -> dict:
     for key in data.keys():
         data[key][mask] = np.nan
     return data
-
-def interpolate_properties(property_fields:Dict[str,np.array]) -> Dict[str, RegularGridInterpolator]:
-    # make property continuous through interpolation
-    interpolators = {}
-    for key in property_fields.keys():
-        x,y = np.arange(property_fields[key].shape[0]), np.arange(property_fields[key].shape[1]) # accelerate: rausziehen aus for-loop
-        interpolators[key] = RegularGridInterpolator((x,y), property_fields[key], bounds_error=False, fill_value=None)
-    return interpolators
