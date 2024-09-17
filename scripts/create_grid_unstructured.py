@@ -4,21 +4,19 @@ import sys
 from typing import Dict, List
 import pathlib
 import argparse
-
 import numpy as np
 
 from scripts.calc_loc_hp_variation_2d import write_hp_additional_files
-from scripts.make_general_settings import load_yaml, save_yaml
 
 
-def write_mesh_file(path_to_output: str, settings: Dict):
-    xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-    resolution = settings["grid"]["resulution"] # Cell width in metres
+def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
+    resolution = settings["grid"]["resolution"] # Cell width in metres
+    xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
 
     faceArea = resolution**2
     volume = faceArea * resolution
 
-    output_string = ["CELLS " + str(xGrid * yGrid * zGrid)]
+    output_string = [f"CELLS {xGrid * yGrid * zGrid}"]
     cellID_1 = 1
     for k in range(0, zGrid):
         zloc = (k + 0.5) * resolution
@@ -50,117 +48,114 @@ def write_mesh_file(path_to_output: str, settings: Dict):
                     cellID_2 = cellID_1 + xGrid * yGrid
                     output_string.append("\n"+ str(cellID_1)+ "  "+ str(cellID_2)+ "  "+ str(xloc)+ "  "+ str(yloc)+ "  "+ str(zloc_local)+ "  "+ str(faceArea))
 
-    if not os.path.exists(path_to_output):
-        os.makedirs(path_to_output)
-
-    with open(str(path_to_output) + "/mesh.uge", "w") as file:
+    with open(path_to_output / "mesh.uge", "w") as file:
         file.writelines(output_string)
 
-def write_loc_well_file(
-    path_to_output: str, settings: Dict, loc_hp: np.array = None, idx: int = 0
-):
+def write_loc_well_file(path_to_output: pathlib.Path, settings: Dict, loc_hp: np.array = None, idx: int = 0):
+    resolution = settings["grid"]["resolution"] # Cell width in metres
+    xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
+    
     if loc_hp is None:
         loc_hp = settings["grid"]["loc_hp"]
-    number_cells = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size [m]"] / np.array(
-        number_cells
-    )  # Cell width in metres
-
-    i, j, k = np.array(loc_hp / cell_widths, int)
+    i, j, k = np.array(loc_hp / resolution, int)
     if k == 0:
         k = 1
         if j == 0:
             j = 1
             if i == 0:
                 i = 1
-    cellID = int(
-        i + (j - 1) * number_cells[0] + (k - 1) * number_cells[0] * number_cells[1]
-    )
+    cellID = int(i + (j - 1) * xGrid + (k - 1) * xGrid * yGrid)
     assert cellID > 0, "CellID is negative"
-    assert type(cellID) == int, "CellID is not an integer"
 
-    with open(os.path.join(path_to_output, f"heatpump_inject{idx}.vs"), "w") as file:
+    with open(path_to_output / f"heatpump_inject{idx}.vs", "w") as file:
         file.write(str(cellID))
     return cellID  # for pytest
 
 
-def write_SN_files(path_to_output: str, settings: Dict):
-    xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size [m]"] / np.array(
-        settings["grid"]["ncells"]
-    )  # Cell width in metres
-    cellXWidth, _, cellZWidth = cell_widths
-    _, yWidth, _ = settings["grid"]["size [m]"]
+def write_SN_files(path_to_output: pathlib.Path, settings: Dict):
+    resolution = settings["grid"]["resolution"] # Cell width in metres
+    xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
 
-    if not cellXWidth == cellZWidth:
-        logging.error("Something with create_grid_unstructured.py is wrong")
-    else:
-        faceArea = cellXWidth * cellZWidth
+    yWidth = settings["grid"]["size [m]"][1]
+    faceArea = resolution**2
 
-    output_string_north = ["CONNECTIONS " + str(xGrid * zGrid)]
-    output_string_south = ["CONNECTIONS " + str(xGrid * zGrid)]
+    output_string_north = [f"CONNECTIONS {xGrid * zGrid}"]
+    output_string_south = [f"CONNECTIONS {xGrid * zGrid}"]
     yloc_north = yWidth
     yloc_south = 0
     for k in range(0, zGrid):
-        zloc = 0.5 * cellZWidth + k * cellZWidth
+        zloc = 0.5 * resolution + k * resolution
         for i in range(0, xGrid):
-            xloc = (i + 0.5) * cellXWidth
+            xloc = (i + 0.5) * resolution
             cellID_north = (xGrid * (yGrid - 1)) + i + 1 + k * xGrid * yGrid
             cellID_south = i + 1 + k * xGrid * yGrid
-            output_string_north.append("\n"+ str(cellID_north)+ "  "+ str(xloc)+ "  "+ str(yloc_north)+ "  "+ str(zloc)+ "  "+ str(faceArea))
-            output_string_south.append("\n"+ str(cellID_south)+ "  "+ str(xloc)+ "  "+ str(yloc_south)+ "  "+ str(zloc)+ "  "+ str(faceArea))
+            output_string_north.append(f"\n{cellID_north}  {xloc}  {yloc_north}  {zloc}  {faceArea}")
+            output_string_south.append(f"\n{cellID_south}  {xloc}  {yloc_south}  {zloc}  {faceArea}")
 
-    with open(str(path_to_output) + "/north.ex", "w") as file:
+    with open(path_to_output / "north.ex", "w") as file:
         file.writelines(output_string_north)
-    with open(str(path_to_output) + "/south.ex", "w") as file:
+    with open(path_to_output / "south.ex", "w") as file:
         file.writelines(output_string_south)
 
 
-def write_WE_files(path_to_output: str, settings: Dict):
-    xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size [m]"] / np.array(
-        settings["grid"]["ncells"]
-    )  # Cell width in metres
-    _, cellYWidth, cellZWidth = cell_widths
-    xWidth, _, _ = settings["grid"]["size [m]"]
+def write_WE_files(path_to_output: pathlib.Path, settings: Dict):
+    resolution = settings["grid"]["resolution"] # Cell width in metres
+    xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
 
-    if not cellYWidth == cellZWidth:
-        logging.error("Something with create_grid_unstructured.py is wrong")
-    else:
-        faceArea = cellYWidth * cellZWidth
+    xWidth = settings["grid"]["size [m]"][0]
+    faceArea = resolution**2
 
     output_string_east = ["CONNECTIONS " + str(yGrid * zGrid)]
     output_string_west = ["CONNECTIONS " + str(yGrid * zGrid)]
     xloc_east = xWidth
     xloc_west = 0
     for k in range(0, zGrid):
-        zloc = 0.5 * cellZWidth + k * cellZWidth
+        zloc = 0.5 * resolution + k * resolution
         for j in range(0, yGrid):
-            yloc = (j + 0.5) * cellYWidth
+            yloc = (j + 0.5) * resolution
             cellID_east = (j + 1) * xGrid + k * xGrid * yGrid
             cellID_west = j * xGrid + 1 + k * xGrid * yGrid
             output_string_east.append("\n"+ str(cellID_east)+ "  "+ str(xloc_east)+ "  "+ str(yloc)+ "  "+ str(zloc)+ "  "+ str(faceArea))
             output_string_west.append("\n"+ str(cellID_west)+ "  "+ str(xloc_west)+ "  "+ str(yloc)+ "  "+ str(zloc)+ "  "+ str(faceArea))
 
-    with open(str(path_to_output) + "/east.ex", "w") as file:
+    with open(path_to_output / "east.ex", "w") as file:
         file.writelines(output_string_east)
-    with open(str(path_to_output) + "/west.ex", "w") as file:
+    with open(path_to_output / "west.ex", "w") as file:
         file.writelines(output_string_west)
 
 
-def create_all_grid_files(settings, path_to_output: str = "."):
+def write_TB_files(path_to_output: pathlib.Path, settings: Dict):
+    resolution = settings["grid"]["resolution"] # Cell width in metres
+    xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
+
+    zWidth = settings["grid"]["size [m]"][2]
+    faceArea = resolution**2
+
+    output_string_top = ["CONNECTIONS " + str(xGrid * yGrid)]
+    output_string_bottom = ["CONNECTIONS " + str(xGrid * yGrid)]
+    zloc_top = zWidth # TODO so rum richtig?
+    zloc_bottom = 0 # TODO so rum richtig?
+
+    for k in range(0, yGrid):
+        # TODO
+        yloc = ...
+        for j in range(0, xGrid):
+            xloc = ...
+            cellID_top = ...
+            cellID_bottom = ...
+            output_string_top.append(f"\n{cellID_top}  {xloc}  {yloc}  {zloc_top}  {faceArea}")
+            output_string_bottom.append(f"\n{cellID_bottom}  {xloc}  {yloc}  {zloc_bottom}  {faceArea}")
+
+    with open(path_to_output / "top.ex", "w") as file:
+        file.writelines(output_string_top)
+    with open(path_to_output / "bottom.ex", "w") as file:
+        file.writelines(output_string_bottom)
+
+
+def create_mesh_files(path_to_output: pathlib.Path, settings: Dict):
     write_mesh_file(path_to_output, settings)
     write_SN_files(path_to_output, settings)
     write_WE_files(path_to_output, settings)
-    write_loc_well_file(path_to_output, settings)
-
-    return settings
-
-def make_mesh_files(args:argparse.Namespace, output_dataset_dir:pathlib.Path, settings: Dict, grid_size: np.array = None, ncells:np.array = None):
-    # make grid files
-    output_dataset_dir.mkdir(parents=True, exist_ok=True)
-    settings = create_all_grid_files(settings, output_dataset_dir, grid_size, ncells)
-
-    write_hp_additional_files(output_dataset_dir, args.num_hps) # region_hps, strata_hps, condition_hps.txt
+    # write_TB_files(path_to_output, settings)
 
     return settings
