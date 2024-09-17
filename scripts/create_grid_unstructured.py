@@ -2,116 +2,53 @@ import logging
 import os
 import sys
 from typing import Dict, List
+import pathlib
+import argparse
 
 import numpy as np
 
-from scripts.make_general_settings import (change_grid_domain_size, load_yaml,
-                                           save_yaml)
+from scripts.calc_loc_hp_variation_2d import write_hp_additional_files
+from scripts.make_general_settings import load_yaml, save_yaml
 
 
 def write_mesh_file(path_to_output: str, settings: Dict):
     xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size"] / np.array(
-        settings["grid"]["ncells"]
-    )  # Cell width in metres
-    cellXWidth, cellYWidth, cellZWidth = cell_widths
+    resolution = settings["grid"]["resulution"] # Cell width in metres
 
-    volume = cellXWidth * cellYWidth * cellZWidth
-    if cellXWidth == cellYWidth and cellXWidth == cellZWidth:
-        faceArea = cellXWidth**2
-    else:
-        logging.error(
-            "The grid is not cubic - look at create_grid_unstructured.py OR 2D case and settings.yaml depth for z is not adapted"
-        )
+    faceArea = resolution**2
+    volume = faceArea * resolution
 
     output_string = ["CELLS " + str(xGrid * yGrid * zGrid)]
     cellID_1 = 1
     for k in range(0, zGrid):
-        zloc = (k + 0.5) * cellZWidth
+        zloc = (k + 0.5) * resolution
         for j in range(0, yGrid):
-            yloc = (j + 0.5) * cellYWidth
+            yloc = (j + 0.5) * resolution
             for i in range(0, xGrid):
-                xloc = (i + 0.5) * cellXWidth
-                output_string.append(
-                    "\n"
-                    + str(cellID_1)
-                    + "  "
-                    + str(xloc)
-                    + "  "
-                    + str(yloc)
-                    + "  "
-                    + str(zloc)
-                    + "  "
-                    + str(volume)
-                )
+                xloc = (i + 0.5) * resolution
+                output_string.append(f"\n{cellID_1}  {xloc}  {yloc}  {zloc}  {volume}")
                 cellID_1 += 1
 
-    output_string.append(
-        "\nCONNECTIONS "
-        + str(
-            (xGrid - 1) * yGrid * zGrid
-            + xGrid * (yGrid - 1) * zGrid
-            + xGrid * yGrid * (zGrid - 1)
-        )
-    )
+    output_string.append(f"\nCONNECTIONS {(xGrid - 1) * yGrid * zGrid+ xGrid * (yGrid - 1) * zGrid+ xGrid * yGrid * (zGrid - 1)}")
     for k in range(0, zGrid):
-        zloc = (k + 0.5) * cellZWidth
+        zloc = (k + 0.5) * resolution
         for j in range(0, yGrid):
-            yloc = (j + 0.5) * cellYWidth
+            yloc = (j + 0.5) * resolution
             for i in range(0, xGrid):
-                xloc = (i + 0.5) * cellXWidth
+                xloc = (i + 0.5) * resolution
                 cellID_1 = i + 1 + j * xGrid + k * xGrid * yGrid
                 if i < xGrid - 1:
-                    xloc_local = (i + 1) * cellXWidth
+                    xloc_local = (i + 1) * resolution
                     cellID_2 = cellID_1 + 1
-                    output_string.append(
-                        "\n"
-                        + str(cellID_1)
-                        + "  "
-                        + str(cellID_2)
-                        + "  "
-                        + str(xloc_local)
-                        + "  "
-                        + str(yloc)
-                        + "  "
-                        + str(zloc)
-                        + "  "
-                        + str(faceArea)
-                    )
+                    output_string.append(f"\n{cellID_1}  {cellID_2}  {xloc_local}  {yloc}  {zloc}  {faceArea}")
                 if j < yGrid - 1:
-                    yloc_local = (j + 1) * cellYWidth
+                    yloc_local = (j + 1) * resolution
                     cellID_2 = cellID_1 + xGrid
-                    output_string.append(
-                        "\n"
-                        + str(cellID_1)
-                        + "  "
-                        + str(cellID_2)
-                        + "  "
-                        + str(xloc)
-                        + "  "
-                        + str(yloc_local)
-                        + "  "
-                        + str(zloc)
-                        + "  "
-                        + str(faceArea)
-                    )
+                    output_string.append("\n"+ str(cellID_1)+ "  "+ str(cellID_2)+ "  "+ str(xloc)+ "  "+ str(yloc_local)+ "  "+ str(zloc)+ "  "+ str(faceArea))
                 if k < zGrid - 1:
-                    zloc_local = (k + 1) * cellZWidth
+                    zloc_local = (k + 1) * resolution
                     cellID_2 = cellID_1 + xGrid * yGrid
-                    output_string.append(
-                        "\n"
-                        + str(cellID_1)
-                        + "  "
-                        + str(cellID_2)
-                        + "  "
-                        + str(xloc)
-                        + "  "
-                        + str(yloc)
-                        + "  "
-                        + str(zloc_local)
-                        + "  "
-                        + str(faceArea)
-                    )
+                    output_string.append("\n"+ str(cellID_1)+ "  "+ str(cellID_2)+ "  "+ str(xloc)+ "  "+ str(yloc)+ "  "+ str(zloc_local)+ "  "+ str(faceArea))
 
     if not os.path.exists(path_to_output):
         os.makedirs(path_to_output)
@@ -125,7 +62,7 @@ def write_loc_well_file(
     if loc_hp is None:
         loc_hp = settings["grid"]["loc_hp"]
     number_cells = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size"] / np.array(
+    cell_widths = settings["grid"]["size [m]"] / np.array(
         number_cells
     )  # Cell width in metres
 
@@ -149,11 +86,11 @@ def write_loc_well_file(
 
 def write_SN_files(path_to_output: str, settings: Dict):
     xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size"] / np.array(
+    cell_widths = settings["grid"]["size [m]"] / np.array(
         settings["grid"]["ncells"]
     )  # Cell width in metres
     cellXWidth, _, cellZWidth = cell_widths
-    _, yWidth, _ = settings["grid"]["size"]
+    _, yWidth, _ = settings["grid"]["size [m]"]
 
     if not cellXWidth == cellZWidth:
         logging.error("Something with create_grid_unstructured.py is wrong")
@@ -170,30 +107,8 @@ def write_SN_files(path_to_output: str, settings: Dict):
             xloc = (i + 0.5) * cellXWidth
             cellID_north = (xGrid * (yGrid - 1)) + i + 1 + k * xGrid * yGrid
             cellID_south = i + 1 + k * xGrid * yGrid
-            output_string_north.append(
-                "\n"
-                + str(cellID_north)
-                + "  "
-                + str(xloc)
-                + "  "
-                + str(yloc_north)
-                + "  "
-                + str(zloc)
-                + "  "
-                + str(faceArea)
-            )
-            output_string_south.append(
-                "\n"
-                + str(cellID_south)
-                + "  "
-                + str(xloc)
-                + "  "
-                + str(yloc_south)
-                + "  "
-                + str(zloc)
-                + "  "
-                + str(faceArea)
-            )
+            output_string_north.append("\n"+ str(cellID_north)+ "  "+ str(xloc)+ "  "+ str(yloc_north)+ "  "+ str(zloc)+ "  "+ str(faceArea))
+            output_string_south.append("\n"+ str(cellID_south)+ "  "+ str(xloc)+ "  "+ str(yloc_south)+ "  "+ str(zloc)+ "  "+ str(faceArea))
 
     with open(str(path_to_output) + "/north.ex", "w") as file:
         file.writelines(output_string_north)
@@ -203,11 +118,11 @@ def write_SN_files(path_to_output: str, settings: Dict):
 
 def write_WE_files(path_to_output: str, settings: Dict):
     xGrid, yGrid, zGrid = settings["grid"]["ncells"]
-    cell_widths = settings["grid"]["size"] / np.array(
+    cell_widths = settings["grid"]["size [m]"] / np.array(
         settings["grid"]["ncells"]
     )  # Cell width in metres
     _, cellYWidth, cellZWidth = cell_widths
-    xWidth, _, _ = settings["grid"]["size"]
+    xWidth, _, _ = settings["grid"]["size [m]"]
 
     if not cellYWidth == cellZWidth:
         logging.error("Something with create_grid_unstructured.py is wrong")
@@ -224,30 +139,8 @@ def write_WE_files(path_to_output: str, settings: Dict):
             yloc = (j + 0.5) * cellYWidth
             cellID_east = (j + 1) * xGrid + k * xGrid * yGrid
             cellID_west = j * xGrid + 1 + k * xGrid * yGrid
-            output_string_east.append(
-                "\n"
-                + str(cellID_east)
-                + "  "
-                + str(xloc_east)
-                + "  "
-                + str(yloc)
-                + "  "
-                + str(zloc)
-                + "  "
-                + str(faceArea)
-            )
-            output_string_west.append(
-                "\n"
-                + str(cellID_west)
-                + "  "
-                + str(xloc_west)
-                + "  "
-                + str(yloc)
-                + "  "
-                + str(zloc)
-                + "  "
-                + str(faceArea)
-            )
+            output_string_east.append("\n"+ str(cellID_east)+ "  "+ str(xloc_east)+ "  "+ str(yloc)+ "  "+ str(zloc)+ "  "+ str(faceArea))
+            output_string_west.append("\n"+ str(cellID_west)+ "  "+ str(xloc_west)+ "  "+ str(yloc)+ "  "+ str(zloc)+ "  "+ str(faceArea))
 
     with open(str(path_to_output) + "/east.ex", "w") as file:
         file.writelines(output_string_east)
@@ -255,26 +148,7 @@ def write_WE_files(path_to_output: str, settings: Dict):
         file.writelines(output_string_west)
 
 
-def _set_z_width_in_2d_case(settings: Dict):
-    # If 2D case: set z-width to average of x and y width
-    cellXWidth = settings["grid"]["size"][0] / np.array(
-        settings["grid"]["ncells"][0]
-    )  # Cell width in metres
-    cellYWidth = settings["grid"]["size"][1] / np.array(settings["grid"]["ncells"][1])
-    cellZWidth = (cellXWidth + cellYWidth) / 2
-    settings["grid"]["size"][2] = float(cellZWidth)
-
-
-def create_all_grid_files(settings, path_to_output: str = ".", grid_widths: List[float] = None, number_cells: List[int] = None):
-    if grid_widths is not None and number_cells is not None:
-        settings = change_grid_domain_size(
-            settings, case="", grid_widths=grid_widths, number_cells=number_cells
-        )
-
-    if settings["general"]["dimensions"] == 2:
-        _set_z_width_in_2d_case(settings)
-
-    save_yaml(settings, path_to_output)
+def create_all_grid_files(settings, path_to_output: str = "."):
     write_mesh_file(path_to_output, settings)
     write_SN_files(path_to_output, settings)
     write_WE_files(path_to_output, settings)
@@ -282,25 +156,11 @@ def create_all_grid_files(settings, path_to_output: str = ".", grid_widths: List
 
     return settings
 
+def make_mesh_files(args:argparse.Namespace, output_dataset_dir:pathlib.Path, settings: Dict, grid_size: np.array = None, ncells:np.array = None):
+    # make grid files
+    output_dataset_dir.mkdir(parents=True, exist_ok=True)
+    settings = create_all_grid_files(settings, output_dataset_dir, grid_size, ncells)
 
-if __name__ == "__main__":
-    cla = sys.argv
-    assert len(cla) >= 2, "Please provide a path to the input folder"
-    path_to_input = cla[1]
-    path_to_output = "."
+    write_hp_additional_files(output_dataset_dir, args.num_hps) # region_hps, strata_hps, condition_hps.txt
 
-    settings = load_yaml(path_to_input)
-    if len(cla) > 3:
-        path_to_output = cla[2]
-        assert (
-            len(cla) >= 9
-        ), "Please provide a path to the output folder and the grid widths and number of cells per direction"
-        grid_widths = [float(cla[3]), float(cla[4]), float(cla[5])]
-        number_cells = [int(cla[6]), int(cla[7]), int(cla[8])]
-        settings = create_all_grid_files(
-            settings, path_to_output, grid_widths=grid_widths, number_cells=number_cells
-        )
-    else:
-        settings = create_all_grid_files(settings, path_to_output)
-
-    save_yaml(settings, path_to_output)
+    return settings

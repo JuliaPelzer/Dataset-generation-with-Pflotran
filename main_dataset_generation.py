@@ -6,10 +6,11 @@ import time
 from pathlib import Path
 
 from scripts.make_general_settings import load_yaml
+from scripts.calc_loc_hp_variation_2d import calc_loc_hp_variation_2d
 from scripts.visualisation import plot_sim
 from scripts.write_parameters_input_files_parallel import write_parameter_input_files
 from scripts.main_helpers import *
-from scripts.create_parameter_set import make_parameter_set, make_realistic_windowed_parameter_set
+from scripts.create_parameter_set import make_random_parameter_set, make_realistic_windowed_parameter_set, prepare_settings
 
 def run_simulation(args, run_ids: list):
     time_begin = time.perf_counter()
@@ -26,20 +27,19 @@ def run_simulation(args, run_ids: list):
     (output_dataset_dir / "inputs").mkdir(parents=True, exist_ok=True)
     logging.info(f"...{output_dataset_dir}/inputs folder is created")
 
-    # ONCE PER DATASET: generate set of perms, pressures and hp locations; and make grid files
-    if args.realistic:
-        settings = make_realistic_windowed_parameter_set(args, output_dataset_dir, args.num_dp)
-    else:
-        settings = make_parameter_set(args, output_dataset_dir)
-    # else: # TODO eikommentieren
-    #     logging.info(f"...{output_dataset_dir}/inputs folder already exists")
+    # ONCE PER DATASET: generate set of subsurface parameter fields and operational heat pump parameters (location, pump rate, pump temperature), grid files
+    settings = prepare_settings(args, output_dataset_dir)
+    settings = make_realistic_windowed_parameter_set(args, output_dataset_dir, settings, args.num_dp, )
 
-    #     # get settings
-    #     settings = load_yaml(output_dataset_dir/"inputs")
+    # calc hp locations (if vary hp, then vary all hp locations)
+    # TODO calc operational pump parameters based on cut out files in RUN-dir
+    if args.vary_hp:
+        (output_dataset_dir / "inputs" / "hps").mkdir(parents=True, exist_ok=True)
+        calc_loc_hp_variation_2d(args.num_dp, output_dataset_dir / "inputs" / "hps", args.num_hps, settings)
 
     pflotran_file = "pflotran_realistic.in"
 
-    p_grads, perms, locs_hps, temp_in, rate_in = load_inputs_subset(run_ids, output_dataset_dir / "inputs", args.num_hps, settings) # TODO check naming
+    locs_hps, temp_in, rate_in = load_pump_params(run_ids, output_dataset_dir / "inputs", args.num_hps, settings)
 
     # make run folders
     for run_id in run_ids:
@@ -48,6 +48,7 @@ def run_simulation(args, run_ids: list):
         # copy respective pflotran.in file
         shutil.copytree(output_dataset_dir/"pflotran_inputs", output_dataset_run_dir)
         shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
+        # TODO if varying (automatic) window shape: load subsurface params directly from RUN folder, in every run
 
         run_idx = run_ids.index(run_id)
         if args.num_hps > 0 and args.vary_hp:

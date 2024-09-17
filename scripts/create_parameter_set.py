@@ -3,63 +3,17 @@ import argparse
 import numpy as np
 import pathlib
 import shutil
-import yaml
+from typing import Dict
 from scripts.utils import timing
 
-from scripts.calc_loc_hp_variation_2d import (calc_loc_hp_variation_2d,
-                                              write_hp_additional_files)
-from scripts.calc_p_and_K import calc_pressure_and_perm_values
-from scripts.calc_hp_parameter_variation import calc_injection_variation
-from scripts.create_grid_unstructured import create_all_grid_files
-from scripts.create_varying_field import create_vary_fields
 from scripts.make_general_settings import load_yaml, save_yaml
-
-from scripts.realistic_window.load_and_align_tiffs import load_properties_after_R_prep, interpolate_properties
+from scripts.realistic_window.load_and_align_tiffs import load_properties_after_R_prep
+from scripts.realistic_window.interpolate import interpolate_windows
 from scripts.realistic_window.estimate_box_dims import make_window_shape, estimate_box_rotation, calc_box_height_from_TOK_n_GWGL
-from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rotated_box, check_validity_window, cut_bcs_hh, define_cell_mesh
+from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rotated_box, check_validity_window, cut_bcs_hh
 from scripts.realistic_window.param_sampling import get_start_positions
 from scripts.create_varying_field import save_vary_field
-
-def make_parameter_set(args, output_dataset_dir):
-    settings = prepare_settings(args, output_dataset_dir)
-
-    if not args.realistic:
-        # calc pressure and perm values
-        pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, only_vary_distribution=args.only_vary_distribution,)
-        settings["pressure"] = {}
-        settings["pressure"]["min"] = float(np.min(pressures))
-        settings["pressure"]["max"] = float(np.max(pressures))
-
-        # if settings["permeability"]["case"] == "realistic_window": 
-        #     assert args.vary_perm == True, "vary_perm not combinable with realistic_window"
-        #     perms = create_realistic_window(settings, args.num_dp, output_dataset_dir / "inputs")
-        #     # and overwrite min, max perm values
-
-        settings["permeability"]["min"] = float(np.min(perms))
-        settings["permeability"]["max"] = float(np.max(perms))
-        save_yaml(settings, output_dataset_dir / "inputs")
-
-        if not settings["permeability"]["case"] == "realistic_window":
-            if args.vary_perm:
-                create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
-            if args.vary_pressure:
-                create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
-            if args.vary_inflow:
-                calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
-
-    # make grid files
-    path_interim_pflotran_files = output_dataset_dir / "pflotran_inputs"
-    path_interim_pflotran_files.mkdir(parents=True, exist_ok=True)
-    settings = create_all_grid_files(settings, path_to_output=path_interim_pflotran_files,) # TODO
-
-    write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps) # region_hps, strata_hps, condition_hps.txt
-
-    # calc hp locations (if vary hp, then vary all hp locations)
-    if args.vary_hp:
-        (output_dataset_dir / "inputs" / "hps").mkdir(parents=True, exist_ok=True)
-        calc_loc_hp_variation_2d(args.num_dp, output_dataset_dir / "inputs" / "hps", args.num_hps, settings)
-
-    return settings
+from scripts.create_grid_unstructured import make_mesh_files
 
 def prepare_settings(args, output_dataset_dir):
     # 0. preparation
@@ -70,131 +24,109 @@ def prepare_settings(args, output_dataset_dir):
     settings = load_yaml(output_dataset_dir / "inputs")
     return settings
 
-
-
-    # make grid files
-    path_interim_pflotran_files = output_dataset_dir / "pflotran_inputs"
-    path_interim_pflotran_files.mkdir(parents=True, exist_ok=True)
-    settings = create_all_grid_files(settings, path_to_output=path_interim_pflotran_files,) # TODO
-
-    write_hp_additional_files(output_dataset_dir / "pflotran_inputs", args.num_hps) # region_hps, strata_hps, condition_hps.txt
-
-    # calc hp locations (if vary hp, then vary all hp locations)
-    if args.vary_hp:
-        (output_dataset_dir / "inputs" / "hps").mkdir(parents=True, exist_ok=True)
-        calc_loc_hp_variation_2d(args.num_dp, output_dataset_dir / "inputs" / "hps", args.num_hps, settings)
-
-    # calc pressure and perm values
-    pressures, perms = calc_pressure_and_perm_values(args.num_dp, output_dataset_dir / "inputs", args.vary_perm, vary_pressure_field=args.vary_pressure, benchmark_bool=args.benchmark, only_vary_distribution=args.only_vary_distribution,)
-    settings["pressure"] = {}
-    settings["pressure"]["min"] = float(np.min(pressures))
-    settings["pressure"]["max"] = float(np.max(pressures))
-
-    # if settings["permeability"]["case"] == "realistic_window": 
-    #     assert args.vary_perm == True, "vary_perm not combinable with realistic_window"
-    #     perms = create_realistic_window(settings, args.num_dp, output_dataset_dir / "inputs")
-    #     # and overwrite min, max perm values
-
-    settings["permeability"]["min"] = float(np.min(perms))
-    settings["permeability"]["max"] = float(np.max(perms))
-    save_yaml(settings, output_dataset_dir / "inputs")
-
-    if not settings["permeability"]["case"] == "realistic_window":
-        if args.vary_perm:
-            create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=perms)
-        if args.vary_pressure:
-            create_vary_fields(args.num_dp, output_dataset_dir / "inputs", settings, min_max=pressures, vary_property="pressure")
-        if args.vary_inflow:
-            calc_injection_variation(args.num_dp, output_dataset_dir / "inputs", args.num_hps)
-
-    return settings
-
 @timing
-def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_path:pathlib.Path, number_of_simulations:int):
-    settings = prepare_settings(args, destination_path)
+def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_path:pathlib.Path, settings: Dict, number_of_simulations:int):
 
-    # 0. load data
+    # 1. load full maps
     orig_data_path = pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/input_files/real_Munich_input_fields/prepared_with_R")
     # destination_path = pathlib.Path("../test_dataset_manual_window")
     # destination_path = pathlib.Path("../test_dataset_automatic_window")
     properties_full, orig_resolution = load_properties_after_R_prep(data_path=orig_data_path)
     # properties_full: 1px (=1cell) = 20m (=orig_resolution)
 
-    # 1. random startpunkt (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
+    # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
     start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], settings["general"])
     print("Number of start positions:", len(start_positions_in_orig_cells))
 
     valid_start_ids = []
     current_number_valid_windows = 0
+    # while not enough windows:
     for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]]
         try:
-            # 2. Größe Box [in cells] bestimmen: 100x100 median oder manuell, e.g. window_shape = np.array([int(12800/20), int(12800/20/2)])
+            # 3. define window_shape (or load) [in cells]: 100x100 median or manually, e.g. np.array([int(12800/20), int(12800/20/2)])
             window_shape = make_window_shape(settings["grid"]["size [m]"], orig_resolution, properties_full, start_pos)
-            
-            # 3. window drehen
+           
+            # 4. define rotation angle
+            #TODO check, dass 100% aligned
             rotation_angle_degree = estimate_box_rotation(properties_full["darcy_dir"], start_pos, window_shape)
             print(f"Rotation: {rotation_angle_degree} [°]")
+
+            # 5. coords of rotated window
             window_rotated_cells = calc_rotated_box(start_pos, window_shape, rotation_angle_degree)
-        except Exception as e: # NanError, e.g. RuntimeWarning: All-NaN slice encountered
+        except Exception as e:
             print(f"{e} WARNING in run {i}, e.g. NaN error encountered")
             continue
 
-        # 4. check if box is valid, i.e. does not contain nan's, otherwise restart with next start_pos
+        # 6. check window for nans
         valid = check_validity_window(properties_full["dtw"], window_rotated_cells)
 
+        # if valid window..., else restart with next start_pos
         if valid:
-            print(f"Valid window for start {start_pos} in run {i}")
+            print(f"Valid window for start {start_pos} in round {i}, called RUN_{current_number_valid_windows}")
 
-            # 5. Data in window ausschneiden
+            filename = destination_path / f"RUN_{current_number_valid_windows}"
+            filename.mkdir(parents=True, exist_ok=True)
+            desti_resolution = settings["grid"]["resolution"]
+
+            # 7. cut out window from full maps
             window_properties = {}
             for name, value in properties_full.items():
                 window_properties[name] = cut_out_values(value, window_rotated_cells)
             window_properties["permeability"] = window_properties["hydraulic_conductivity"]/7.5E06
 
-            # 6. max Dicke bestimmen
-            # TODO check again (Sept)
+            # 8. calc box height (max thickness)
             window_height_in_meters = calc_box_height_from_TOK_n_GWGL(window_properties["tok"], window_properties["gwgl"])
             print(f"simulation box height: {window_height_in_meters} meters")
 
-            # TODO Fabian hydraulic head
-            # TODO check again (Sept)
-            bcs_hh, hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
-
-            # 7. interpolate in boxes acc. to new resolution, based on coords (in cells of orig resolution) "window_rotated" and values "wondow_properties"
-            desti_resolution = settings["grid"]["resolution"]
-            window_desti_cells = tuple(np.meshgrid(np.arange(0, window_shape[0],
-                                                       step=desti_resolution/orig_resolution),
-                                             np.arange(0, window_shape[1],
-                                                       step=desti_resolution/orig_resolution)))
-            # alternative: load mesh.uge and somehow evaluate at those positions
-            # window_orig_cells = tuple(np.meshgrid(np.arange(0, window_shape[0]),
-            #                                  np.arange(0, window_shape[1])))
-            interpolators = interpolate_properties(window_properties)
-            window_desti_values = {}
-            # orig_values = {}
-            for key in interpolators.keys():
-                window_desti_values[key] = interpolators[key](window_desti_cells)
-                # plt.figure()
-                # plt.title(key)
-                # plt.imshow(window_desti_values[key], origin="lower")
-                # plt.savefig("test_interpo.png")
-
-                # plt.figure()
-                # orig_values[key] = interpolators[key](window_orig_cells)
-                # plt.title(key)
-                # plt.imshow(orig_values[key], origin="lower")
-                # plt.savefig("test_.png")
-
-                # plt.figure()
-                # plt.title(key)
-                # plt.scatter(window_rotated_cells[1], window_rotated_cells[0], c=window_properties[key])
-                # plt.savefig("test_orig.png")
-                # exit()
-            
-            # 8. store values (and visualize)
+            # 9. generate mesh (height added to ncells, NOT to window_shape)
+            # TODO include height
             ncells = window_shape[...] * orig_resolution / desti_resolution
-            filename = destination_path / f"RUN_{current_number_valid_windows}"
-            filename.mkdir(parents=True, exist_ok=True)
+            if False:
+                ncells = np.append(ncells, np.ceil(window_height_in_meters / desti_resolution))
+            else:
+                ncells = np.append(ncells, 1)
+            ncells = ncells.astype(int)
+            settings["grid"]["size [m]"].append(ncells[2] * desti_resolution)
+            settings["grid"]
+            print(settings["grid"]["size [m]"])
+            save_yaml(settings, filename)
+            settings = make_mesh_files(args, filename, settings)
+
+            # 10. interpolate cut out data to mesh (e.g. new resolution)
+            # based on coords (in cells of orig resolution)
+            # TODO use mesh.uge, BCs, etc. for interpolation instead
+            # TODO add 3rd dim
+            window_desti_values = interpolate_windows(orig_resolution, window_shape, window_properties, desti_resolution)
+
+            # 11. calc BCs, HH, ...? # TODO Fabian hydraulic head
+            bcs_hh, hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
+            # print(hydraulic_head, gwgl[:,0]-gwgl[:,-1])
+
+            # plt.subplot(1,3,1)
+            # plt.imshow(properties_full["darcy_dir"][start_pos[0]:start_pos[0]+100,start_pos[1]:start_pos[1]+100], origin="lower")
+            # plt.title("Darcy dir")
+            # plt.colorbar()
+            # plt.scatter(window_rotated_cells[0][0,0]-start_pos[0], window_rotated_cells[1][0,0]-start_pos[1], label="start")
+            # plt.scatter(window_rotated_cells[0][15,0]-start_pos[0], window_rotated_cells[1][15,0]-start_pos[1], label="middle")
+            # plt.scatter(window_rotated_cells[0][15,31]-start_pos[0], window_rotated_cells[1][15,31]-start_pos[1], label="end")
+            # plt.legend()
+            # plt.subplot(1,3,2)
+            # plt.title("GWGL")
+            # plt.imshow(properties_full["gwgl"][start_pos[0]:start_pos[0]+100,start_pos[1]:start_pos[1]+100], origin="lower")
+            # plt.colorbar()
+            # plt.scatter(window_rotated_cells[0][0,0]-start_pos[0], window_rotated_cells[1][0,0]-start_pos[1], label="start")
+            # plt.scatter(window_rotated_cells[0][15,0]-start_pos[0], window_rotated_cells[1][15,0]-start_pos[1], label="middle")
+            # plt.scatter(window_rotated_cells[0][15,31]-start_pos[0], window_rotated_cells[1][15,31]-start_pos[1], label="end")
+            # plt.legend()
+            # plt.subplot(1,3,3)
+            # plt.title("GWGL")
+            # plt.imshow(window_properties["gwgl"], origin="lower")
+            # plt.colorbar()
+            # plt.plot(0,0)
+            # plt.scatter([0,]*window_properties["gwgl"].shape[0], np.arange(0,window_properties["gwgl"].shape[0]), c=window_properties["gwgl"][:,0])
+            # plt.show()
+            
+            # 12. store interpolated data and unique params to RUN-dir
             save_yaml({"start position [m]": [start_pos[0]*orig_resolution, start_pos[1]*orig_resolution], "rotation angle [°]": float(rotation_angle_degree), "orig resolution [m]": orig_resolution}, filename, "realistic_params", {"allow_unicode":True})
             for key, field in window_desti_values.items():
                 save_vary_field(filename/f"{key}.h5", ncells, field, vary_property=key)

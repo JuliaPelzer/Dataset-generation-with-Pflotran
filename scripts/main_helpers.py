@@ -43,12 +43,17 @@ def load_list_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
                 fields.append(np.array(line.split(" "), dtype=np.float32))
     return fields
 
-def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None):
+def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path):
 
     # load perm files
     perms = load_vary_files(origin_folder, "permeability_fields")
     # load pressure files
     pressure_grads = load_iso_files(origin_folder, run_ids, "pressure_gradients.txt")
+    
+    return np.array(pressure_grads), np.array(perms)
+
+
+def load_pump_params(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None):
     # load temp_in
     temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
     # load rate_in
@@ -95,7 +100,7 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path, num_hp: int, 
         locs_hps = np.array(locs_hps)
         locs_hps = np.swapaxes(locs_hps, 0, 1)
     
-    return np.array(pressure_grads), np.array(perms), np.array(locs_hps), np.array(temp_in), np.array(rate_in)
+    return np.array(locs_hps), np.array(temp_in), np.array(rate_in)
 
 def assert_combinations(args, run_ids: list):
     # vary inflow only combinable with iso perm and pressure
