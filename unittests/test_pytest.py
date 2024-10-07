@@ -5,7 +5,7 @@ import subprocess
 import numpy as np
 
 import scripts.make_general_settings as script_settings
-from scripts.create_grid_unstructured import write_loc_well_file
+from scripts.create_grid_unstructured import calc_well_location
 
 # def test_run_bash_pressure_1D_permeability():
 # 	assert os.getcwd() == "/home/pelzerja/Development/simulation_groundtruth_pflotran/Phd_simulation_groundtruth", "wrong working directory"
@@ -175,21 +175,21 @@ def test_loc_well():
     # Fixture
     true_id = 1
     # Result
-    result_id = write_loc_well_file(path_to_output, settings, loc_hp)
+    result_id = calc_well_location(path_to_output, settings, loc_hp)
     assert true_id == result_id, "wrong id"
 
     # Fixture
     true_id = 11
     loc_hp = np.array([39, 41, 0])
     # Result
-    result_id = write_loc_well_file(path_to_output, settings, loc_hp)
+    result_id = calc_well_location(path_to_output, settings, loc_hp)
     assert true_id == result_id, "wrong id"
 
     # Fixture
     true_id = 1000
     loc_hp = np.array([200, 200, 200])
     # Result
-    result_id = write_loc_well_file(path_to_output, settings, loc_hp)
+    result_id = calc_well_location(path_to_output, settings, loc_hp)
     assert true_id == result_id, "wrong id"
 
 

@@ -18,7 +18,7 @@ from scripts.create_grid_unstructured import create_mesh_files
 
 
 @timing
-def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_path:pathlib.Path, settings: Dict, number_of_simulations:int):
+def make_realistic_hydrogeological_parameter_windows(args:argparse.Namespace, destination_path:pathlib.Path, settings: Dict, number_of_simulations:int):
 
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
     orig_data_path = pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/input_files/real_Munich_input_fields/prepared_with_R")
@@ -86,17 +86,16 @@ def make_realistic_windowed_parameter_set(args:argparse.Namespace, destination_p
 
             # 10. interpolate cut out data to mesh (i.e. new resolution), based on coords (in cells of orig resolution)
             # TODO add 3rd dim
-            window_desti_values = interpolate_windows(orig_resolution, window_shape, window_properties, desti_resolution, cells)
+            window_desti_values = interpolate_windows(orig_resolution, window_properties, cells["all"])
 
-            # 11. calc and store BCs (hydraulic head)
-            # TODO use mesh.uge/ BCs!
-            bcs_hh = cut_bcs_hh(window_properties["tok"], window_properties["gwgl"])
+            # 11. calc and store BCs (hydraulic head) (convention: north=inflow, south=outflow, west=right, east=left)
+            bcs_hh = cut_bcs_hh(window_desti_values["tok"], window_desti_values["gwgl"], cells, desti_resolution, ncells[1] * desti_resolution)
             save_bcs(filename, bcs_hh)
             
             # 12. store interpolated data and unique params to RUN-dir
             save_yaml({"start position [m]": [start_pos[0]*orig_resolution, start_pos[1]*orig_resolution], "rotation angle [°]": float(rotation_angle_degree), "orig resolution [m]": orig_resolution}, filename, "realistic_params", {"allow_unicode":True})
             for key, field in window_desti_values.items():
-                store_hdf5_field(filename/f"{key}.h5", cells, field, vary_property=key)
+                store_hdf5_field(filename/f"{key}.h5", cells["all"], field, vary_property=key)
 
             current_number_valid_windows += 1
             valid_start_ids.append(start_pos)
@@ -116,8 +115,7 @@ def store_hdf5_field(filename, cells, data, vary_property:str = "permeability"):
     data_flatten = data.reshape(len(cells[:,0]), order="F")
 
     with File(filename, mode="w") as h5file:
-        dataset_name = "Cell Ids"
-        h5file.create_dataset(dataset_name, data=cells[:,0].astype(int))
+        h5file.create_dataset("Cell Ids", data=cells[:,0].astype(int))
         h5file.create_dataset(vary_property, data=data_flatten)
 
     h5file.close()

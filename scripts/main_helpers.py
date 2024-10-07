@@ -6,16 +6,10 @@ import shutil
 import time
 import numpy as np
 import yaml
+import argparse
 
 from scripts.make_general_settings import load_yaml
 from scripts.visualisation import plot_sim
-
-def make_output_dir(name: str):
-    output_dataset_dir = pathlib.Path("outputs") 
-    output_dataset_dir.mkdir(parents=True, exist_ok=True)
-    output_dataset_dir = output_dataset_dir / name
-    output_dataset_dir.mkdir(parents=True, exist_ok=True)
-    return output_dataset_dir
 
 def load_iso_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
     fields = []
@@ -53,12 +47,19 @@ def load_inputs_subset(run_ids: list, origin_folder: pathlib.Path):
     return np.array(pressure_grads), np.array(perms)
 
 
-def load_pump_params(run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None):
-    # load temp_in
-    temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
-    # load rate_in
-    rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
-
+def load_pump_params(args:argparse.Namespace, run_ids: list, origin_folder: pathlib.Path, num_hp: int, settings: dict = None):
+    if args.vary_inflow:
+        # load temp_in
+        temp_in = load_list_files(origin_folder, run_ids, "injection_temperatures.txt")
+        # load rate_in
+        rate_in = load_list_files(origin_folder, run_ids, "injection_rates.txt")
+    else:
+        try:
+            temp_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["temperature"]
+            rate_in = np.ones([len(run_ids), num_hp]) * settings["injection"]["rate"]
+        except:
+            temp_in = None
+            rate_in = None
 
     # load hp locations
     locs_hps = []
@@ -92,8 +93,8 @@ def load_pump_params(run_ids: list, origin_folder: pathlib.Path, num_hp: int, se
             file_y.close()
             locs_hps.append(np.array([x, y]).T)
         else:
-            # take value from settings.yaml in [m]
-            locs_hps.append(settings["grid"]["loc_hp"][0:2])
+            # take value from settings.yaml
+            locs_hps.append(settings["grid"]["loc_hp [m]"][0:2])
     if len(np.array(locs_hps).shape) == 2:
         locs_hps = [locs_hps]
     elif len(np.array(locs_hps).shape) == 3:
@@ -113,23 +114,12 @@ def clean_up():
     try:
         shutil.move("pflotran.in", f"../inputs/pflotran.in")
     except: ... # exists already in inputs
-    for file in ["regions_hps.txt", "strata_hps.txt", "conditions_hps.txt", "east.ex", "west.ex", "south.ex", "north.ex", "top_cover.txt", "bottom_cover.txt", "mesh.uge", "settings.yaml",]:
-        try:
-            os.remove(file)
-        except:
-            continue
+    
     # move all hps into hps folder
     hps_dir = pathlib.Path("./hps")
     hps_dir.mkdir(parents=True, exist_ok=True)
     for file in pathlib.Path(".").glob("*.vs"):
         shutil.move(file, hps_dir / file)
-
-def clean_up_end(args, output_dataset_dir: pathlib.Path):
-    if not args.benchmark:
-        try:
-            os.remove(output_dataset_dir / "inputs" / "benchmark_locs_hps.yaml")
-        except:
-            pass
 
 def save_args(output_dataset_dir, args, timestamp_begin, time_begin, time_end, avg_time_per_sim):
     # save args as yaml file

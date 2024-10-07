@@ -26,7 +26,7 @@ def sample_median(field: np.ndarray, start_pos: Tuple[int,int], field_size: np.n
     return median
 
 def random_thresholded_v_tech(v_dd:float):
-    # v_tech = random, with upper threshold (0.5l/s? - max-drawdown)
+    """v_tech = random, with upper threshold (0.5l/s? - max-drawdown)"""
     lower_limit = 0.5 * 1E-3 # m^3/s
     assert v_dd >= lower_limit, f"max-drawdown with {v_dd} too low for v_tech formula"
     return np.random.uniform(lower_limit, v_dd * 1E-3)

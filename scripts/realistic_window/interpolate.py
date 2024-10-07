@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from typing import Dict
 
-def interpolate_properties(property_fields:Dict[str,np.array], orig_resolution: int) -> Dict[str, RegularGridInterpolator]:
+def interpolate_properties(property_fields:Dict[str,np.ndarray], orig_resolution: int) -> Dict[str, RegularGridInterpolator]:
     # make property continuous through interpolation
     x,y = np.arange(property_fields["dtw"].shape[0]*orig_resolution, step=orig_resolution), np.arange(property_fields["dtw"].shape[1]*orig_resolution, step=orig_resolution)
     interpolators = {}

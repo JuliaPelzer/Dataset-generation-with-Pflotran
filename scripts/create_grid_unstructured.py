@@ -1,13 +1,6 @@
-import logging
-import os
-import sys
-from typing import Dict, List
+from typing import Dict
 import pathlib
-import argparse
 import numpy as np
-
-from scripts.calc_loc_hp_variation_2d import write_hp_additional_files
-
 
 def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
     resolution = settings["grid"]["resolution"] # Cell width in metres
@@ -55,13 +48,13 @@ def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
 
     return cells
 
-def write_loc_well_file(path_to_output: pathlib.Path, settings: Dict, loc_hp: np.array = None, idx: int = 0):
+def calc_well_location(settings: Dict, loc_hp: np.array = None):
     resolution = settings["grid"]["resolution"] # Cell width in metres
     xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
     
     if loc_hp is None:
         loc_hp = settings["grid"]["loc_hp"]
-    i, j, k = np.array(loc_hp / resolution, int)
+    i, j, k = (np.array(loc_hp) / resolution).astype(int)
     if k == 0:
         k = 1
         if j == 0:
@@ -71,9 +64,11 @@ def write_loc_well_file(path_to_output: pathlib.Path, settings: Dict, loc_hp: np
     cellID = int(i + (j - 1) * xGrid + (k - 1) * xGrid * yGrid)
     assert cellID > 0, "CellID is negative"
 
+    return cellID
+
+def write_well_location_file(path_to_output, idx, cellID):
     with open(path_to_output / f"heatpump_inject{idx}.vs", "w") as file:
         file.write(str(cellID))
-    return cellID  # for pytest
 
 
 def write_SN_files(path_to_output: pathlib.Path, settings: Dict):
@@ -87,6 +82,9 @@ def write_SN_files(path_to_output: pathlib.Path, settings: Dict):
     output_string_south = [f"CONNECTIONS {xGrid * zGrid}"]
     yloc_north = yWidth
     yloc_south = 0
+    cells_N = np.ndarray((xGrid*zGrid, 4))
+    cells_S = np.ndarray((xGrid*zGrid, 4))
+    idx = 0
     for k in range(0, zGrid):
         zloc = 0.5 * resolution + k * resolution
         for i in range(0, xGrid):
@@ -95,11 +93,16 @@ def write_SN_files(path_to_output: pathlib.Path, settings: Dict):
             cellID_south = i + 1 + k * xGrid * yGrid
             output_string_north.append(f"\n{cellID_north}  {xloc}  {yloc_north}  {zloc}  {faceArea}")
             output_string_south.append(f"\n{cellID_south}  {xloc}  {yloc_south}  {zloc}  {faceArea}")
+            cells_N[idx] = [cellID_north, xloc, yloc_north, zloc]
+            cells_S[idx] = [cellID_south, xloc, yloc_south, zloc]
+            idx += 1
 
     with open(path_to_output / "north.ex", "w") as file:
         file.writelines(output_string_north)
     with open(path_to_output / "south.ex", "w") as file:
         file.writelines(output_string_south)
+
+    return cells_N, cells_S
 
 
 def write_WE_files(path_to_output: pathlib.Path, settings: Dict):
@@ -113,6 +116,9 @@ def write_WE_files(path_to_output: pathlib.Path, settings: Dict):
     output_string_west = ["CONNECTIONS " + str(yGrid * zGrid)]
     xloc_east = xWidth
     xloc_west = 0
+    cells_W = np.ndarray((yGrid*zGrid, 4))
+    cells_E = np.ndarray((yGrid*zGrid, 4))
+    idx = 0
     for k in range(0, zGrid):
         zloc = 0.5 * resolution + k * resolution
         for j in range(0, yGrid):
@@ -121,11 +127,16 @@ def write_WE_files(path_to_output: pathlib.Path, settings: Dict):
             cellID_west = j * xGrid + 1 + k * xGrid * yGrid
             output_string_east.append("\n"+ str(cellID_east)+ "  "+ str(xloc_east)+ "  "+ str(yloc)+ "  "+ str(zloc)+ "  "+ str(faceArea))
             output_string_west.append("\n"+ str(cellID_west)+ "  "+ str(xloc_west)+ "  "+ str(yloc)+ "  "+ str(zloc)+ "  "+ str(faceArea))
+            cells_W[idx] = [cellID_west, xloc_west, yloc, zloc]
+            cells_E[idx] = [cellID_east, xloc_east, yloc, zloc]
+            idx += 1
 
     with open(path_to_output / "east.ex", "w") as file:
         file.writelines(output_string_east)
     with open(path_to_output / "west.ex", "w") as file:
         file.writelines(output_string_west)
+
+    return cells_W, cells_E
 
 
 def write_TB_files(path_to_output: pathlib.Path, settings: Dict):
@@ -157,9 +168,9 @@ def write_TB_files(path_to_output: pathlib.Path, settings: Dict):
 
 
 def create_mesh_files(path_to_output: pathlib.Path, settings: Dict):
-    cells = write_mesh_file(path_to_output, settings)
-    write_SN_files(path_to_output, settings)
-    write_WE_files(path_to_output, settings)
+    cells_all = write_mesh_file(path_to_output, settings)
+    cells_N, cells_S = write_SN_files(path_to_output, settings)
+    cells_W, cells_E = write_WE_files(path_to_output, settings)
     # write_TB_files(path_to_output, settings)
 
-    return cells
+    return {"all": cells_all, "north": cells_N, "south": cells_S, "west": cells_W, "east": cells_E}
