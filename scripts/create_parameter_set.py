@@ -56,6 +56,7 @@ def make_realistic_hydrogeological_parameter_windows(destination_path:pathlib.Pa
             filename = destination_path / f"RUN_{current_number_valid_windows}"
             filename.mkdir(parents=True, exist_ok=True)
             desti_resolution = settings["grid"]["resolution"]
+            assert desti_resolution >=1, "not implemented for resolution <1 yet"
 
             # 7. cut out window from full maps
             window_properties = {}
