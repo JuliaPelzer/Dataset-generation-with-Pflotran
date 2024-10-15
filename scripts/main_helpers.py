@@ -11,6 +11,9 @@ import argparse
 from scripts.make_general_settings import load_yaml
 from scripts.visualisation import plot_sim
 
+def groundwater_temp() -> float:
+    return 10
+
 def load_iso_files(origin_folder: pathlib.Path, run_ids: list, curr_file: str):
     fields = []
     file_fixed = open(origin_folder/curr_file, "r")

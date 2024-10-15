@@ -3,6 +3,7 @@ import pathlib
 from typing import Dict
 import h5py
 
+from scripts.main_helpers import *
 from scripts.realistic_window.param_sampling import sample_median, random_delta_t, random_thresholded_v_tech
 
 def calc_pump_params(number_datapoints: int, dataset_folder: str, num_hp_per_dp:int,):
@@ -33,7 +34,7 @@ def realistic_pump_params(data_dir: pathlib.Path, hps_cell_ids: np.ndarray, temp
     for hp_id, hp_cell_id in enumerate(hps_cell_ids):
         if temp_default == None:
             delta_T = random_delta_t() # delta of injection temperature to groundwater temperature
-            injection_T = 10.6 + delta_T
+            injection_T = groundwater_temp() + delta_T
             temps[hp_id] = injection_T
         else:
             temps[hp_id] = temp_default
@@ -55,7 +56,7 @@ def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray = None, tem
     with open(destination_dir / "regions_hps.txt", "w") as f:
         
         for hp_id, cell_id_hp in enumerate(loc_hps):
-            loc_text = f"""REGION heatpump_inject{hp_id}\nLIST\n    {cell_id_hp}\n/\n/\n\n"""
+            loc_text = f"""REGION heatpump_inject{hp_id}\n  LIST\n    {cell_id_hp}\n  /\n/\n\n"""
             f.write(loc_text)
 
     # # INJECTION_X_TEMPERATURE.TXT
