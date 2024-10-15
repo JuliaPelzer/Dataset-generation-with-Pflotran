@@ -111,7 +111,11 @@ def assert_combinations(args, run_ids: list):
     assert args.num_dp >= len(run_ids), f"number of datapoints must be smaller than number of run ids"
 
     if args.num_hps > 1:
-        assert (args.vary_hp), f"If number of heatpumps is larger than 1, vary_hp must be True"
+        assert args.vary_hp, f"If number of heat pumps is larger than 1, vary_hp must be True"
+
+    if args.domain_category == "automatic":
+        assert args.num_hps == 1, "can only calc domain size automatically for one hp"
+        assert args.vary_inflow == False, "can only consistently combine automatic domain size with fixed inflows"
 
 def clean_up():
     try:

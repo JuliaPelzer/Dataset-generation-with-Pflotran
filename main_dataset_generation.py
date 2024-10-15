@@ -18,8 +18,15 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     avg_time_per_sim = 0
     output_dataset_dir, pflotran_file, settings = preparation(output_dataset_dir, args, run_ids)
 
+    # if varying (automatic) window shape: load subsurface params directly from RUN folder, in every run -> no need to load and change location of files
+    if not args.vary_inflow:
+        temp_default = 5+groundwater_temp() #[C]
+        rate_default = 0.00024 #[m^3/s]
+    else:
+        temp_default, rate_default = None, None
+
     # generate set of subsurface parameter fields and grid files, for whole dataset
-    make_realistic_hydrogeological_parameter_windows(args, output_dataset_dir, settings, args.num_dp)
+    make_realistic_hydrogeological_parameter_windows(output_dataset_dir, settings, args.num_dp, temp_default, rate_default)
 
     # generate operational heat pump parameters (location, pump rate, pump temperature)
     # strata_hps, condition_hps.txt - same for all datasets
@@ -37,13 +44,6 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         shutil.copytree(output_dataset_dir/"interim", output_dataset_run_dir, dirs_exist_ok=True)
         shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
         
-        # if varying (automatic) window shape: load subsurface params directly from RUN folder, in every run -> no need to load and change location of files
-        # TODO not doubling with estimate_box_size (recalc), in case of automatic window-shape
-        if not args.vary_inflow:
-            temp_default = 15.6 #[C]
-            rate_default = 0.00024 #[m^3/s]
-        else:
-            temp_default, rate_default = None, None
         temps_hps, rates_hps = realistic_pump_params(output_dataset_run_dir, hps_cell_ids[run_id], temp_default, rate_default)
         np.savetxt(output_dataset_run_dir / "injection_temps.txt", np.array([hps_cell_ids[run_id], temps_hps]).T)
         np.savetxt(output_dataset_run_dir / "injection_rates.txt", np.array([hps_cell_ids[run_id], rates_hps]).T)
@@ -51,7 +51,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         write_pump_param_files(output_dataset_run_dir, hps_cell_ids[run_id], temps_hps, rates_hps) # calls write_loc_well_file for each hp, and stores temp_in and rate_in to RUN folder, region_hps.txt
         # TODO ugly
 
-    # RUNNING SIMULATIONS
+    # RUN SIMULATIONS
     for run_id in run_ids:
         output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
     

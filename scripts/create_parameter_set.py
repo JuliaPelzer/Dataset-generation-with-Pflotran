@@ -18,8 +18,7 @@ from scripts.create_grid_unstructured import create_mesh_files
 
 
 @timing
-def make_realistic_hydrogeological_parameter_windows(args:argparse.Namespace, destination_path:pathlib.Path, settings: Dict, number_of_simulations:int):
-
+def make_realistic_hydrogeological_parameter_windows(destination_path:pathlib.Path, settings:Dict, number_of_simulations:int, temp_default:float, rate_default:float):
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
     orig_data_path = pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/input_files/real_Munich_input_fields/prepared_with_R")
     properties_full, orig_resolution = load_properties_after_R_prep(data_path=orig_data_path) 
@@ -34,9 +33,9 @@ def make_realistic_hydrogeological_parameter_windows(args:argparse.Namespace, de
     for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]]
         try:
             # 3. estimate window_shape [in cells] or load / manually, e.g. np.array([int(12800/20), int(12800/20/2)])
-            # TODO take pump parameters as input
-            window_shape = make_window_shape(settings["grid"]["size [m]"], orig_resolution, properties_full, start_pos)
-           
+            window_shape = make_window_shape(settings, orig_resolution, properties_full, start_pos, temp_default, rate_default)
+            settings["grid"]["size [m]"] = (window_shape*orig_resolution).tolist()
+
             # 4. define rotation angle
             #TODO check, dass 100% aligned
             rotation_angle_degree = estimate_box_rotation(properties_full["darcy_dir"], start_pos, window_shape)
@@ -47,7 +46,6 @@ def make_realistic_hydrogeological_parameter_windows(args:argparse.Namespace, de
         except Exception as e:
             print(f"{e} WARNING in run {i}, e.g. NaN error encountered")
             continue
-
         # 6. check window for nans
         valid = check_validity_window(properties_full["dtw"], window_rotated_cells)
 

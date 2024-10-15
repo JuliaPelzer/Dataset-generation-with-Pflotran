@@ -1,18 +1,24 @@
 import numpy as np
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 
+from scripts.main_helpers import *
 from scripts.realistic_window.param_sampling import sample_median, random_delta_t, random_thresholded_v_tech
 from scripts.realistic_window.lahm.analytical_model_lahm import estimate_plume_shapeparams_lahm
 from scripts.realistic_window.tap import estimate_plume_shapeparams_tap
 
-def estimate_box_size(properties:dict[str,np.ndarray], center: Tuple[int,int], sample_size:np.ndarray[int,int] = np.array([100,100]), safety_factor:float = 1.0, method: str = "TAP"):
+def estimate_box_size(properties:dict[str,np.ndarray], center: Tuple[int,int], sample_size:np.ndarray[int,int] = np.array([100,100]), safety_factor:float = 1.5, method: str = "TAP", temp_default:float = None, rate_default:float = None):
     # sample_size is in number of cells in orig-data
     v_d = sample_median(properties["darcy_velocity"], center, sample_size) # Darcy vel [m/s]
     b = sample_median(properties["thickness"], center, sample_size) # Aquifer thickness [m]
     v_dd = sample_median(properties["drawdown"], center, sample_size) # max-drawdown # TODO Einheitsumrechnung -> SI-Einheiten
-    delta_t = random_delta_t() # delta of injection temperature, groundwater temperature in [K]
-    v_tech = random_thresholded_v_tech(v_dd) # [m^3/s]  #TODO schiefe Verteilung?
-    # print("sampled props", "vd", v_d, "b", b, "vdd", v_dd, "deltaT", delta_t, "vtech", v_tech)
+    if temp_default == None:
+        delta_t = random_delta_t() # delta of injection temperature, groundwater temperature in [K]
+    else:
+        delta_t = temp_default - groundwater_temp()
+    if rate_default == None:
+        v_tech = random_thresholded_v_tech(v_dd) # [m^3/s]  #TODO schiefe Verteilung?
+    else:
+        v_tech = rate_default
 
     if method == "TAP":
         # Formel aus Poster von Fabian
@@ -26,11 +32,13 @@ def estimate_box_size(properties:dict[str,np.ndarray], center: Tuple[int,int], s
     box_shape = safety_factor * np.array([plume_len, plume_width])
     return box_shape
 
-def make_window_shape(window_shape_in_meters: Union[None, np.array], resolution: int, properties_full: np.ndarray, start: Tuple[int,int]) -> np.ndarray[int, int]:
+def make_window_shape(settings: Dict, resolution: int, properties_full: np.ndarray, start: Tuple[int,int], temp_default: float, rate_default: float) -> np.ndarray[int, int]:
     """
     this function estimates the size of the simulation box in cells if no window_shape is given manually"""
+    window_shape_in_meters = settings["grid"]["size [m]"]
+
     if window_shape_in_meters is None:
-        window_shape_in_meters = estimate_box_size(properties_full, start, method="LAHM")
+        window_shape_in_meters = estimate_box_size(properties_full, start, method="LAHM", temp_default=temp_default, rate_default=rate_default)
         print(f"estimated window size: {window_shape_in_meters} [m]")
     else:
         print(f"manually set window size: {window_shape_in_meters} [m]")
@@ -44,7 +52,6 @@ def make_window_shape(window_shape_in_meters: Union[None, np.array], resolution:
             window_shape[i] = 2
             print(f"WARNING: window_shape too small (zero in one direction) -> set to 2 cells")
    
-    # print("size of box", window_shape, "[orig. cells]")
     return window_shape
 
 def estimate_box_rotation(direction_field: np.ndarray, start: Tuple[int,int], window_shape: np.ndarray[int, int]) -> float:
