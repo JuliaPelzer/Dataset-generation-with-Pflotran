@@ -34,10 +34,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     write_hps_strata_conditions_files(output_dataset_dir/"interim", args.num_hps)
 
     # generate set of hp locations
-    if args.vary_hp:
-        hps_cell_ids = calc_locs_hp(args.num_dp, args.num_hps, settings)
-    else: ...
-        # TODO read default (from settings?) and turn into cell_ids
+    hps_cell_ids = calc_locs_hp(args.vary_hp, args.num_dp, args.num_hps, settings)
     
     for run_id in np.arange(args.num_dp):
         output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
