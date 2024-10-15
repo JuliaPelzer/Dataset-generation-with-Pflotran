@@ -52,23 +52,10 @@ def realistic_pump_params(data_dir: pathlib.Path, hps_cell_ids: np.ndarray, temp
 
 def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024):
 
-    # REGION_HPS.TXT
     with open(destination_dir / "regions_hps.txt", "w") as f:
-        
         for hp_id, cell_id_hp in enumerate(loc_hps):
             loc_text = f"""REGION heatpump_inject{hp_id}\n  LIST\n    {cell_id_hp}\n  /\n/\n\n"""
             f.write(loc_text)
-
-    # # INJECTION_X_TEMPERATURE.TXT
-    # temp_schedule = f"""TIME_UNITS yr\nDATA_UNITS C\n! <time> <value>\n0.  0.\n38. 0.\n72. {temp[0]}d0"""
-    # with open(destination_dir / f"injection_{hp_id}_temperature.txt", "w") as file:
-    #     file.write(temp_schedule)
-
-    # # INJECTION_X_RATE.TXT
-    # rate_schedule = f"""0.    0.\n38.   0.\n72.   {rate[0]}"""
-    # with open(destination_dir / f"injection_{hp_id}_rate.txt", "w") as file:
-    #     file.write(rate_schedule)
-
 
     with open(f"{destination_dir}/conditions_flow_inj.txt", "w") as f:
         for hp_id, cell_id_hp in enumerate(loc_hps):
@@ -76,20 +63,3 @@ def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray = None, tem
             temp_schedule = f"""0.  {temp[hp_id]}"""
 
             f.write(f"""FLOW_CONDITION injection{hp_id}\n  TYPE\n    RATE SCALED_VOLUMETRIC_RATE VOLUME\n    TEMPERATURE DIRICHLET\n  /\n  CYCLIC\n  RATE LIST\n    TIME_UNITS d\n    DATA_UNITS m^3/s\n    {rate_schedule}\n  /\n   TEMPERATURE LIST\n    TIME_UNITS yr\n    DATA_UNITS C\n    ! <time> <value>\n    {temp_schedule}\n  /\n/\n\n""")
-            
-
-
-
-
-#   FLOW_CONDITION injection !influx starting at day 72
-#     TYPE
-#       RATE SCALED_VOLUMETRIC_RATE VOLUME
-#       TEMPERATURE DIRICHLET
-#     /
-#     RATE LIST
-#       TIME_UNITS d
-#       DATA_UNITS m^3/s
-#       EXTERNAL_FILE injection_rate.txt
-#     /
-#     TEMPERATURE FILE injection_temperature.txt
-#   /
