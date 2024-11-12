@@ -94,7 +94,8 @@ def make_realistic_hydrogeological_parameter_windows(destination_path:pathlib.Pa
             # 12. store interpolated data and unique params to RUN-dir
             save_yaml({"start position [m]": [start_pos[0]*orig_resolution, start_pos[1]*orig_resolution], "rotation angle [°]": float(rotation_angle_degree), "orig resolution [m]": orig_resolution}, filename, "realistic_params", {"allow_unicode":True})
             for key, field in window_desti_values.items():
-                store_hdf5_field(filename/f"{key}.h5", cells["all"], field, vary_property=key)
+                if key in ["permeability", "drawdown", "hydraulic_gradient", "dtw"]:
+                    store_hdf5_field(filename/f"{key}.h5", cells["all"], field, vary_property=key)
 
             current_number_valid_windows += 1
             valid_start_ids.append(start_pos)
