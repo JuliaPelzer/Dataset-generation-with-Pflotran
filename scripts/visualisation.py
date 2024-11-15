@@ -35,7 +35,7 @@ def make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, s
                     "time": str(time),
                 }  # +str(time)}
                 if reshape_bool:
-                    data_dict["data"] = data_dict["data"] = data_dict["data"].reshape(dimensions, order="F")
+                    data_dict["data"] = data_dict["data"] = data_dict["data"].reshape(dimensions)
                 if case == "side_hp":
                     data_dict["data"] = data_dict["data"][9, :, :].T
                 elif case == "top_hp":

@@ -17,6 +17,10 @@ def create_regular_cell_centers(resolution, n_cells):
     cells = np.vstack([xv.ravel(), yv.ravel(), zv.ravel()]).T
     return cells
 
+def correct_cell_ids(cell_ids, offset=0):
+    cell_ids[:, 0] += offset
+    return cell_ids
+
 def create_regular_cell_volumes(resolution, n_cells):
     ''' a 1D float dataset with the volume of each cell'''
     volume = resolution**3
@@ -46,13 +50,18 @@ def create_regular_faces_ids(cell_centers, resolution, n_cells, n_faces):
     '''a 2D integer dataset with the two cell ids on either side of the connection'''
     mesh_ids = create_3D_mesh_with_cell_ids(cell_centers, resolution, n_cells)
 
-    x_faces = np.array([(mesh_ids[:-1]).flatten(), mesh_ids[1:].flatten()])
+    x_faces = np.array([mesh_ids[:-1].flatten(), mesh_ids[1:].flatten()])
     y_faces = np.array([mesh_ids[:, :-1].flatten(), mesh_ids[:, 1:].flatten()])
     z_faces = np.array([mesh_ids[:, :, :-1].flatten(), mesh_ids[:, :, 1:].flatten()])
     cell_ids = np.concatenate((x_faces, y_faces, z_faces), axis=1).T
     assert len(cell_ids) == n_faces, f"{len(cell_ids)=} != {n_faces=}"
 
     return cell_ids
+
+def correct_face_ids(face_cell_ids, offset=0):
+    '''a 2D integer dataset with the two cell ids on either side of the connection'''
+    face_cell_ids += offset
+    return face_cell_ids
 
 def create_regular_faces_centers(face_cell_ids, cell_centers, n_faces):
     '''a 2D float dataset with the center’s XYZ coordinates per connection'''
@@ -63,7 +72,7 @@ def create_regular_faces_centers(face_cell_ids, cell_centers, n_faces):
 
 # REGULAR GRID GENERATION
 def create_regular_grid(settings:Dict, destination:pathlib, return_dataset:bool=False, printing:bool=False):
-
+    offset = 1
     out = h5py.File(destination/"mesh.h5", "w")
 
     n_cells = (np.array(settings["grid"]["size [m]"]) / settings["grid"]["resolution"]).astype(int)
@@ -74,6 +83,7 @@ def create_regular_grid(settings:Dict, destination:pathlib, return_dataset:bool=
     face_areas = create_regular_face_areas(settings["grid"]["resolution"], n_faces)
     face_cell_ids = create_regular_faces_ids(cell_centers, settings["grid"]["resolution"], n_cells, n_faces)
     face_centers = create_regular_faces_centers(face_cell_ids, cell_centers, n_faces)
+    face_cell_ids = correct_face_ids(face_cell_ids, offset)
 
     out.create_dataset("Domain/Cells/Centers", data=cell_centers, dtype="f8")
     out.create_dataset("Domain/Cells/Volumes", data=volumes, dtype="f8")
@@ -101,6 +111,8 @@ def create_regular_grid(settings:Dict, destination:pathlib, return_dataset:bool=
         # append cell_centers by their index in 1st dimension
         cell_ids = np.arange(np.prod(n_cells))
         cell_centers = np.hstack([cell_ids.reshape(-1, 1), cell_centers])
+        cell_centers = correct_cell_ids(cell_centers, offset)
         if printing:
             print(f"{cell_centers[:10]=}")
+
         return cell_centers
