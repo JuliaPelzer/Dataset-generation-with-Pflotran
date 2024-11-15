@@ -2,6 +2,8 @@ from typing import Dict
 import pathlib
 import numpy as np
 
+from scripts.mesh_generation import create_regular_grid
+
 def write_mesh_file(path_to_output: pathlib.Path, settings: Dict):
     resolution = settings["grid"]["resolution"] # Cell width in metres
     xGrid, yGrid, zGrid = (np.array(settings["grid"]["size [m]"]) / resolution).astype(int)
@@ -168,9 +170,14 @@ def write_TB_files(path_to_output: pathlib.Path, settings: Dict):
 
 
 def create_mesh_files(path_to_output: pathlib.Path, settings: Dict):
-    cells_all = write_mesh_file(path_to_output, settings)
+    # cells_all = write_mesh_file(path_to_output, settings)
+    cells_all = create_regular_grid(settings, path_to_output, False)
+    print("TODO check if cells_all and cells_N/W/E/S fit together or if order is off")
     cells_N, cells_S = write_SN_files(path_to_output, settings)
     cells_W, cells_E = write_WE_files(path_to_output, settings)
     # write_TB_files(path_to_output, settings)
 
     return {"all": cells_all, "north": cells_N, "south": cells_S, "west": cells_W, "east": cells_E}
+
+def create_refined_mesh_files(path_to_output: pathlib.Path, settings: Dict, positions_hps: np.ndarray):
+    ...

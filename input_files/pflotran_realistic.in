@@ -91,7 +91,7 @@
 
   #=========================== discretization ===================================
   GRID
-    TYPE UNSTRUCTURED_EXPLICIT mesh.uge
+    TYPE UNSTRUCTURED_EXPLICIT mesh.h5
     MAX_CELLS_SHARING_A_VERTEX 8
   END
 
