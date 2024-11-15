@@ -4,6 +4,8 @@ datasets/
 datasets_1hp/
 datasets_domain/
 uml_20230317/
+old/
+datasets_local/
 
 # Pflotran files
 *.vtk
