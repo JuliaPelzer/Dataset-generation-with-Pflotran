@@ -1,0 +1,12 @@
+behind:
+- 625
+- 1100
+close:
+- 645
+- 1020
+normal:
+- 655
+- 1100
+almost_no_interaction:
+- 670
+- 1020
