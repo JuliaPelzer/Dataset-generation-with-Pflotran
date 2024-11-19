@@ -1,8 +1,7 @@
 import numpy as np
-from pathlib import Path
 from typing import Dict
 
-from scripts.create_grid_unstructured import calc_well_location
+from scripts.mesh_generation_utils import loc_to_id
 
 def write_hps_strata_conditions_files(dataset_folder_interim: str, number_of_hps: int):
     with open(f"{dataset_folder_interim}/strata_hps.txt", "w") as f:
@@ -12,7 +11,7 @@ def write_hps_strata_conditions_files(dataset_folder_interim: str, number_of_hps
         for hp in range(number_of_hps):
             f.write(f"SOURCE_SINK heatpump_inject{hp}\n  FLOW_CONDITION injection{hp}\n  REGION heatpump_inject{hp}\nEND\n\n")
     
-def calc_locs_hp(vary_poss: bool, param_dataset_size: int, number_of_hps: int, settings: Dict):
+def calc_locs_hp(vary_poss: bool, param_dataset_size: int, number_of_hps: int, grids_cells_centers: np.array, settings: Dict):
     hps_cell_ids = np.zeros((number_of_hps, param_dataset_size))
     # get boundaries of domain
     grid_size = settings["grid"]["size [m]"]
@@ -26,6 +25,7 @@ def calc_locs_hp(vary_poss: bool, param_dataset_size: int, number_of_hps: int, s
 
     for i in range(number_of_hps):
         # choose random position inside domain
+        # TODO better variation, TODO float instead of int for position
         if vary_poss:
             try:
                 locs_x = np.random.randint(0 + distance_to_border[0][0],grid_size[0] - distance_to_border[0][1],param_dataset_size,)
@@ -57,7 +57,13 @@ def calc_locs_hp(vary_poss: bool, param_dataset_size: int, number_of_hps: int, s
                 locs_hps = [list((np.array(settings["grid"]["size [m]"])/2).astype(int))]
 
         list_hps_ids = []
-        for loc_hp in locs_hps:
-            list_hps_ids.append(calc_well_location(settings, loc_hp))
+        for sim_run_id, loc_hp in enumerate(locs_hps):
+            list_hps_ids.append(loc_to_id(grids_cells_centers[sim_run_id], loc_hp))
         hps_cell_ids[i] = list_hps_ids
-    return np.swapaxes(hps_cell_ids, 0, 1).astype(int)
+    result = np.swapaxes(hps_cell_ids, 0, 1).astype(int)
+    # return hps_locs
+
+    for i in range(result.shape[0]):
+        print(result[i])
+        assert len(np.unique(result[i])) == number_of_hps, f"Double entries in line {i}: {result[i]}"
+    return result

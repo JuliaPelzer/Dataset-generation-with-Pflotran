@@ -1,20 +1,16 @@
 import logging
 import os
 import sys
-from typing import List, Tuple
+from typing import List, Dict
 
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-try:
-    from scripts.make_general_settings import load_yaml
-except:
-    from make_general_settings import load_yaml
+from scripts.utils import load_yaml
 
-
-def plot_sim(path_run: str, settings, plot_name: str = "plot_simulation_results", case: str = "side_hp", reshape_bool: bool = True):
+def plot_sim(path_run: str, settings: Dict, plot_name: str = "plot_simulation_results", case: str = "2D", reshape_bool: bool = True):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
     with h5py.File(path_run + "/pflotran.h5", "r") as file:
         list_to_plot = make_plottable_and_2D(file, case, reshape_bool, settings)
@@ -22,7 +18,7 @@ def plot_sim(path_run: str, settings, plot_name: str = "plot_simulation_results"
     plot_data(list_to_plot, path_run, name_pic=plot_name, case=case)
 
 
-def make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, settings) -> List:
+def make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, settings: Dict) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
     dimensions = np.array(settings["grid"]["size [m]"]) // settings["grid"]["resolution"]
     list_to_plot = []
@@ -33,9 +29,9 @@ def make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, s
                     "data": np.array(hdf5_file[time][property]),
                     "property": str(property),
                     "time": str(time),
-                }  # +str(time)}
+                }
                 if reshape_bool:
-                    data_dict["data"] = data_dict["data"] = data_dict["data"].reshape(dimensions)
+                    data_dict["data"] = data_dict["data"].reshape(dimensions)
                 if case == "side_hp":
                     data_dict["data"] = data_dict["data"][9, :, :].T
                 elif case == "top_hp":
@@ -50,17 +46,16 @@ def make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, s
     return list_to_plot
 
 
-def plot_data(data, path: str, name_pic: str = "plot_y_exemplary", case: str = "side_hp"):
+def plot_data(data: List, path: str, name_pic: str = "plot_y_exemplary", case: str = "side_hp"):
     # helper function to plot the data
     n_subplots = len(data)
     _, axes = plt.subplots(n_subplots, 1, sharex=True, figsize=(20, 3 * (n_subplots)))
 
     for index, data_point in enumerate(data):
         plt.sca(axes[index])
-        plt.imshow(data_point["data"])
-        plt.gca().invert_yaxis()
+        plt.imshow(data_point["data"], origin="lower")
         plt.xlabel("y")
-        plt.ylabel("x or z")
+        plt.ylabel("x")
         _aligned_colorbar(label=data_point["property"])
 
     pic_file_name = f"{path}/{name_pic}_{case}.png"

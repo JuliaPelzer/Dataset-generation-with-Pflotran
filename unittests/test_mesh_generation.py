@@ -1,6 +1,9 @@
 import numpy as np
+import pathlib
+import os
 
-from scripts.mesh_generation import create_regular_cell_centers, create_regular_cell_volumes
+from scripts.mesh_generation_utils import loc_to_id
+from scripts.mesh_generation import create_regular_cell_centers, create_regular_cell_volumes, create_regular_grid
 
 def test_create_regular_cell_centers():
     # Fixture
@@ -47,6 +50,31 @@ def test_create_regular_cell_volumes():
     # Test
     assert np.allclose(actual, expected_volume)
 
-if __name__=="__main__":
+def test_loc_to_id():
+    # Fixture
+    settings = {
+        "grid": {
+            "resolution": 5,
+            "size [m]": [20, 15, 10], #100
+            "loc_hp [m]": [10, 7, 10],
+        }
+    }
+    out, _ = create_regular_grid(settings, pathlib.Path.cwd())
+
+    # Expected result
+    cell_id_expected = 10
+
+    # Actual result
+    cell_id_calc = loc_to_id(out['Domain/Cells/Centers'], np.array(settings['grid']['loc_hp [m]']))
+
+    # Test
+    assert cell_id_expected == cell_id_calc, f"Expected: {cell_id_expected}, Actual: {cell_id_calc}"
+
+    # Clean up
+    out.close()
+    os.remove(pathlib.Path.cwd() / "mesh.h5")
+
+if __name__ == "__main__":
     test_create_regular_cell_centers()
     test_create_regular_cell_volumes()
+    test_loc_to_id()

@@ -5,6 +5,7 @@ general:
 grid:
   distance_to_border:
   ncells: automatic
+  refinement: False
   resolution: 5 #[m]
   size [m]:
   - 320

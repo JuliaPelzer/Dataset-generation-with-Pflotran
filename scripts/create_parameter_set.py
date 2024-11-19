@@ -7,14 +7,15 @@ from typing import Dict
 from scripts.utils import timing
 from h5py import File
 
-from scripts.make_general_settings import load_yaml, save_yaml
+from scripts.utils import load_yaml, save_yaml
 from scripts.realistic_window.load_and_align_tiffs import load_properties_after_R_prep
 from scripts.realistic_window.interpolate import interpolate_windows
 from scripts.realistic_window.estimate_box_dims import make_window_shape, estimate_box_rotation, calc_box_height_from_TOK_n_GWGL
 from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rotated_box, check_validity_window
 from scripts.realistic_window.boundary_conditions import cut_bcs_hh, save_bcs
 from scripts.realistic_window.param_sampling import get_start_positions
-from scripts.create_grid_unstructured import create_mesh_files
+from scripts.mesh_generation import create_mesh_files
+from scripts.mesh_generation_utils import calc_n_cells_array
 
 
 @timing
@@ -28,7 +29,8 @@ def make_realistic_hydrogeological_parameter_windows(destination_path:pathlib.Pa
     print("Number of start positions:", len(start_positions_in_orig_cells))
 
     valid_start_ids = []
-    current_number_valid_windows = 0
+    grids_cells_centers = []
+    n_valid_windows = 0
     # while not enough windows:
     for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]]
         try:
@@ -51,9 +53,9 @@ def make_realistic_hydrogeological_parameter_windows(destination_path:pathlib.Pa
 
         # if valid window..., else restart with next start_pos
         if valid:
-            print(f"Valid window for start {start_pos} in round {i}, called RUN_{current_number_valid_windows}")
+            print(f"Valid window for start {start_pos} in round {i}, called RUN_{n_valid_windows}")
 
-            filename = destination_path / f"RUN_{current_number_valid_windows}"
+            filename = destination_path / f"RUN_{n_valid_windows}"
             filename.mkdir(parents=True, exist_ok=True)
             desti_resolution = settings["grid"]["resolution"]
             assert desti_resolution >=1, "not implemented for resolution <1 yet"
@@ -81,41 +83,44 @@ def make_realistic_hydrogeological_parameter_windows(destination_path:pathlib.Pa
             else:
                 settings["grid"]["size [m]"][2] = int(ncells[2] * desti_resolution)
             save_yaml(settings, filename)
-            cells = create_mesh_files(filename, settings) # cells: np.ndarray of [cell id, x[m], y[m], z[m]]
+            grid_dataset, boundaries_cells = create_mesh_files(filename, settings)
 
             # 10. interpolate cut out data to mesh (i.e. new resolution), based on coords (in cells of orig resolution)
             # TODO add 3rd dim
-            window_desti_values = interpolate_windows(orig_resolution, window_properties, cells["all"])
+            window_desti_values = interpolate_windows(orig_resolution, window_properties, grid_dataset["Domain/Cells/Centers"][:,0:2]) # [m] TODO 0:2 if 2D , sonst 0:3?
 
             # 11. calc and store BCs (hydraulic head) (convention: north=inflow, south=outflow, west=right, east=left)
-            bcs_hh = cut_bcs_hh(window_desti_values["tok"], window_desti_values["gwgl"], cells, desti_resolution, ncells[1] * desti_resolution)
+            bcs_hh = cut_bcs_hh(window_desti_values["tok"], window_desti_values["gwgl"], boundaries_cells, desti_resolution, ncells[1] * desti_resolution)
             save_bcs(filename, bcs_hh)
             
             # 12. store interpolated data and unique params to RUN-dir
             save_yaml({"start position [m]": [start_pos[0]*orig_resolution, start_pos[1]*orig_resolution], "rotation angle [°]": float(rotation_angle_degree), "orig resolution [m]": orig_resolution}, filename, "realistic_params", {"allow_unicode":True})
             for key, field in window_desti_values.items():
                 if key in ["permeability", "drawdown", "hydraulic_gradient", "dtw"]:
-                    store_hdf5_field(filename/f"{key}.h5", cells["all"], field, vary_property=key)
+                    store_hdf5_field(filename/f"{key}.h5", np.prod(calc_n_cells_array(settings)), field, vary_property=key) # TODO check dass richtig herum (removed order=F)/ eh anders auslesen
 
-            current_number_valid_windows += 1
+            n_valid_windows += 1
             valid_start_ids.append(start_pos)
+            grids_cells_centers.append(np.array(grid_dataset["Domain/Cells/Centers"]))
+            grid_dataset.close()
         else:
             print(f"invalid window for start {start_pos} in run {i}")
             continue
 
-        if current_number_valid_windows >= number_of_simulations:
-            break
+        if n_valid_windows >= number_of_simulations:
+            return grids_cells_centers
 
-    print(current_number_valid_windows, " valid windows found within", i+1, "tries")
-    if current_number_valid_windows < number_of_simulations:
-        print("Not enough windows found. Only", current_number_valid_windows, "found.")
+    print(n_valid_windows, " valid windows found within", i+1, "tries")
+    if n_valid_windows < number_of_simulations:
+        print("Not enough windows found. Only", n_valid_windows, "found.")
+
+    return grids_cells_centers
 
 
-def store_hdf5_field(filename, cells, data, vary_property:str = "permeability"):
-    data_flatten = data.reshape(len(cells[:,0]), order="F")
+def store_hdf5_field(filename, n_cells_total, data, vary_property:str = "permeability"):
 
     with File(filename, mode="w") as h5file:
-        h5file.create_dataset("Cell Ids", data=cells[:,0].astype(int))
-        h5file.create_dataset(vary_property, data=data_flatten)
+        h5file.create_dataset("Cell Ids", data=np.arange(1,n_cells_total+1).astype(int))
+        h5file.create_dataset(vary_property, data=data.reshape(n_cells_total))
 
     h5file.close()

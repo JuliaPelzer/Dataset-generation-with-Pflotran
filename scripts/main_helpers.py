@@ -8,7 +8,7 @@ import numpy as np
 import yaml
 import argparse
 
-from scripts.make_general_settings import load_yaml
+from scripts.utils import load_yaml
 from scripts.visualisation import plot_sim
 
 def groundwater_temp() -> float:

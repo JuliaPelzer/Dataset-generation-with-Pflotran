@@ -5,13 +5,12 @@ import shutil
 import time
 from pathlib import Path
 
-from scripts.make_general_settings import load_yaml
-from scripts.calc_loc_hp_variation_2d import calc_locs_hp, write_hps_strata_conditions_files
+from scripts.hp_variation_2d import calc_locs_hp, write_hps_strata_conditions_files
 from scripts.calc_hp_parameter_variation import realistic_pump_params, write_pump_param_files
 from scripts.visualisation import plot_sim
 from scripts.main_helpers import *
 from scripts.create_parameter_set import make_realistic_hydrogeological_parameter_windows
-from scripts.make_general_settings import load_yaml, save_yaml
+from scripts.utils import load_yaml, save_yaml
 
 def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: list):
     time_begin = time.perf_counter()
@@ -26,14 +25,14 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         temp_default, rate_default = None, None
 
     # generate set of subsurface parameter fields and grid files, for whole dataset
-    make_realistic_hydrogeological_parameter_windows(output_dataset_dir, settings, args.num_dp, temp_default, rate_default)
+    grids_cells_centers = make_realistic_hydrogeological_parameter_windows(output_dataset_dir, settings, args.num_dp, temp_default, rate_default)
 
     # strata_hps, condition_hps.txt - same for all datasets
     (output_dataset_dir / "interim").mkdir(exist_ok=True, parents=True)
     write_hps_strata_conditions_files(output_dataset_dir/"interim", args.num_hps)
 
     # generate set of hp locations
-    hps_cell_ids = calc_locs_hp(args.vary_hp, args.num_dp, args.num_hps, settings)
+    hps_cell_ids = calc_locs_hp(args.vary_hp, args.num_dp, args.num_hps, grids_cells_centers, settings)
 
     for run_id in np.arange(args.num_dp):
         output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
