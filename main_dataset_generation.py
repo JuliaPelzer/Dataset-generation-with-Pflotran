@@ -85,10 +85,9 @@ def preparation(output_dataset_dir, args, run_ids):
     settings = load_yaml(output_dataset_dir)
     return output_dataset_dir,pflotran_file,settings
 
-def call_pflotran(avg_time_per_sim, run_id):
+def call_pflotran(avg_time_per_sim, run_id:int, tmp_output:bool=False):
     start_sim = time.perf_counter()
     logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}")
-    tmp_output = False
     output_extension = " -screen_output off" if not tmp_output else ""
     os.system(f"mpirun -n 1 {os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
     avg_time_per_sim += time.perf_counter() - start_sim
