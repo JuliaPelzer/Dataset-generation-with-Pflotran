@@ -48,9 +48,13 @@ def realistic_pump_params(data_dir: pathlib.Path, hps_cell_ids: np.ndarray, temp
         else:
             rates[hp_id] = rate_default
 
-    return temps, rates
+    # store information, generate files regions_hps and inj-conditions_hps
+    write_pump_param_files(data_dir, hps_cell_ids, temps, rates)
 
 def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024):
+
+    np.savetxt(destination_dir / "injection_temps.txt", np.array([loc_hps, temp]).T)
+    np.savetxt(destination_dir / "injection_rates.txt", np.array([loc_hps, rate]).T)
 
     with open(destination_dir / "regions_hps.txt", "w") as f:
         for hp_id, cell_id_hp in enumerate(loc_hps):

@@ -39,13 +39,9 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         shutil.copytree(output_dataset_dir/"interim", output_dataset_run_dir, dirs_exist_ok=True)
         shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
         
-        # generate operational heat pump parameters (location, pump rate, pump temperature)
-        temps_hps, rates_hps = realistic_pump_params(output_dataset_run_dir, hps_cell_ids[run_id], temp_default, rate_default)
-        np.savetxt(output_dataset_run_dir / "injection_temps.txt", np.array([hps_cell_ids[run_id], temps_hps]).T)
-        np.savetxt(output_dataset_run_dir / "injection_rates.txt", np.array([hps_cell_ids[run_id], rates_hps]).T)
+        # generate and store operational heat pump parameters (location, pump rate, pump temperature)
+        realistic_pump_params(output_dataset_run_dir, hps_cell_ids[run_id], temp_default, rate_default)
 
-        # generate files regions_hps and inj-conditions_hps
-        write_pump_param_files(output_dataset_run_dir, hps_cell_ids[run_id], temps_hps, rates_hps)
 
     # RUN SIMULATIONS
     for run_id in run_ids:
