@@ -2,9 +2,6 @@ import numpy as np
 from typing import Dict
 import logging
 
-# set logging level to error
-logging.basicConfig(level=logging.ERROR)
-
 # n_cells
 def calc_n_cells_array(settings:Dict):
     n_cells = (np.array(settings["grid"]["size [m]"]) / settings["grid"]["resolution"]).astype(int)
@@ -39,7 +36,7 @@ def create_regular_cell_volumes(resolution:int, n_cells:np.array):
 def loc_to_id(cell_centers:np.array, position:np.array):
     '''find the cell id of a location'''
     if (position > cell_centers).any() or (position < 0).any():
-        logging.warning("loc_hp is outside/on boundary of domain")
+        logging.info("loc_hp is outside/on boundary of domain")
     return np.argmin(np.linalg.norm(cell_centers - position, axis=1))+1
 
 def id_to_loc(cell_centers:np.array, cell_id:int):

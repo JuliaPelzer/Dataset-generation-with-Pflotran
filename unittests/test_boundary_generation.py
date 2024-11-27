@@ -14,7 +14,7 @@ def test_SN():
             "loc_hp [m]": [10, 7, 7],
         }
     }
-    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd(), printing=False)
+    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd())
 
     # Expected result
     cells_N_expected = np.array([[ 2.5, 15., 2.5],
@@ -67,7 +67,7 @@ def test_WE():
             "loc_hp [m]": [10, 7, 7],
         }
     }
-    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd(), printing=False)
+    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd())
 
     # Expected result
     cells_W_expected = np.array([[ 0.,   2.5,  2.5],
@@ -111,7 +111,7 @@ def test_TB():
             "loc_hp [m]": [10, 7, 7],
         }
     }
-    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd(), printing=False)
+    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd())
 
     # Expected result
     cells_T_expected = np.array([[ 2.5,  2.5, 10.],

@@ -7,10 +7,9 @@ import logging
 from scripts.mesh_generation_utils import create_regular_cell_centers, create_regular_cell_volumes, calc_n_faces, create_regular_face_areas, create_regular_faces_ids, create_regular_faces_centers, correct_face_ids, calc_n_cells_array
 from scripts.mesh_generation_boundaries import create_SN_boundaries, create_WE_boundaries, create_TB_boundaries
 
-logging.basicConfig(level=logging.WARNING)
 
 # REGULAR GRID GENERATION
-def create_regular_grid(settings:Dict, destination:pathlib, printing:bool=False) -> Tuple[h5py.File, np.array]:
+def create_regular_grid(settings:Dict, destination:pathlib) -> Tuple[h5py.File, np.array]:
     out = h5py.File(destination/"mesh.h5", "w")
 
     n_cells = calc_n_cells_array(settings)
@@ -29,24 +28,23 @@ def create_regular_grid(settings:Dict, destination:pathlib, printing:bool=False)
     out.create_dataset("Domain/Connections/Cell Ids", data=face_cell_ids, dtype="i")
     out.create_dataset("Domain/Connections/Centers", data=face_centers, dtype="i")
 
-    if printing:
-        print(f"{n_cells=}")
-        print(f"{cell_centers[:10]=}")
-        print(f"{volumes[:10]=}")
-        print(f"{n_faces=}")
-        print(f"{face_cell_ids[:10]=}")
-        print(f"{face_centers[:10]=}")
-        print(f"{out['Domain/Cells/Centers'].shape=}", f"{out['Domain/Cells/Centers'][0]=}")
-        print(f"{out['Domain/Cells/Volumes'].shape=}", f"{out['Domain/Cells/Volumes'][0]=}")
-        print(f"{out['Domain/Connections/Areas'].shape=}")
-        print(f"{out['Domain/Connections/Cell Ids'].shape=}")
-        print(f"{out['Domain/Connections/Centers'].shape=}")
+    logging.info(f"{n_cells=}")
+    logging.info(f"{cell_centers[:10]=}")
+    logging.info(f"{volumes[:10]=}")
+    logging.info(f"{n_faces=}")
+    logging.info(f"{face_cell_ids[:10]=}")
+    logging.info(f"{face_centers[:10]=}")
+    logging.info(f"{out['Domain/Cells/Centers'].shape=}", f"{out['Domain/Cells/Centers'][0]=}")
+    logging.info(f"{out['Domain/Cells/Volumes'].shape=}", f"{out['Domain/Cells/Volumes'][0]=}")
+    logging.info(f"{out['Domain/Connections/Areas'].shape=}")
+    logging.info(f"{out['Domain/Connections/Cell Ids'].shape=}")
+    logging.info(f"{out['Domain/Connections/Centers'].shape=}")
 
     return out, n_cells
 
 def create_mesh_files(path_to_output: pathlib.Path, settings: Dict):
     # cells_all = write_mesh_file(path_to_output, settings)
-    dataset_grid, n_cells = create_regular_grid(settings, path_to_output, False)
+    dataset_grid, n_cells = create_regular_grid(settings, path_to_output)
     
     cells_N, cells_S = create_SN_boundaries(path_to_output, settings["grid"]["resolution"], n_cells, dataset_grid["Domain/Cells/Centers"], north_position = settings["grid"]["size [m]"][1], south_position = 0)
     cells_W, cells_E = create_WE_boundaries(path_to_output, settings["grid"]["resolution"], n_cells, dataset_grid["Domain/Cells/Centers"], west_position = 0, east_position = settings["grid"]["size [m]"][0])
