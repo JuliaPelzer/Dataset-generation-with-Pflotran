@@ -2,8 +2,9 @@ import numpy as np
 import pathlib
 import os
 
-from scripts.mesh_generation_utils import loc_to_id
+from scripts.mesh_generation_utils import loc_to_id, calc_face_cell_ids
 from scripts.mesh_generation import create_regular_cell_centers, create_regular_cell_volumes, create_regular_grid
+from scripts.mesh_refinement_utils import calc_inner_face_centers
 
 def test_create_regular_cell_centers():
     # Fixture
@@ -74,7 +75,41 @@ def test_loc_to_id():
     out.close()
     os.remove(pathlib.Path.cwd() / "mesh.h5")
 
+def test_calc_face_cell_ids():
+    # Fixture
+    faces_res_orient = [
+        [10, 2.5, 2.5, 5, 0], 
+        [15, 2.5, 2.5, 5, 0]
+    ]
+    centers = np.array([[5, 5, 2.5], [12.5, 2.5, 2.5], [12.5, 7.5, 2.5], [17.5, 2.5, 2.5], [17.5, 7.5, 2.5]])
+
+    # Expected result
+    expected = np.array([[1, 2], [2, 4]])
+
+    # Actual result
+    actual = calc_face_cell_ids(faces_res_orient, centers)
+
+    # Test
+    assert np.allclose(actual, expected)
+
+def test_calc_inner_face_centers():
+    # Fixture
+    centers = np.array([[22.65625,  2.03125,  2.5,      0.3125 ],
+    [22.65625,  2.34375,  2.5,      0.3125 ],
+    [22.96875,  2.03125,  2.5,      0.3125 ],
+    [22.96875,  2.34375,  2.5,      0.3125 ]])
+
+    # Expected result
+    expected = np.array([[22.65625, 2.1875, 2.5, 0.3125],
+    [22.8125, 2.34375, 2.5, 0.3125],
+    [22.96875, 2.1875, 2.5, 0.3125],
+    [22.8125, 2.03125, 2.5, 0.3125]])
+
+    # Actual result
+    actual = calc_inner_face_centers(centers)
+
+    # Test
+    assert np.allclose(actual, expected)
+
 if __name__ == "__main__":
-    test_create_regular_cell_centers()
-    test_create_regular_cell_volumes()
     test_loc_to_id()

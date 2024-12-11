@@ -8,7 +8,7 @@ def calc_n_cells_array(settings:Dict):
     return n_cells
 
 # CELLS
-def create_regular_cell_centers(resolution:int, n_cells:np.array):
+def create_regular_cell_centers(resolution:int, n_cells:np.ndarray):
     '''a 2D float dataset with center’s XYZ coordinates per cells)'''
 
     # Create 1D arrays for each dimension
@@ -21,11 +21,11 @@ def create_regular_cell_centers(resolution:int, n_cells:np.array):
     cells = np.vstack([xv.ravel(), yv.ravel(), zv.ravel()]).T
     return cells
 
-def correct_cell_ids(cell_ids:np.array, offset:int=1):
+def correct_cell_ids(cell_ids:np.ndarray, offset:int=1):
     cell_ids[:, 0] += offset
     return cell_ids
 
-def create_regular_cell_volumes(resolution:int, n_cells:np.array):
+def create_regular_cell_volumes(resolution:int, n_cells:np.ndarray):
     ''' a 1D float dataset with the volume of each cell'''
     volume = resolution**3
     cell_volumes = np.ones(n_cells)*volume
@@ -33,18 +33,20 @@ def create_regular_cell_volumes(resolution:int, n_cells:np.array):
     cell_volumes = cell_volumes.flatten()
     return cell_volumes
 
-def loc_to_id(cell_centers:np.array, position:np.array):
+def loc_to_id(cell_centers:np.ndarray, position:np.ndarray):
     '''find the cell id of a location'''
+    # WARNING! this only works if no cells of 2 different resolutions are connected
+    logging.getLogger().setLevel(logging.ERROR)
     if (position > cell_centers).any() or (position < 0).any():
         logging.info("loc_hp is outside/on boundary of domain")
-    return np.argmin(np.linalg.norm(cell_centers - position, axis=1))+1
+    return int(np.argmin(np.linalg.norm(cell_centers - position, axis=1))+1)
 
-def id_to_loc(cell_centers:np.array, cell_id:int):
+def id_to_loc(cell_centers:np.ndarray, cell_id:int):
     '''find the location of a cell id'''
-    return cell_centers[cell_id-1]
+    return cell_centers[int(cell_id)-1]
 
 # FACES
-def calc_n_faces(n_cells:np.array):
+def calc_n_faces(n_cells:np.ndarray):
     return (n_cells[0] - 1) * n_cells[1] * n_cells[2] + n_cells[0] * (n_cells[1] - 1) * n_cells[2] + n_cells[0] * n_cells[1] * (n_cells[2] - 1)
 
 def create_regular_face_areas(resolution:int, n_faces:int):
@@ -53,14 +55,14 @@ def create_regular_face_areas(resolution:int, n_faces:int):
     face_areas = np.ones(n_faces)*area
     return face_areas
 
-def create_3D_mesh_with_cell_ids(cell_centers:np.array, resolution:int, n_cells:np.array):
+def create_3D_mesh_with_cell_ids(cell_centers:np.ndarray, resolution:int, n_cells:np.ndarray):
     cell_ids = np.zeros((n_cells[0], n_cells[1], n_cells[2]), dtype=int)
     for cell_id, cell in enumerate(cell_centers):
         cell = (cell / resolution - 0.5).astype(int)
         cell_ids[cell[0], cell[1], cell[2]] = cell_id
     return cell_ids
 
-def create_regular_faces_ids(cell_centers:np.array, resolution:int, n_cells:np.array, n_faces:int):
+def create_regular_faces_ids(cell_centers:np.ndarray, resolution:int, n_cells:np.ndarray, n_faces:int):
     '''a 2D integer dataset with the two cell ids on either side of the connection'''
     mesh_ids = create_3D_mesh_with_cell_ids(cell_centers, resolution, n_cells)
 
@@ -72,14 +74,51 @@ def create_regular_faces_ids(cell_centers:np.array, resolution:int, n_cells:np.a
 
     return cell_ids
 
-def correct_face_ids(face_cell_ids:np.array, offset:int=1):
+def correct_face_ids(face_cell_ids:np.ndarray, offset:int=1):
     '''a 2D integer dataset with the two cell ids on either side of the connection'''
     face_cell_ids += offset
     return face_cell_ids
 
-def create_regular_faces_centers(face_cell_ids:np.array, cell_centers:np.array, n_faces:int):
-    '''a 2D float dataset with the center’s XYZ coordinates per connection'''
-    centers = np.zeros((n_faces, 3))
+def create_regular_faces_centers(face_cell_ids:np.ndarray, cell_centers:np.ndarray, n_faces:int):
+    '''a 2D float dataset with the centers XYZ coordinates per connection'''
+    centers = np.zeros((n_faces, 3), dtype=float)
     for i, face in enumerate(face_cell_ids):
         centers[i] = 0.5 * (cell_centers[face[1]] + cell_centers[face[0]])
     return centers
+
+def get_neighboring_2cells_ids_of_face_pos(face_center, resolution, orientation, cell_centers_and_res):
+    neighbors = np.array([face_center.copy()]*2)
+    sign = np.array([-1, 1])
+    offset = 0.75 * resolution
+    neighbors[0,int(orientation)] += sign[0] * offset
+    neighbors[1,int(orientation)] += sign[1] * offset
+    neighbor_ids = np.zeros(2)
+    for id in range(2):
+        neighbor_ids[id] = loc_to_id(cell_centers_and_res[:,:3], neighbors[id])
+    if neighbor_ids[0] == neighbor_ids[1]:
+        logging.info(f"neighbors should be different, but are {neighbor_ids}")
+        for id in range(2):
+            found_neighbor_and_res = id_to_loc(cell_centers_and_res, neighbor_ids[id])
+            if np.abs(found_neighbor_and_res[int(orientation)] - neighbors[id, int(orientation)]) > found_neighbor_and_res[3]:
+                logging.error(f"this neighbor is wrong: {found_neighbor_and_res} != {neighbors[id]}, {id}")
+                neighbors[id, int(orientation)] 
+                neighbors[id, int(orientation)] -= sign[id] * offset
+                neighbors[id, int(orientation)] += sign[id] * 0.75 * 4* resolution
+                neighbor_ids[id] = loc_to_id(cell_centers_and_res[:,:3], neighbors[id])
+                logging.error(f"corrected to {neighbors[id]}")
+        assert neighbor_ids[0] != neighbor_ids[1], f"neighbors should be different, but are {neighbor_ids}"
+
+    return neighbor_ids
+
+def calc_face_cell_ids(faces_and_res_and_orient, cell_centers):
+    face_cell_ids = []
+    for x,y,z, res, orientation in faces_and_res_and_orient:
+        neighbors = get_neighboring_2cells_ids_of_face_pos([x,y,z], res, orientation, cell_centers)
+        face_cell_ids.append(neighbors)
+    return np.array(face_cell_ids)
+
+def face_loc_to_line(face_centers:np.ndarray, position:np.ndarray):
+    '''find the cell id of a location'''
+    if (position > face_centers).any() or (position < 0).any():
+        logging.info("position is not a valid face")
+    return np.argmin(np.linalg.norm(face_centers - position, axis=1))
