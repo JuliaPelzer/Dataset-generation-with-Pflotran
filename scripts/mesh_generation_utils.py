@@ -100,12 +100,12 @@ def get_neighboring_2cells_ids_of_face_pos(face_center, resolution, orientation,
         for id in range(2):
             found_neighbor_and_res = id_to_loc(cell_centers_and_res, neighbor_ids[id])
             if np.abs(found_neighbor_and_res[int(orientation)] - neighbors[id, int(orientation)]) > found_neighbor_and_res[3]:
-                logging.error(f"this neighbor is wrong: {found_neighbor_and_res} != {neighbors[id]}, {id}")
+                logging.info(f"this neighbor is wrong: {found_neighbor_and_res} != {neighbors[id]}, {id}")
                 neighbors[id, int(orientation)] 
                 neighbors[id, int(orientation)] -= sign[id] * offset
                 neighbors[id, int(orientation)] += sign[id] * 0.75 * 4* resolution
                 neighbor_ids[id] = loc_to_id(cell_centers_and_res[:,:3], neighbors[id])
-                logging.error(f"corrected to {neighbors[id]}")
+                logging.info(f"corrected to {neighbors[id]}")
         assert neighbor_ids[0] != neighbor_ids[1], f"neighbors should be different, but are {neighbor_ids}"
 
     return neighbor_ids

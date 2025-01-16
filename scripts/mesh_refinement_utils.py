@@ -14,7 +14,7 @@ def get_circular_region(hp:np.array, grid_and_resolutions:np.array, radius:float
     region = []
     # TODO how to handle z-dim?
     for cell in grid_and_resolutions:
-        if np.linalg.norm(cell[:-1] - hp) < radius + 0.5*cell[-1]:
+        if np.linalg.norm(cell[:-1] - hp) < radius + 0.75 * cell[-1]:
             region.append(cell)
     return region
 
@@ -35,7 +35,7 @@ def get_face_orientation(cell_position, face_position):
     assert len(id_differ) == 1, f"cell and face should share 2 positions, but cell={cell_position} and face={face_position} differ in {id_differ}"
     return id_differ[0]
 
-def calc_inner_face_centers(old_cell_center:np.ndarray, new_4cell_centers:np.ndarray):
+def calc_inner_face_centers(new_4cell_centers:np.ndarray):
     # 4 new faces between new cells
     new_face_centers = []
     for inter1, inter2 in [(0, 1), (1, 3), (3, 2), (2, 0)]:

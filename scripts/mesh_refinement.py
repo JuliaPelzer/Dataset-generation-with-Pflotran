@@ -166,8 +166,9 @@ def calc_refined_face_centers(old_cell_and_res:np.ndarray, face_cell_ids:np.ndar
     curr_face_ids = np.delete(curr_face_ids, already_refined_lines)
     return np.array(new_face_and_res_and_orient), curr_face_ids, np.array(already_refined_faces)
 
-def do_refinements(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np.ndarray, face_cell_ids:np.ndarray, hp: np.ndarray, settings, bounds, goal_resolution:float=0.1):
+def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np.ndarray, face_cell_ids:np.ndarray, hp: np.ndarray, settings, bounds, goal_resolution:float=0.1):
     refinement_steps = calc_refinement_steps(hp, settings["grid"]["resolution"], goal_resolution, settings, decrease_factor=1)
+    
     for goal_resolution, curr_radius in tqdm(refinement_steps["radius"].items(), desc="Refinement steps"):
         cells_to_refine_and_res = calc_cells_to_refine(grid_and_resolutions, hp, goal_resolution, refinement_steps, curr_radius)
 
@@ -180,12 +181,11 @@ def do_refinements(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np
                 new_cell_and_res_tmp = calc_refined_cell_centers(cells_to_refine_and_res[id_and_face_and_res_and_orient][:-1], curr_resolution / 2, bounds)
                 # get old face centers, calc new face centers
                 new_outer_face_centers_and_res_and_orient, old_face_ids, already_refined_faces = calc_refined_face_centers(cells_to_refine_and_res[id_and_face_and_res_and_orient], face_cell_ids, faces_and_res_and_orient, grid_and_resolutions, new_cell_and_res_tmp)
-                new_inner_face_centers_and_res_and_orient = calc_inner_face_centers(cells_to_refine_and_res[id_and_face_and_res_and_orient,:-1], new_cell_and_res_tmp)
+                new_inner_face_centers_and_res_and_orient = calc_inner_face_centers(new_cell_and_res_tmp)
                 try:
                     new_face_centers_and_res_and_orient_tmp = np.concatenate([new_inner_face_centers_and_res_and_orient, new_outer_face_centers_and_res_and_orient])
                 except:
                     new_face_centers_and_res_and_orient_tmp = new_inner_face_centers_and_res_and_orient
-                    print("no outer faces")
 
                 ## overwrite and append: cells: centers, volumes; faces: centers, areas, cell ids
                 # old cell ids: curr_cell_id; # new cells: new_cell_centers_tmp
@@ -198,13 +198,10 @@ def do_refinements(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np
 
                 collect_already_faces_cell_ids = []
                 if len(already_refined_faces) > 0:
-                    print("update already refined face")
-                    print("prior", already_refined_faces)
                     neighbors = calc_face_cell_ids(already_refined_faces[:,1:], grid_and_resolutions)
                     for neigh, face in zip(neighbors, already_refined_faces):
                         face_cell_ids[int(face[0])] = neigh
                         collect_already_faces_cell_ids.append(neigh)
-                    print("post", face_cell_ids[int(face[0])])
                 collect_already_faces_cell_ids = np.array(collect_already_faces_cell_ids)
 
                 # pos of refined_face in faces_and_resolutions
@@ -214,48 +211,30 @@ def do_refinements(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np
                     face_cell_ids[old_f] = new_face_cell_ids_tmp[id]
                 faces_and_res_and_orient = np.concatenate([faces_and_res_and_orient, new_face_centers_and_res_and_orient_tmp[len(old_face_ids):]])
                 face_cell_ids = np.concatenate([face_cell_ids, new_face_cell_ids_tmp[len(old_face_ids):]])
-            # break
-        plt.figure(figsize=(20,10))
-        plt.subplot(121)
-        # plt.plot(cells_to_refine_and_res[:,0], cells_to_refine_and_res[:,1], "x")
-        plt.scatter(grid_and_resolutions[:,0], grid_and_resolutions[:,1], c=range(len(grid_and_resolutions[:,:-1])))
-        # plt.plot(hp[0], hp[1], "rx")
-        for cell_id, pos in enumerate(grid_and_resolutions): #cell_positions, cell_ids):
-            plt.text(pos[0], pos[1], str(cell_id+1), fontsize=12, ha='center', va='center', color='blue')
-
-        plt.grid()
-        # plt.colorbar()
-        plt.subplot(122)
-        plt.plot(grid_and_resolutions[:,0], grid_and_resolutions[:,1], "gx")
-        plt.scatter(faces_and_res_and_orient[:,0], faces_and_res_and_orient[:,1], c=range(len(faces_and_res_and_orient[:,:-1])))
-        if len(collect_already_faces_cell_ids) > 0:
-            tmpi_cells = np.concatenate((new_face_cell_ids_tmp, collect_already_faces_cell_ids))
-            tmpi_centers = np.concatenate((new_face_centers_and_res_and_orient_tmp, already_refined_faces[:,1:]))
-        else:
-            tmpi_cells = new_face_cell_ids_tmp
-            tmpi_centers = new_face_centers_and_res_and_orient_tmp
-        for line, face_cell_id in enumerate(tmpi_cells):
-            tmp = np.array([id_to_loc(grid_and_resolutions[:,:-1], face_cell_id[0])[:2], tmpi_centers[line][:2], id_to_loc(grid_and_resolutions[:,:-1], face_cell_id[1])[:2]])
-            plt.plot(tmp[:,0], tmp[:,1], "r-o")
-        # try:
-        #     plt.plot(grid_and_resolutions[66,0], grid_and_resolutions[66,1], "ro")
-        #     plt.plot(grid_and_resolutions[67,0], grid_and_resolutions[67,1], "ro")
-        #     plt.plot(grid_and_resolutions[68,0], grid_and_resolutions[68,1], "ro")
-        # except:
-        #     print(grid_and_resolutions.shape)
-        plt.colorbar()
-        plt.grid()
-        plt.show()
-
-        # for line, face_cell_id in enumerate(face_cell_ids):
-        #     print(face_cell_id, faces_and_res_and_orient[line], "cell1", id_to_loc(grid_and_resolutions[:,:-1], face_cell_id[0]), "cell2", id_to_loc(grid_and_resolutions[:,:-1], face_cell_id[1]))
-        # break
-
+        
+        if logging.getLogger().getEffectiveLevel() <= logging.WARNING:
+            plt.figure(figsize=(20,10))
+            plt.subplot(121)
+            plt.scatter(grid_and_resolutions[:,0], grid_and_resolutions[:,1], c=range(len(grid_and_resolutions[:,:-1])))
+            plt.grid()
+            plt.colorbar()
+            plt.subplot(122)
+            plt.plot(grid_and_resolutions[:,0], grid_and_resolutions[:,1], "gx")
+            plt.scatter(faces_and_res_and_orient[:,0], faces_and_res_and_orient[:,1], c=range(len(faces_and_res_and_orient[:,:-1])))
+            plt.colorbar()
+            plt.grid()
+            plt.show()
 
     return grid_and_resolutions, faces_and_res_and_orient, face_cell_ids
 
 
-def refine_regions_acc_to_hps(num_dp:int, settings:Dict, grids:np.ndarray, face_centers:np.ndarray, face_cell_ids:np.ndarray, dps_hps_locs:np.ndarray):
+def mesh_refinements_all_dps(num_dp:int, settings:Dict, grids:np.ndarray, face_centers:np.ndarray, face_cell_ids:np.ndarray, dps_hps_locs:np.ndarray):
+    """
+    Refine regions around hp according to settings
+    Outputs:
+    - refined_cell_centers: list of np.arrays (#cells, 3) with cell centers, list length = num_dp
+    - refined_cell_volumes: list of np.arrays (#cells, ) with cell volumes, list length = num_dp
+    """
     refined_cell_centers = []
     refined_cell_volumes = []
 
@@ -268,31 +247,15 @@ def refine_regions_acc_to_hps(num_dp:int, settings:Dict, grids:np.ndarray, face_
         resolutions_faces = np.array([settings["grid"]["resolution"],]*len(face_centers[id]))
         faces_and_res_and_orient = np.concatenate([face_centers[id], resolutions_faces.reshape(-1,1), np.ones_like(resolutions_faces.reshape(-1,1))*(-1)], axis=1)
         face_cell_ids_tmp = face_cell_ids[id]
-        # print(faces_and_resolutions[:10], faces_and_resolutions.shape)
+
         # for each hp:
-        id = 0
         for hp in dps_hps_locs[id]:
             # refine region around hp
-            grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp = do_refinements(grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp, hp, settings, bounds)
-            id += 1
-            if id > 0:
-                break
+            grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp = refine_region_acc_to_hp(grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp, hp, settings, bounds)
 
         # TODO 
         refined_cell_centers.append(grid_and_resolutions[:,:-1])
         ## cell volumes
         refined_cell_volumes.append(grid_and_resolutions[:,-1]**3)
-        break
         
     return refined_cell_centers, refined_cell_volumes
-
-
-# out, _  = create_regular_grid(settings, pathlib.Path.cwd())
-# grids_global = np.array([out["Domain/Cells/Centers"],]*num_dp)
-# face_areas = np.array([out["Domain/Connections/Areas"],]*num_dp)
-# face_cell_ids_global = np.array([out["Domain/Connections/Cell Ids"],]*num_dp)
-# face_centers_global = np.array([out["Domain/Connections/Centers"],]*num_dp)
-# out.close()
-# dps_hps_locs_global = np.array([[[31.27825912, 10.23414779,  1.        ]]])
-
-# refined_cell_centers, refined_cell_volumes = refine_regions_acc_to_hps(num_dp, settings, grids_global, face_centers_global, face_cell_ids_global, dps_hps_locs_global)

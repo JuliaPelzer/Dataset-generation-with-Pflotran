@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Dict
+import logging
 
 from scripts.mesh_generation_utils import loc_to_id
 
@@ -76,7 +77,7 @@ def calc_locs_hp_float(vary_poss: bool, param_dataset_size: int, number_of_hps: 
     if vary_poss:
         try:
             distance_to_border = settings["grid"]["distance_to_border"]
-            print(f"distance to border: {distance_to_border} m, {len(distance_to_border[1])} values")
+            logging.info(f"distance to border: {distance_to_border} m, {len(distance_to_border[1])} values")
         except:
             distance_to_border = [[5], [5,5], 5]
 
