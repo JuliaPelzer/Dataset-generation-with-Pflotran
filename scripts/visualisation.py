@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import scripts.cmap_jp
 
-def plot_sim(path_run: str, settings: Dict, plot_name: str = "plot_simulation_results", case: str = "2D", reshape_bool: bool = True):
+def plot_results(path_run: str, settings: Dict, plot_name: str = "plot_simulation_results", case: str = "2D", reshape_bool: bool = True):
     # master function: plots the data from the given path in given view, no need for reshaping if structured grid
     with h5py.File(path_run + "/pflotran.h5", "r") as file:
         list_to_plot = make_plottable_and_2D(file, case, reshape_bool, settings)

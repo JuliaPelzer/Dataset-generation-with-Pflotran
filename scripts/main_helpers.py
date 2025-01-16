@@ -9,7 +9,7 @@ import yaml
 import argparse
 
 from scripts.utils import load_yaml
-from scripts.visualisation import plot_sim
+from scripts.visualisation import plot_results
 
 def groundwater_temp() -> float:
     return 10
@@ -144,5 +144,5 @@ def just_visualize(args):
 
     for run_id in range(4):  # in case of testcases_4
         output_dataset_run_dir = f"{args.name}/RUN_{run_id}"
-        plot_sim(output_dataset_run_dir, settings, case="2D")
+        plot_results(output_dataset_run_dir, settings, case="2D")
         logging.info(f"...visualisation of RUN {run_id} is done")

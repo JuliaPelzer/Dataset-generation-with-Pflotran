@@ -5,9 +5,9 @@ import shutil
 import time
 from pathlib import Path
 
-from scripts.hp_variation_2d import calc_locs_hp, write_hps_strata_conditions_files
+from scripts.hp_variation_2d import calc_hp_locs, write_hps_strata_conditions_files, hps_locs_to_ids
 from scripts.calc_hp_parameter_variation import realistic_pump_params, write_pump_param_files
-from scripts.visualisation import plot_sim
+from scripts.visualisation import plot_results
 from scripts.main_helpers import *
 from scripts.create_parameter_set import make_realistic_hydrogeological_parameter_windows
 from scripts.utils import load_yaml, save_yaml
@@ -19,10 +19,13 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
 
     # if varying (automatic) window shape: load subsurface params directly from RUN folder, in every run -> no need to load and change location of files
     if not args.vary_inflow:
-        temp_default = 5+groundwater_temp() #[C]
+        temp_default = 5 + groundwater_temp() #[C]
         rate_default = 0.00024 #[m^3/s]
     else:
         temp_default, rate_default = None, None
+
+    # generate set of hp locations
+    hps_locs = calc_hp_locs(args.vary_hp, args.num_dp, args.num_hps, settings)
 
     # generate set of subsurface parameter fields and grid files, for whole dataset
     grids_cells_centers = make_realistic_hydrogeological_parameter_windows(output_dataset_dir, settings, args.num_dp, temp_default, rate_default)
@@ -31,9 +34,13 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     (output_dataset_dir / "interim").mkdir(exist_ok=True, parents=True)
     write_hps_strata_conditions_files(output_dataset_dir/"interim", args.num_hps)
 
-    # generate set of hp locations
-    hps_cell_ids = calc_locs_hp(args.vary_hp, args.num_dp, args.num_hps, grids_cells_centers, settings)
+    # TODO include mesh refinement
 
+    hps_cell_ids = hps_locs_to_ids(hps_locs, grids_cells_centers)
+    print(f"{hps_cell_ids=}") # TODO check after refinement
+
+    # TODO only now do eval/interpolation of windows
+    
     for run_id in np.arange(args.num_dp):
         output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
         shutil.copytree(output_dataset_dir/"interim", output_dataset_run_dir, dirs_exist_ok=True)
@@ -54,7 +61,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
             call_pflotran(avg_time_per_sim, run_id)
 
             if args.visu:
-                plot_sim(".", settings, case="2D")
+                plot_results(".", settings, case="2D")
 
             # clean_up()
             os.chdir("../../../")
