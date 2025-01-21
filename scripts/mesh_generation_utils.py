@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Dict
 import logging
+from pathlib import Path
+import h5py
 
 # n_cells
 def calc_n_cells_array(settings:Dict):
@@ -122,3 +124,16 @@ def face_loc_to_line(face_centers:np.ndarray, position:np.ndarray):
     if (position > face_centers).any() or (position < 0).any():
         logging.info("position is not a valid face")
     return np.argmin(np.linalg.norm(face_centers - position, axis=1))
+
+def store_mesh(destination_path:Path, mesh:Dict[str, np.ndarray]):
+    '''store the mesh in a file'''
+
+    out = h5py.File(destination_path/"mesh.h5", "w")
+
+    out.create_dataset("Domain/Cells/Centers", data=mesh["cell_centers"], dtype="f8")
+    out.create_dataset("Domain/Cells/Volumes", data=mesh["cell_volumes"], dtype="f8")
+    out.create_dataset("Domain/Connections/Areas", data=mesh["face_areas"], dtype="f8")
+    out.create_dataset("Domain/Connections/Cell Ids", data=mesh["face_cell_ids"], dtype="i")
+    out.create_dataset("Domain/Connections/Centers", data=mesh["face_centers"], dtype="f8")
+
+    out.close()

@@ -1,164 +1,62 @@
 import numpy as np
 import pathlib
 import os
+import filecmp
 
 from scripts.mesh_generation import create_regular_grid
-from scripts.mesh_generation_boundaries import create_SN_boundaries, create_WE_boundaries, create_TB_boundaries
+from scripts.mesh_generation_boundaries import create_boundary_locs
+from scripts.mesh_refinement import mesh_refinements_all_dps
 
-def test_SN():
+def test_refined_BCs():
     # Fixture
     settings = {
         "grid": {
             "resolution": 5,
-            "size [m]": [20, 15, 10],
-            "loc_hp [m]": [10, 7, 7],
+            "size [m]": [40, 30, 5], #100
+            "loc_hp [m]": [1, 7, 7],
+            "distance_to_border": [[0, 0], [0, 0], 0],
+            "min resolution well (m)": 0.1,
+            "min resolution plume (m)": 1,
+        },
+        "subsurface": {
+            "hydraulic conductivity": 1e-5,
+            "aquifer thickness": 5,
+            "darcy velocity": 1,
+        },
+        "max pump": {
+            "temperature": 5,
         }
     }
-    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd())
+    num_dp = 1
+    dps_hps_locs_global = np.array([[[ 4.68187768,  0.83783127,  1.        ],
+        [35.97385269,  4.77132156,  1.        ],
+        [ 1.44393715, 13.66984525,  1.        ],
+        [18.02092972, 16.91220293,  1.        ]]])
+    windows = [{"properties": {"hydraulic_conductivity": np.ones(settings["grid"]["size [m]"][:2])*settings["subsurface"]["hydraulic conductivity"], "thickness": np.ones(settings["grid"]["size [m]"][:2])*settings["subsurface"]["aquifer thickness"], "darcy_velocity": np.ones(settings["grid"]["size [m]"][:2])*settings["subsurface"]["darcy velocity"]}}]
+    
+    out, _  = create_regular_grid(settings)
+    out = [out,]
+    meshs_refined = mesh_refinements_all_dps(num_dp, settings, meshs_regular=out, dps_hps_locs=dps_hps_locs_global, dps_hps_temps=np.ones_like(dps_hps_locs_global[:,:,0])*5, windows_properties_collected=windows, orig_resolution=20)
 
     # Expected result
-    cells_N_expected = np.array([[ 2.5, 15., 2.5],
-                                [ 7.5, 15., 2.5],
-                                [12.5, 15., 2.5],
-                                [17.5, 15., 2.5],
-                                [ 2.5, 15., 7.5],
-                                [ 7.5, 15., 7.5],
-                                [12.5, 15., 7.5],
-                                [17.5, 15., 7.5]])
-    cells_S_expected = np.array([[ 2.5, 0., 2.5],
-                                [ 7.5, 0., 2.5],
-                                [12.5, 0., 2.5],
-                                [17.5, 0., 2.5],
-                                [ 2.5, 0., 7.5],
-                                [ 7.5, 0., 7.5],
-                                [12.5, 0., 7.5],
-                                [17.5, 0., 7.5]])
-    cell_ids_north_expected = np.array([5, 11, 17, 23, 6, 12, 18, 24])
-    cell_ids_south_expected = np.array([1, 7, 13, 19, 2, 8, 14, 20])
+    path_expected = pathlib.Path.cwd() / "unittests"
 
     # Actual result
-    cells_N, cells_S = create_SN_boundaries(pathlib.Path.cwd(), settings["grid"]["resolution"], n_cells, out["Domain/Cells/Centers"], north_position = settings["grid"]["size [m]"][1], south_position = 0)
-    out.close()
-    # load the files again
-    with open(pathlib.Path.cwd() / "north.ex", "r") as file:
-        lines = file.readlines()
-        cell_ids_north = np.array([int(line.split()[0]) for line in lines[1:]])
-    with open(pathlib.Path.cwd() / "south.ex", "r") as file:
-        lines = file.readlines()
-        cell_ids_south = np.array([int(line.split()[0]) for line in lines[1:]])
+    for direction in ["west", "east", "north", "south"]:
+        create_boundary_locs(meshs_refined[0], direction, settings["grid"]["resolution"], settings["grid"]["size [m]"], output_dir=pathlib.Path.cwd())
 
     # Assertion
-    np.testing.assert_allclose(cells_N, cells_N_expected)
-    np.testing.assert_allclose(cells_S, cells_S_expected)
-    np.testing.assert_allclose(cell_ids_north, cell_ids_north_expected)
-    np.testing.assert_allclose(cell_ids_south, cell_ids_south_expected)
+    for direction in ["west", "east", "north", "south"]:
+        assert filecmp.cmp(path_expected / f"{direction}.ex", pathlib.Path.cwd() / f"{direction}.ex"), f"{direction} not equal to reference file in ./unittests"
+    
 
     # Clean up
-    os.remove(pathlib.Path.cwd() / "mesh.h5")
+    os.remove(pathlib.Path.cwd() / "west.ex")
+    os.remove(pathlib.Path.cwd() / "east.ex")
     os.remove(pathlib.Path.cwd() / "north.ex")
     os.remove(pathlib.Path.cwd() / "south.ex")
-
-def test_WE():
-    # Fixture
-    settings = {
-        "grid": {
-            "resolution": 5,
-            "size [m]": [20, 15, 10],
-            "loc_hp [m]": [10, 7, 7],
-        }
-    }
-    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd())
-
-    # Expected result
-    cells_W_expected = np.array([[ 0.,   2.5,  2.5],
-                                [ 0.,   7.5,  2.5],
-                                [ 0.,  12.5,  2.5],
-                                [ 0.,   2.5,  7.5],
-                                [ 0.,   7.5,  7.5],
-                                [ 0.,  12.5,  7.5]])
-    cells_E_expected = np.array([[20.,   2.5,  2.5],
-                                [20.,   7.5,  2.5],
-                                [20.,  12.5,  2.5],
-                                [20.,   2.5,  7.5],
-                                [20.,   7.5,  7.5],
-                                [20.,  12.5,  7.5]])
-    cell_ids_west_expected = np.array([1, 3, 5, 2, 4, 6])
-    cell_ids_east_expected = np.array([19, 21, 23, 20, 22, 24])
-
-    # Actual result
-    cells_W, cells_E = create_WE_boundaries(pathlib.Path.cwd(), settings["grid"]["resolution"], n_cells, out["Domain/Cells/Centers"], west_position = 0, east_position = settings["grid"]["size [m]"][0])
-    out.close()
-    # load the files again
-    with open(pathlib.Path.cwd() / "west.ex", "r") as file:
-        lines = file.readlines()
-        cell_ids_west = np.array([int(line.split()[0]) for line in lines[1:]])
-    with open(pathlib.Path.cwd() / "east.ex", "r") as file:
-        lines = file.readlines()
-        cell_ids_east = np.array([int(line.split()[0]) for line in lines[1:]])
-
-    # Assertion
-    np.testing.assert_allclose(cells_W, cells_W_expected)
-    np.testing.assert_allclose(cells_E, cells_E_expected)
-    np.testing.assert_allclose(cell_ids_west, cell_ids_west_expected)
-    np.testing.assert_allclose(cell_ids_east, cell_ids_east_expected)
-
-def test_TB():
-    # Fixture
-    settings = {
-        "grid": {
-            "resolution": 5,
-            "size [m]": [20, 15, 10],
-            "loc_hp [m]": [10, 7, 7],
-        }
-    }
-    out, n_cells = create_regular_grid(settings, pathlib.Path.cwd())
-
-    # Expected result
-    cells_T_expected = np.array([[ 2.5,  2.5, 10.],
-                                [ 7.5,  2.5, 10.],
-                                [12.5,  2.5, 10.],
-                                [17.5,  2.5, 10.],
-                                [ 2.5,  7.5, 10.],
-                                [ 7.5,  7.5, 10.],
-                                [12.5,  7.5, 10.],
-                                [17.5,  7.5, 10.],
-                                [ 2.5, 12.5, 10.],
-                                [ 7.5, 12.5, 10.],
-                                [12.5, 12.5, 10.],
-                                [17.5, 12.5, 10.]])
-    cells_B_expected = np.array([[ 2.5,  2.5, 0.],
-                                [ 7.5,  2.5, 0.],
-                                [12.5,  2.5, 0.],
-                                [17.5,  2.5, 0.],
-                                [ 2.5,  7.5, 0.],
-                                [ 7.5,  7.5, 0.],
-                                [12.5,  7.5, 0.],
-                                [17.5,  7.5, 0.],
-                                [ 2.5, 12.5, 0.],
-                                [ 7.5, 12.5, 0.],
-                                [12.5, 12.5, 0.],
-                                [17.5, 12.5, 0.]])
-    cell_ids_top_expected = np.array([2, 8, 14, 20, 4, 10, 16, 22, 6, 12, 18, 24])
-    cell_ids_bottom_expected = np.array([1, 7, 13, 19, 3, 9, 15, 21, 5, 11, 17, 23])
-
-    # Actual result
-    cells_T, cells_B = create_TB_boundaries(pathlib.Path.cwd(), settings["grid"]["resolution"], n_cells, out["Domain/Cells/Centers"], top_position = settings["grid"]["size [m]"][2], bottom_position = 0)
-    out.close()
-    # load the files again
-    with open(pathlib.Path.cwd() / "top.ex", "r") as file:
-        lines = file.readlines()
-        cell_ids_top = np.array([int(line.split()[0]) for line in lines[1:]])
-    with open(pathlib.Path.cwd() / "bottom.ex", "r") as file:
-        lines = file.readlines()
-        cell_ids_bottom = np.array([int(line.split()[0]) for line in lines[1:]])
-
-    # Assertion
-    np.testing.assert_allclose(cells_T, cells_T_expected)
-    np.testing.assert_allclose(cells_B, cells_B_expected)
-    np.testing.assert_allclose(cell_ids_top, cell_ids_top_expected)
-    np.testing.assert_allclose(cell_ids_bottom, cell_ids_bottom_expected)
-
-if __name__ == "__main__":
-    test_SN()
-    test_WE()
-    test_TB()
+    try:
+        os.remove(pathlib.Path.cwd() / "top.ex")
+        os.remove(pathlib.Path.cwd() / "bottom.ex")
+    except:
+        pass

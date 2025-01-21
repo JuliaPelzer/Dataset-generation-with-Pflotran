@@ -117,17 +117,6 @@ def assert_combinations(args, run_ids: list):
         assert args.num_hps == 1, "can only calc domain size automatically for one hp"
         assert args.vary_inflow == False, "can only consistently combine automatic domain size with fixed inflows"
 
-def clean_up():
-    try:
-        shutil.move("pflotran.in", f"../inputs/pflotran.in")
-    except: ... # exists already in inputs
-    
-    # move all hps into hps folder
-    hps_dir = pathlib.Path("./hps")
-    hps_dir.mkdir(parents=True, exist_ok=True)
-    for file in pathlib.Path(".").glob("*.vs"):
-        shutil.move(file, hps_dir / file)
-
 def save_args(output_dataset_dir, args, timestamp_begin, time_begin, time_end, avg_time_per_sim):
     # save args as yaml file
     with open(output_dataset_dir / "inputs"/"args.yaml", "w") as f:

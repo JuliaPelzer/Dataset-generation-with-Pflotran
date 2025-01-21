@@ -1,10 +1,8 @@
 import numpy as np
-import pathlib
-from typing import Dict
-import h5py
+from typing import Tuple
 
 from scripts.main_helpers import *
-from scripts.realistic_window.param_sampling import sample_median, random_delta_t, random_thresholded_v_tech
+from scripts.realistic_window.param_sampling import random_delta_t, random_thresholded_v_tech
 
 def calc_pump_params(number_datapoints: int, dataset_folder: str, num_hp_per_dp:int,):
     temp_array, rate_array = None, None
@@ -28,33 +26,48 @@ def calc_pump_params(number_datapoints: int, dataset_folder: str, num_hp_per_dp:
 
     return temp_array, rate_array
 
-def realistic_pump_params(data_dir: pathlib.Path, hps_cell_ids: np.ndarray, temp_default:float=None, rate_default:float=None):
-    temps = np.zeros_like(hps_cell_ids, dtype=float)
-    rates = np.zeros_like(hps_cell_ids, dtype=float)
-    for hp_id, hp_cell_id in enumerate(hps_cell_ids):
-        if temp_default == None:
-            delta_T = random_delta_t() # delta of injection temperature to groundwater temperature
-            injection_T = groundwater_temp() + delta_T
-            temps[hp_id] = injection_T
-        else:
-            temps[hp_id] = temp_default
+def make_pump_params(v_dd:np.ndarray, temp_default:float = None, rate_default:float = None):
+    if temp_default == None:
+        delta_t = random_delta_t() # delta of injection temperature, groundwater temperature in [K]
+    else:
+        delta_t = temp_default - groundwater_temp()
+    if rate_default == None:
+        v_tech = random_thresholded_v_tech(v_dd) # [m^3/s]  #TODO schiefe Verteilung?
+    else:
+        v_tech = rate_default
 
-        if rate_default == None:
-            with h5py.File(data_dir / "drawdown.h5", "r") as v_dd:
-                line_id = np.where(v_dd["Cell Ids"] == hp_cell_id)
-                max_dd = v_dd["drawdown"][line_id]
+    return {"temp": delta_t + groundwater_temp(), "rate": v_tech}
+
+def realistic_pump_params(windows_properties: list[dict], hps_locs: np.ndarray, orig_resolution: int, temp_default:float=None, rate_default:float=None) -> Tuple[np.ndarray, np.ndarray]:
+    """returns temperatures and rates for all heat pumps in all datapoints"""
+    temps = np.zeros((hps_locs.shape[0], hps_locs.shape[1]), dtype=float)
+    rates = np.zeros((hps_locs.shape[0], hps_locs.shape[1]), dtype=float)
+    for dp_id, dp in enumerate(hps_locs):
+        for hp_id, hp_loc in enumerate(dp):
+            if temp_default == None:
+                delta_T = random_delta_t() # delta of injection temperature to groundwater temperature, TODO match to automatic window shape generation
+                injection_T = groundwater_temp() + delta_T
+                temps[dp_id, hp_id] = injection_T
+            else:
+                temps[dp_id, hp_id] = temp_default
+
+            if rate_default == None:
+                v_dd = windows_properties[dp_id]["properties"]["drawdown"]
+                hp_loc = (hp_loc / orig_resolution).astype(int)
+                max_dd = v_dd[hp_loc[0], hp_loc[1]] #np.min(slice_box(v_dd, hp_loc, [2,2])) # does not work if directly at border
                 v_tech = random_thresholded_v_tech(max_dd) # [m^3/s]
-                rates[hp_id] = np.round(v_tech, 8)
-        else:
-            rates[hp_id] = rate_default
+                rates[dp_id, hp_id] = np.round(v_tech, 8)
+            else:
+                rates[dp_id, hp_id] = rate_default
 
-    # store information, generate files regions_hps and inj-conditions_hps
-    write_pump_param_files(data_dir, hps_cell_ids, temps, rates)
+    print("TODO @Fabian use min oder max oder median? calc_hp_parameter_variation.py line 61")
+    return temps, rates
 
-def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray = None, temp: np.ndarray = 15.6, rate: np.ndarray = 0.00024):
 
-    np.savetxt(destination_dir / "injection_temps.txt", np.array([loc_hps, temp]).T)
-    np.savetxt(destination_dir / "injection_rates.txt", np.array([loc_hps, rate]).T)
+def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray, temps: np.ndarray, rates: np.ndarray):
+
+    np.savetxt(destination_dir / "injection_temps.txt", np.array([loc_hps, temps]).T)
+    np.savetxt(destination_dir / "injection_rates.txt", np.array([loc_hps, rates]).T)
 
     with open(destination_dir / "regions_hps.txt", "w") as f:
         for hp_id, cell_id_hp in enumerate(loc_hps):
@@ -63,7 +76,7 @@ def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray = None, tem
 
     with open(f"{destination_dir}/conditions_flow_inj.txt", "w") as f:
         for hp_id, cell_id_hp in enumerate(loc_hps):
-            rate_schedule = f"""0.  {rate[hp_id]}"""
-            temp_schedule = f"""0.  {temp[hp_id]}"""
+            rate_schedule = f"""0.  {rates[hp_id]}"""
+            temp_schedule = f"""0.  {temps[hp_id]}"""
 
             f.write(f"""FLOW_CONDITION injection{hp_id}\n  TYPE\n    RATE SCALED_VOLUMETRIC_RATE VOLUME\n    TEMPERATURE DIRICHLET\n  /\n  CYCLIC\n  RATE LIST\n    TIME_UNITS d\n    DATA_UNITS m^3/s\n    {rate_schedule}\n  /\n   TEMPERATURE LIST\n    TIME_UNITS yr\n    DATA_UNITS C\n    ! <time> <value>\n    {temp_schedule}\n  /\n/\n\n""")

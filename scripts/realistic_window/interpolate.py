@@ -12,7 +12,6 @@ def interpolate_properties(property_fields:Dict[str,np.ndarray], orig_resolution
 
 
 def interpolate_windows(orig_resolution:int, window_properties:Dict[str,np.ndarray], window_desti_cells:np.ndarray):
-    # TODO where? pixel ist orientiert an lower left -> korrektur notwendig: +0.5 resolution in beide richtungen 
     interpolators = interpolate_properties(window_properties, orig_resolution)
     window_desti_values = {}
     for key in interpolators.keys():

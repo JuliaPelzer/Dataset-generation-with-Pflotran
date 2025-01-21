@@ -69,22 +69,21 @@ def lahm_calc_T(x, y, time, parameters):
 def _radial_distance(x, y, alpha_L, alpha_T):
     return np.sqrt(x**2 + y**2*alpha_L/alpha_T)
 
-def estimate_plume_shapeparams_lahm(T_inj_diff: float, q_inj: float, v_a: float, m_aquifer: int) -> tuple:
+def estimate_plume_shape_lahm(T_inj_diff: float, q_inj: float, v_a: float, m_aquifer: int) -> tuple:
     params = Parameters(m_aquifer=m_aquifer, T_inj_diff=T_inj_diff, q_inj=q_inj, v_a=v_a)
-    cell_size = 1 # [m]
-    
+    step_size = 1 # [m]
     delta_T = params.T_inj_diff
     x_pos = 0
     y_pos = 0
     while delta_T > 1:
-        x_pos += cell_size
+        x_pos += step_size
         delta_T = lahm_calc_T(x_pos, y_pos, params.time_sim_sec, params)
         # print("At x=", x_pos, "m:", round(delta_T, 2), "°C Temperaturdifferenz")
 
     delta_T = params.T_inj_diff
     x_half = x_pos / 2
     while delta_T > 1:
-        y_pos += cell_size
+        y_pos += step_size
         delta_T = lahm_calc_T(x_half, y_pos, params.time_sim_sec, params)
         # print("At y=", y_pos, "m:", round(delta_T, 2), "°C Temperaturdifferenz")
     y_pos *= 2
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     q_inj=52 / 86400 # q_inj in m^3/s
     v_a=0.0015*0.058 # darcy in m/s
     
-    length_1K, width_1K = estimate_plume_shapeparams_lahm(T_inj_diff, q_inj, v_a, m_aquifer)
+    length_1K, width_1K = estimate_plume_shape_lahm(T_inj_diff, q_inj, v_a, m_aquifer)
     print(f"Downstream-length of plume: {length_1K} m")
     print(f"Width of plume at half length: {width_1K} m")
 

@@ -1,13 +1,11 @@
 import numpy as np
-import h5py
-import pathlib
-from typing import Dict, Tuple, List, Union
+from typing import Dict, List, Union
 import logging
 import matplotlib.pyplot as plt
 
-from scripts.mesh_generation_utils import loc_to_id, id_to_loc, calc_n_cells_array
 from scripts.realistic_window.param_sampling import slice_box
-from scripts.realistic_window.lahm.analytical_model_lahm import estimate_plume_shapeparams_lahm
+from scripts.realistic_window.lahm.analytical_model_lahm import estimate_plume_shape_lahm
+from scripts.main_helpers import groundwater_temp
 
 def get_circular_region(hp:np.array, grid_and_resolutions:np.array, radius:float):
     # if cell within radius, add to region
@@ -61,24 +59,26 @@ def determine_refinement_intervals(max_resolution: float, min_resolution: float,
         refinements[max_resolution / 2 ** (i + 1)] = max_distance
     return refinements
 
-def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution:float, settings:Dict, decrease_factor:float=1.0):
+def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution:float, orig_resolution: int, subsurface_properties:dict[str, np.ndarray], hp_temp: float, decrease_factor:float=1.0):
     # Get parameters
-    hydr_cond, thickness = settings["subsurface"]["hydraulic conductivity"], settings["subsurface"]["aquifer thickness"]
-    T_inj_diff, v_a = settings["max pump"]["temperature"], settings["subsurface"]["darcy velocity"]
+    hp_id = (center / orig_resolution).astype(int)
+    hydr_cond, thickness, v_a = subsurface_properties["hydraulic_conductivity"][hp_id[0], hp_id[1]], subsurface_properties["thickness"][hp_id[0], hp_id[1]], subsurface_properties["darcy_velocity"][hp_id[0], hp_id[1]]
+    T_inj_diff = hp_temp - groundwater_temp()
 
     # Estimate the radius of the "Absenktrichter" with Sichardt around each well
-    inner_radius = sichardt_distance(center, hydr_cond, thickness, debug=2.5)
+    inner_radius = sichardt_distance(center/orig_resolution, hydr_cond, thickness) 
+    inner_radius = 2.5 # for debug/testing
     logging.info(f"sichardt distance (=inner_radius) {inner_radius}")
-    # max_influence_distance = inner_radius * (1+decrease_factor)
     refinements_radius = determine_refinement_intervals(max_resolution, min_resolution, inner_radius, decrease_factor)
 
     # Estimate the plume shape parameters (1K isoline) with LAHM
     safety_factor = 1
-    length_1K, width_1K = estimate_plume_shapeparams_lahm(T_inj_diff, 1/3 * thickness, v_a, thickness)
+    length_1K, width_1K = estimate_plume_shape_lahm(T_inj_diff, 1/3 * thickness, v_a, thickness)
+
     length_1K *= (1+safety_factor)
-    length_1K = 15
+    # length_1K = 15 # for debug/testing
     width_1K *= (1+safety_factor)
-    width_1K = 5
+    # width_1K = 5 # for debug/testing
     logging.info(f"downstream: {length_1K=}\nat half length: {width_1K=}")
     min_resolution_plume = 1
     refinement_plume_length = determine_refinement_intervals(max_resolution, min_resolution_plume, length_1K, decrease_factor)
@@ -98,7 +98,7 @@ def plot_grid(centers_new, vols_new, settings:Dict, hps=np.array([]), factor:int
     plt.ylim(0,settings["grid"]["size [m]"][1])
     plt.show()
 
-def sichardt_distance(cell_hp: np.array, hydr_cond: Union[float, np.array], thickness: Union[float, np.array], debug:Union[float, None]=None) -> List[np.array]:
+def sichardt_distance(hp_cell: np.array, hydr_cond: Union[float, np.array], thickness: Union[float, np.array]) -> List[np.array]:
     '''Sichardt  (1928)
     
     Returns distance in m, float.
@@ -108,15 +108,12 @@ def sichardt_distance(cell_hp: np.array, hydr_cond: Union[float, np.array], thic
         hydr_cond -- hydraulic conductivity, float or np.array
         thickness -- thickness of aquifer, float or np.array
     '''
-    if not debug:
-        if isinstance(hydr_cond, np.ndarray):
-            hydr_cond = slice_box(hydr_cond, cell_hp, [3,3])
-        if isinstance(thickness, np.ndarray):
-            thickness = slice_box(thickness, cell_hp, [3,3])
-        max_downdraw = 1/3 * thickness
-        return 3000 * max_downdraw * np.sqrt(hydr_cond)
-    else:
-        return debug
+    if isinstance(hydr_cond, np.ndarray):
+        hydr_cond = slice_box(hydr_cond, hp_cell, [3,3])
+    if isinstance(thickness, np.ndarray):
+        thickness = slice_box(thickness, hp_cell, [3,3])
+    max_downdraw = 1/3 * thickness
+    return 3000 * max_downdraw * np.sqrt(hydr_cond)
 
 
 def calc_refined_cell_centers(old_cell_center, curr_resolution, bounds:List):
