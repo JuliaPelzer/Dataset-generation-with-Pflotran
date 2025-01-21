@@ -43,7 +43,7 @@ def test_refined_BCs():
 
     # Actual result
     for direction in ["west", "east", "north", "south"]:
-        create_boundary_locs(meshs_refined[0], direction, settings["grid"]["resolution"], settings["grid"]["size [m]"], output_dir=pathlib.Path.cwd())
+        create_boundary_locs(meshs_refined[0], direction, settings["grid"]["resolution"], np.array(settings["grid"]["size [m]"])/settings["grid"]["resolution"], orig_resolution=settings["grid"]["resolution"], output_dir=pathlib.Path.cwd())
 
     # Assertion
     for direction in ["west", "east", "north", "south"]:
