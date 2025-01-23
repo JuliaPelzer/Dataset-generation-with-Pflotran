@@ -27,7 +27,6 @@ def mesh_generation_all_dps(settings:Dict, destination_path:pathlib.Path, window
     meshs = []
     for i, window in enumerate(windows_collected):
         filename = destination_path / f"RUN_{i}"
-        filename.mkdir(parents=True, exist_ok=True)
         desti_resolution = settings["grid"]["resolution"]
         assert desti_resolution >=1, "not implemented for resolution <1 yet"
 

@@ -6,8 +6,8 @@ from typing import List, Dict
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from scripts.utils import aligned_colorbar
 import scripts.cmap_jp
 
 def plot_results(path_run: str, settings: Dict, plot_name: str = "plot_simulation_results", case: str = "2D", reshape_bool: bool = True):
@@ -16,7 +16,6 @@ def plot_results(path_run: str, settings: Dict, plot_name: str = "plot_simulatio
         list_to_plot = make_plottable_and_2D(file, case, reshape_bool, settings)
 
     plot_data(list_to_plot, path_run, name_pic=plot_name, case=case)
-
 
 def make_plottable_and_2D(hdf5_file: h5py.File, case: str, reshape_bool: bool, settings: Dict) -> List:
     # helper function to make the data plottable, i.e. put it into a dictionary
@@ -56,15 +55,9 @@ def plot_data(data: List, path: str, name_pic: str = "plot_y_exemplary", case: s
         plt.imshow(data_point["data"], origin="lower", cmap="jp")
         plt.xlabel("y")
         plt.ylabel("x")
-        _aligned_colorbar(label=data_point["property"])
+        aligned_colorbar(label=data_point["property"])
 
     pic_file_name = f"{path}/{name_pic}_{case}.png"
     logging.info(f"Resulting picture is at {pic_file_name}")
     plt.savefig(pic_file_name, dpi=400)
-
-
-def _aligned_colorbar(*args, **kwargs):
-    # scales and positions the colorbar
-    cax = make_axes_locatable(plt.gca()).append_axes("right", size=0.3, pad=0.05)
-    plt.colorbar(*args, cax=cax, **kwargs)
 

@@ -4,7 +4,8 @@ from functools import wraps
 import pathlib
 from typing import Dict
 import yaml
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
 
 def load_yaml(path: pathlib.Path, file_name="settings") -> Dict:
     with open(path / f"{file_name}.yaml", "r") as file:
@@ -18,6 +19,11 @@ def save_yaml(settings: Dict, path: pathlib.Path, name_file: str = "settings", k
             yaml.dump(settings, file, **kwargs)
         else:
             yaml.dump(settings, file)
+
+def aligned_colorbar(*args, **kwargs):
+    # scales and positions the colorbar
+    cax = make_axes_locatable(plt.gca()).append_axes("right", size=0.3, pad=0.05)
+    plt.colorbar(*args, cax=cax, **kwargs)
 
 def beep(case: str = "end"):
     duration = 0.05  # seconds
@@ -37,3 +43,4 @@ def timing(f):
           (f.__name__, te-ts))
         return result
     return wrap
+

@@ -8,7 +8,7 @@ import numpy as np
 
 from scripts.hp_variation_2d import write_hps_strata_conditions_files, hps_locs_to_ids, calc_hps_locs_float
 from scripts.calc_hp_parameter_variation import realistic_pump_params, write_pump_param_files
-from scripts.visualisation import plot_results
+from scripts.visualisation_refined import plot_results
 from scripts.main_helpers import assert_combinations, groundwater_temp
 from scripts.create_parameter_set import realistic_hydrogeological_params_boxes_and_hp_params, interpolate_and_store_windows_and_bcs
 from scripts.mesh_generation import mesh_generation_all_dps
@@ -22,6 +22,11 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     avg_time_per_sim = 0
     output_dataset_dir, pflotran_file, settings = preparation(output_dataset_dir, args, run_ids)
 
+    (output_dataset_dir / "interim").mkdir(exist_ok=True, parents=True)
+    for run_id in np.arange(args.num_dp):
+        output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
+        output_dataset_run_dir.mkdir(exist_ok=True, parents=True)
+        
     # if varying (automatic) window shape: load subsurface params directly from RUN folder, in every run -> no need to load and change location of files
     if not args.vary_inflow:
         temp_default = 5 + groundwater_temp() #[C]
@@ -30,7 +35,6 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         temp_default, rate_default = None, None
 
     # strata_hps, condition_hps.txt - same for all datasets
-    (output_dataset_dir / "interim").mkdir(exist_ok=True, parents=True)
     write_hps_strata_conditions_files(output_dataset_dir/"interim", args.num_hps)
 
     # generate set of hp locations
@@ -51,7 +55,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     # TODO mesh generation + refinement
     meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
 
-    meshs_refined = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, windows_collected, orig_resolution)
+    meshs_refined = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, windows_collected, orig_resolution, output_dataset_dir)
 
     hps_cell_ids = hps_locs_to_ids(hps_locs, meshs_refined)
     print(f"{hps_cell_ids=}") # TODO check after refinement
@@ -60,13 +64,9 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     for run_id in np.arange(args.num_dp):
         output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
         shutil.copytree(output_dataset_dir/"interim", output_dataset_run_dir, dirs_exist_ok=True)
-        shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
-        
+
         # store realistic pump params for hp-cell_id, generate files regions_hps and inj-conditions_hps
         write_pump_param_files(output_dataset_run_dir, hps_cell_ids[run_id], hps_temps[run_id], hps_rates[run_id])
-
-        # store refined mesh
-        store_mesh(output_dataset_run_dir, meshs_refined[run_id])
 
         bcs_cell_ids = {}
         for direction in ["west", "east", "north", "south"]: #, "top", "bottom"]:
@@ -78,17 +78,18 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     # RUN SIMULATIONS
     for run_id in run_ids:
         output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
+        shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
     
         if (output_dataset_run_dir / "pflotran.h5").exists():
             continue
         else:
             os.chdir(output_dataset_run_dir)
-            call_pflotran(avg_time_per_sim, run_id, tmp_output=True)
-
-            # if args.visu:
-            #     plot_results(".", settings, case="2D")
+            call_pflotran(avg_time_per_sim, run_id)
 
             os.chdir("../../../")
+
+        if args.visu:
+            plot_results(output_dataset_run_dir)
 
     shutil.rmtree(output_dataset_dir/"interim")
     save_yaml({"timestamp": time.ctime(), "duration [s]": (time.perf_counter()-time_begin), "avg duration sim [s]": (avg_time_per_sim/len(run_ids))}, output_dataset_dir, "args")
@@ -115,13 +116,12 @@ def preparation(output_dataset_dir, args, run_ids):
 
 def call_pflotran(avg_time_per_sim, run_id:int, tmp_output:bool=False):
     start_sim = time.perf_counter()
-    print(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}")
-    logging.info(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}")
+    print(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}") # TODO logging.info
     output_extension = " -screen_output off" if not tmp_output else ""
     # TODO mpirun -n 1 does not work
     os.system(f"{os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
     avg_time_per_sim += time.perf_counter() - start_sim
-    logging.info(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds")
+    print(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds") # TODO logging.info
 
 
 if __name__ == "__main__":

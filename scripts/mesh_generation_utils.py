@@ -127,7 +127,6 @@ def face_loc_to_line(face_centers:np.ndarray, position:np.ndarray):
 
 def store_mesh(destination_path:Path, mesh:Dict[str, np.ndarray]):
     '''store the mesh in a file'''
-
     out = h5py.File(destination_path/"mesh.h5", "w")
 
     out.create_dataset("Domain/Cells/Centers", data=mesh["cell_centers"], dtype="f8")

@@ -169,7 +169,7 @@ def calc_refined_face_centers(old_cell_and_res:np.ndarray, face_cell_ids:np.ndar
 def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np.ndarray, face_cell_ids:np.ndarray, orig_resolution: int, hp_loc: np.ndarray, hp_temperature:float, subsurface_properties:dict[str,np.ndarray], bounds, max_resolution: int, goal_resolution:float=0.1):
     refinement_steps = calc_refinement_steps(hp_loc, max_resolution, goal_resolution, orig_resolution, subsurface_properties, hp_temperature, decrease_factor=1)
 
-    for goal_resolution, curr_radius in tqdm(refinement_steps["radius"].items(), desc="Refinement steps"):
+    for goal_resolution, curr_radius in tqdm(refinement_steps["radius"].items(), desc="Refinement"):
         cells_to_refine_and_res = calc_cells_to_refine(grid_and_resolutions, hp_loc, goal_resolution, refinement_steps, curr_radius)
 
         # refine cells in region
@@ -228,7 +228,7 @@ def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_
     return grid_and_resolutions, faces_and_res_and_orient, face_cell_ids
 
 
-def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int):
+def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int, output_dir: Path) -> list[Dict[str, np.ndarray]]:
     """
     Refine regular-grid around hp according to hps and settings
     Outputs:
@@ -243,7 +243,10 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
     meshs_refined = []
 
     # for each dp:
-    for id in range(num_dp):
+    for id in tqdm(range(num_dp), desc="Data points"):
+        output_run_dir = output_dir / f"RUN_{id}"
+        # if not (output_run_dir / "mesh.h5").exists():
+
         # get cell centers in region
         resolutions_cells = np.array([settings["grid"]["resolution"],]*len(meshs_regular[id]["cell_centers"]))
         grid_and_resolutions = np.concatenate([meshs_regular[id]["cell_centers"], resolutions_cells.reshape(-1, 1)], axis=1)
@@ -253,13 +256,20 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
         face_cell_ids_tmp = meshs_regular[id]["face_cell_ids"]
 
         # for each hp:
-        print(dps_hps_locs.shape, dps_hps_temps.shape)
-        for hp_loc, hp_temp in zip(dps_hps_locs[id], dps_hps_temps[id]):
+        for hp_loc, hp_temp in tqdm(zip(dps_hps_locs[id], dps_hps_temps[id]), desc="Heat pumps"):
             # refine region around hp
             grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp = refine_region_acc_to_hp(grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp, orig_resolution, hp_loc, hp_temp, windows_properties_collected[id]["properties"], bounds, max_resolution=settings["grid"]["resolution"])
 
-        meshs_refined.append({"cell_centers": grid_and_resolutions[:,:-1], "cell_volumes": grid_and_resolutions[:,-1]**2*interim_orig_res, "face_areas": faces_and_res_and_orient[:,-2]*interim_orig_res, "face_cell_ids": face_cell_ids_tmp, "face_centers": faces_and_res_and_orient[:,:-2]})
+        mesh_refined = {"cell_centers": grid_and_resolutions[:,:-1], "cell_volumes": grid_and_resolutions[:,-1]**2*interim_orig_res, "face_areas": faces_and_res_and_orient[:,-2]*interim_orig_res, "face_cell_ids": face_cell_ids_tmp, "face_centers": faces_and_res_and_orient[:,:-2]}
         # refined_cell_volumes: grid_and_resolutions[:,-1]**3 # TODO **3 is currently bullshit since CURRENTLY only refined in 2 directions
         # refined_face_areas: faces_and_res_and_orient[:,-2]**2 # TODO **2 is currently bullshit since CURRENTLY only refined in 2 directions
+
+        # store refined mesh
+        store_mesh(output_run_dir, mesh_refined)
+        # else:
+        #     mesh_refined = load_mesh(output_run_dir)
+        #     # TODO
+
+        meshs_refined.append(mesh_refined)
         
     return meshs_refined

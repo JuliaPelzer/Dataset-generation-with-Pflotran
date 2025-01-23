@@ -16,7 +16,7 @@ from tqdm import tqdm
 from scripts.get_clipped_inputs import get_all_clipped_inputs
 from scripts.calc_p_and_K import calc_perm_from_K_2
 from scripts.make_general_settings import load_yaml
-from scripts.visualisation import _aligned_colorbar
+from scripts.visualisation import aligned_colorbar
 
 
 def make_grid(settings: Dict, aimed_min: float, aimed_max: float, base: float = 0, offset: float = None, freq: float = None, vary_property: str = "permeability",):
@@ -185,7 +185,7 @@ def plot_vary_field(cells, filename, case="trigonometric", vary_property:str="pe
         plt.ylabel("x ")
         plt.xlabel("y")
         # fig.tight_layout()
-        _aligned_colorbar()
+        aligned_colorbar()
         # fig.show()
     fig.savefig(f"{filename}.png")
     plt.close(fig)
