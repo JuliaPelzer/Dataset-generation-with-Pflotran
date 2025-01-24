@@ -144,9 +144,9 @@ def sichardt_distance(hp_cell: np.array, hydr_cond: Union[float, np.array], thic
         thickness -- thickness of aquifer, float or np.array
     '''
     if isinstance(hydr_cond, np.ndarray):
-        hydr_cond = sample_median(hydr_cond, hp_cell[:2].T, [3,3])
+        hydr_cond = sample_median(hydr_cond, [hp_cell[1],hp_cell[0]], [3,3])
     if isinstance(thickness, np.ndarray):
-        thickness = sample_median(thickness, hp_cell[:2].T, [3,3])
+        thickness = sample_median(thickness, [hp_cell[1],hp_cell[0]], [3,3])
 
     max_drawdown = 1/3 * thickness
     drawdown = drawdown_by_dupuit_thiem(hydr_cond, thickness, q_inj) # Absenkung mit Dupuit Thiem Brunnenformel, acc. to real pump rate - no need to estimate
