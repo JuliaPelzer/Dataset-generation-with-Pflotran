@@ -3,10 +3,10 @@ general:
   seed_id: 2907
   dimensions: 2
 grid:
-  distance_to_border:
+  distance_to_border: 20
   ncells: automatic
   refinement: True
-  resolution: 5 #[m]
+  resolution: 2 #[m]
   size [m]:
   - 320
   - 640
