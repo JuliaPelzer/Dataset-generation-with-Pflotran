@@ -27,7 +27,7 @@ def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:i
     pumps_collected = []
     n_valid_windows = 0
     # while not enough windows:
-    for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]]
+    for i, start_pos in enumerate(start_positions_in_orig_cells): #[[1883, 1241]][[2630, 2644],[2644,2630]]): #
         try:
             # 3. estimate window_shape [in cells] or load / manually, e.g. np.array([int(12800/20), int(12800/20/2)])
             window_shape, pump_params = make_window_shape_and_pump_params(settings, orig_resolution, properties_full, start_pos, temp_default, rate_default)
