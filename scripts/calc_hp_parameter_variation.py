@@ -2,7 +2,8 @@ import numpy as np
 from typing import Tuple
 
 from scripts.main_helpers import *
-from scripts.realistic_window.param_sampling import random_delta_t, random_thresholded_v_tech
+from scripts.realistic_window.param_sampling import random_delta_t, random_thresholded_v_tech, sample_median
+
 
 def calc_pump_params(number_datapoints: int, dataset_folder: str, num_hp_per_dp:int,):
     temp_array, rate_array = None, None
@@ -54,13 +55,12 @@ def realistic_pump_params(windows_properties: list[dict], hps_locs: np.ndarray, 
             if rate_default == None:
                 v_dd = windows_properties[dp_id]["properties"]["drawdown"]
                 hp_loc = (hp_loc / orig_resolution).astype(int)
-                max_dd = v_dd[hp_loc[0], hp_loc[1]] #np.min(slice_box(v_dd, hp_loc, [2,2])) # does not work if directly at border
+                max_dd = sample_median(v_dd, hp_loc, [3,3]) # does not work if directly at border # v_dd[hp_loc[0], hp_loc[1]] #
                 v_tech = random_thresholded_v_tech(max_dd) # [m^3/s]
                 rates[dp_id, hp_id] = np.round(v_tech, 8)
             else:
                 rates[dp_id, hp_id] = rate_default
 
-    print("TODO @Fabian use min oder max oder median? calc_hp_parameter_variation.py line 61")
     return temps, rates
 
 

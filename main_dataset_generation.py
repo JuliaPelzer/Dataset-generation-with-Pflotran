@@ -55,7 +55,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     # TODO mesh generation + refinement
     meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
 
-    meshs_refined = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, windows_collected, orig_resolution, output_dataset_dir)
+    meshs_refined = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
 
     hps_cell_ids = hps_locs_to_ids(hps_locs, meshs_refined)
     print(f"{hps_cell_ids=}") # TODO check after refinement

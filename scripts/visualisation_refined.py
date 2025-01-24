@@ -10,7 +10,7 @@ import scripts.cmap_jp
 from scripts.utils import timing
 
 @timing
-def plot_results(path_run: Path, plot_name: str = "plot_simulation_results",plot_area=(0,-1,0,-1),     plot_res:float = 0.15625):
+def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plot_area=(0,-1,0,-1), plot_res:float = 0.15625):
     """
     Plots results on a refined mesh of the simulation in the folder path_run. The results are saved in a picture with the name plot_name.
 
@@ -28,7 +28,7 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results",plot
     
     plt.figure()
     n_subplots = len(data)
-    _, axes = plt.subplots(n_subplots, 1, sharex=True, figsize=(8, 4 * (n_subplots)))
+    _, axes = plt.subplots(n_subplots, 1, sharex=True, figsize=(9, 4 * (n_subplots)))
     
     for index, data_point in enumerate(data):
         values = generate_regular_cell_values(plot_res, mesh, data_point)
@@ -40,6 +40,7 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results",plot
         plt.ylabel("y [m]")
         plt.gca().invert_yaxis()
         aligned_colorbar(label=data_point["property"])
+        print(f"property {data_point['property']} , min: {np.min(values)}, max: {np.max(values)}")
     plt.tight_layout()
 
     pic_file_name = path_run/f"{plot_name}.png"
@@ -74,7 +75,7 @@ def load_data_for_visu(path_run: Path) -> Tuple[list[Property], np.ndarray]:
     list_to_plot = []
     with h5py.File(path_run/"pflotran.h5", "r") as file:
         for time in file.keys():
-            if not time in ["   0 Time  0.00000E+00 y"]:
+            if not time in []: #"   0 Time  0.00000E+00 y"]:
                 for property in file[time].keys():
                     data: Property = {
                     "data": np.array(file[time][property]),
@@ -99,7 +100,9 @@ def calc_shape_regular_plot_grid(plot_res: float, mesh: np.ndarray) -> Tuple[int
     # reihe mit verdopplungen von res_min bis res_max
     res_len = np.log2(res_max/res_min)
     res_options = [res_min * np.power(2, i) for i in range(int(res_len)+1)]
-    assert plot_res in res_options, f"{plot_res=}, {res_options=}"
+    if not plot_res in res_options:
+        plot_res = res_options[np.argmin(np.abs(np.array(res_options)-plot_res))]
+        print(f"plot_res changed to {plot_res}")
 
     min_len = np.min(mesh[:, 0]-mesh[:, 3]/2)
     max_len = np.max(mesh[:, 0]+mesh[:, 3]/2)

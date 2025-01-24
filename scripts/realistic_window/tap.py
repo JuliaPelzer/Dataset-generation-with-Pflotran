@@ -3,3 +3,6 @@ def estimate_plume_shape_tap(v_tech: float, delta_t: int, v_d: float, b: float) 
     length = 0.54 * v_tech**1.5 * delta_t**1.96 * (v_d * b)**(-1.5)
     width = 1.16 * v_tech * delta_t**0.76 * (v_d * b)**(-1)
     return length, width
+
+def estimate_pump_rate(hydraulic_conductivity, thickness):
+    return 0.195 * hydraulic_conductivity * thickness**2

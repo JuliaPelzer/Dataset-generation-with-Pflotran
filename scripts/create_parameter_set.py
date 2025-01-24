@@ -12,7 +12,6 @@ from scripts.realistic_window.estimate_box_dims import make_window_shape_and_pum
 from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rotated_box, check_validity_window
 from scripts.realistic_window.boundary_conditions import get_bcs_values, save_bcs
 from scripts.realistic_window.param_sampling import get_start_positions
-from scripts.mesh_generation_utils import calc_n_cells_array
 
 @timing
 def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:int, temp_default:float, rate_default:float):
@@ -86,7 +85,7 @@ def interpolate_and_store_windows_and_bcs(destination_path:pathlib.Path, window_
     window_desti_values = interpolate_windows(orig_resolution, window_collected["properties"], mesh_refined["cell_centers"][:,:2]) # [m] TODO 0:2 if 2D , sonst 0:3?
 
     # 11. calc and store BCs (hydraulic head) (convention: north=inflow, south=outflow, west=right, east=left)
-    bcs_hh = get_bcs_values(window_desti_values["tok"], window_desti_values["gwgl"], bcs_cell_ids, window_collected["shape"][1] * orig_resolution) # TODO correct? box_len_in_m =? window_shape[1] * orig_resolution??
+    bcs_hh = get_bcs_values(window_desti_values["tok"], window_desti_values["gwgl"], bcs_cell_ids, window_collected["shape"] * orig_resolution)
     save_bcs(destination_path, bcs_hh)
     
     # 12. store interpolated data and unique params to RUN-dir

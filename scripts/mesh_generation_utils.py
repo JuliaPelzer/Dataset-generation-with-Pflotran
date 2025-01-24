@@ -38,10 +38,10 @@ def create_regular_cell_volumes(resolution:int, n_cells:np.ndarray):
 def loc_to_id(cell_centers:np.ndarray, position:np.ndarray):
     '''find the cell id of a location'''
     # WARNING! this only works if no cells of 2 different resolutions are connected
-    logging.getLogger().setLevel(logging.ERROR)
-    if (position > cell_centers).any() or (position < 0).any():
-        logging.info("loc_hp is outside/on boundary of domain")
-    return int(np.argmin(np.linalg.norm(cell_centers - position, axis=1))+1)
+    # if (position > cell_centers).any() or (position < 0).any():
+    #     logging.info("loc_hp is outside/on boundary of domain")
+    
+    return int(np.argmin(np.sum((cell_centers - position)**2, axis=1))+1)
 
 def id_to_loc(cell_centers:np.ndarray, cell_id:int):
     '''find the location of a cell id'''

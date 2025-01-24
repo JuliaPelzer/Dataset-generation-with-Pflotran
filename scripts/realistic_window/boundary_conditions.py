@@ -2,19 +2,18 @@ import numpy as np
 from typing import Dict
 from pathlib import Path
 
-def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarray], box_length_in_m: float) -> Dict[str, np.ndarray]:
+def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarray], box_shape_in_m: float) -> Dict[str, np.ndarray]:
     # only [1:3] in case of 2D
     
     tok_min = np.nanmin(tok)
 
     bcs = {}
-    bcs["inflow"]   = - np.median(gwgl[bcs_cell_ids["west"]-1] - tok_min)/box_length_in_m
-    bcs["outflow"]  = - np.median(gwgl[bcs_cell_ids["east"]-1] - tok_min)/box_length_in_m
-    bcs["left"]     = - np.median(gwgl[bcs_cell_ids["south"]-1] - tok_min)/box_length_in_m  # in stream direction
-    bcs["right"]    = - np.median(gwgl[bcs_cell_ids["north"]-1] - tok_min)/box_length_in_m  # in stream direction
+    bcs["west"]   = - np.median(gwgl[bcs_cell_ids["west"]-1] - tok_min)/box_shape_in_m[0]
+    bcs["east"]  = - np.median(gwgl[bcs_cell_ids["east"]-1] - tok_min)/box_shape_in_m[0]
+    bcs["north"]     = - np.median(gwgl[bcs_cell_ids["north"]-1] - tok_min)/box_shape_in_m[1]  # in stream direction
+    bcs["south"]    = - np.median(gwgl[bcs_cell_ids["south"]-1] - tok_min)/box_shape_in_m[1]  # in stream direction
     # TODO top, bottom
-    # TODO immer box_length_in_m , nie width??
-    bcs["initial"]  = (bcs["outflow"] + bcs["inflow"])/2 # TODO check (different order of magnitude)
+    bcs["initial"]  = (bcs["west"] + bcs["east"])/2
     print("bcs", bcs)
     return bcs
 
