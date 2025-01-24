@@ -36,8 +36,8 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plo
         plt.title(f"{data_point['property']} at time {data_point['time_years']}")
         plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest") #, vmin=10, vmax=20)
         # offset of 0.5*plot_res to center the cells, i.e. to x-,y-scale
-        plt.xlabel("x [m]")
-        plt.ylabel("y [m]")
+        plt.xlabel("y [m]")
+        plt.ylabel("x [m]")
         plt.gca().invert_yaxis()
         aligned_colorbar(label=data_point["property"])
         print(f"property {data_point['property']} , min: {np.min(values)}, max: {np.max(values)}")

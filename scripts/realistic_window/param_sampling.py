@@ -36,6 +36,6 @@ def slice_box(field: np.ndarray, start_pos: np.ndarray, field_size: np.array = n
 
     # falls alle Werte in der Box nan sind - dann jump einfach zu nächsten potentiellen Startpunkt ausprobieren
     if np.isnan(field).all():
-        raise ValueError()
+        raise ValueError("All values in box are nan")
     
     return field
