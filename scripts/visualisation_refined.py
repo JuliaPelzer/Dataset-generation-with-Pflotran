@@ -3,14 +3,14 @@ import numpy as np
 import h5py
 from typing import TypedDict, Tuple
 from pathlib import Path
-import logging
-
+from tqdm import tqdm
 from scripts.utils import aligned_colorbar
 import scripts.cmap_jp
 from scripts.utils import timing
+import yaml
 
 @timing
-def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plot_area=(0,-1,0,-1), plot_res:float = 0.15625):
+def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plot_area=(0,-1,0,-1), plot_res:float = None):
     """
     Plots results on a refined mesh of the simulation in the folder path_run. The results are saved in a picture with the name plot_name.
 
@@ -23,24 +23,32 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plo
     Returns:
         None
     """
-
     data, mesh = load_data_for_visu(path_run)
+    if plot_res is None:
+        plot_res = np.min(mesh[:,3])
+    print(f"plot_res set to {plot_res}")
     
     plt.figure()
     n_subplots = len(data)
-    _, axes = plt.subplots(n_subplots, 1, sharex=True, figsize=(9, 4 * (n_subplots)))
+    _, axes = plt.subplots(1, n_subplots, sharex=True, figsize=(4 * n_subplots, 9))
     
     for index, data_point in enumerate(data):
         values = generate_regular_cell_values(plot_res, mesh, data_point)
         plt.sca(axes[index])
         plt.title(f"{data_point['property']} at time {data_point['time_years']}")
-        plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest") #, vmin=10, vmax=20)
+        plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
         # offset of 0.5*plot_res to center the cells, i.e. to x-,y-scale
-        plt.xlabel("y [m]")
-        plt.ylabel("x [m]")
-        plt.gca().invert_yaxis()
+        if plot_area == (0, -1, 0, -1):
+            if index == 0:
+                plt.yticks(np.arange(0, values.shape[0], 100//plot_res), (np.arange(0, values.shape[0], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
+            plt.xticks(np.arange(0, values.shape[1], 100//plot_res), (np.arange(0, values.shape[1], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
+        else:
+            print("for cutouts no xticks, yticks implemented yet")
+        if index == 0:
+            plt.ylabel("y [m]")
+        plt.xlabel("x [m]")
         aligned_colorbar(label=data_point["property"])
-        print(f"property {data_point['property']} , min: {np.min(values)}, max: {np.max(values)}")
+        # print(f"property {data_point['property']} , min: {np.min(values)}, max: {np.max(values)}")
     plt.tight_layout()
 
     pic_file_name = path_run/f"{plot_name}.png"
@@ -77,19 +85,21 @@ def load_data_for_visu(path_run: Path) -> Tuple[list[Property], np.ndarray]:
         for time in file.keys():
             if not time in []: #"   0 Time  0.00000E+00 y"]:
                 for property in file[time].keys():
-                    data: Property = {
-                    "data": np.array(file[time][property]),
-                    "property": str(property),
-                    "time_years": time_from_pflotran_time(time)
-                }
-                    list_to_plot.append(data)
+                    if property not in []: #"Material ID", "Liquid Saturation", "Liquid Z-Velocity [m_per_y]", "Permeability X [m^2]"]:
+                        data: Property = {
+                        "data": np.array(file[time][property]),
+                        "property": str(property),
+                        "time_years": time_from_pflotran_time(time)
+                        }
+                        list_to_plot.append(data)
   
     with h5py.File(path_run/"mesh.h5", "r") as mesh_file:
         cell_centers = np.array(mesh_file["Domain/Cells/Centers"])
         cell_volumes = np.array(mesh_file["Domain/Cells/Volumes"])
         mesh = np.concatenate([cell_centers, cell_volumes[:,None]], axis=1)
 
-        mesh[:, 3] = np.sqrt(mesh[:, 3]/5) # TODO wenn 3D dann np.cbrt
+        orig_res = yaml.safe_load(open(path_run/"settings.yaml"))["grid"]["resolution"]
+        mesh[:, 3] = np.sqrt(mesh[:, 3]/orig_res) # TODO wenn 3D dann np.cbrt statt /orig_res
 
     return list_to_plot, mesh
 
@@ -121,8 +131,7 @@ def generate_regular_cell_values(plot_res: float, mesh: np.ndarray, data: Proper
     n_cells_x,n_cells_y = calc_shape_regular_plot_grid(plot_res, mesh)
 
     values = np.zeros((n_cells_x, n_cells_y))
-    
-    for (curr_x,curr_y,curr_z,curr_res), value in zip(mesh, data["data"]):
+    for (curr_x,curr_y,curr_z,curr_res), value in zip(mesh, data["data"]): # tqdm
         start_pos = np.array([curr_x, curr_y])-curr_res/2
         cell = (start_pos/plot_res).astype(int) # TODO correct this way? also for twice refined cells?
         if curr_res == plot_res:
