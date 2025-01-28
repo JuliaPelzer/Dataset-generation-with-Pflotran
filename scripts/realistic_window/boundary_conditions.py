@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Dict
 from pathlib import Path
+import logging
 
 def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarray], box_shape_in_m: float) -> Dict[str, np.ndarray]:
     # only [1:3] in case of 2D
@@ -10,9 +11,8 @@ def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarr
     bcs = {}
     bcs["north"]     = - np.median(gwgl[bcs_cell_ids["north"]-1] - tok_min)/box_shape_in_m[0]  # in stream direction
     bcs["south"]    = - np.median(gwgl[bcs_cell_ids["south"]-1] - tok_min)/box_shape_in_m[0]  # in stream direction
-    # TODO top, bottom
     bcs["initial"]  = (bcs["north"] + bcs["south"])/2
-    print("bcs", bcs, "box", box_shape_in_m)
+    logging.info("bcs", bcs, "box", box_shape_in_m)
     return bcs
 
 def save_bcs(filename: Path, bcs:Dict):
