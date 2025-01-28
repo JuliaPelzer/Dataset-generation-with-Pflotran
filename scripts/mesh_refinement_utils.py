@@ -36,6 +36,7 @@ def get_face_orientation(cell_position, face_position):
     return id_differ[0]
 
 def calc_refined_face_centers(old_cell_and_res:np.ndarray, face_cell_ids:np.ndarray, faces_and_res_and_orient:np.ndarray, grid_and_res:np.ndarray, new_cell_centers_and_ress:np.ndarray):
+    logging.getLogger().setLevel(logging.WARNING)
     cell_id = loc_to_id(grid_and_res[:,:-1], old_cell_and_res[:-1])
     curr_face_ids = np.concatenate([np.where(face_cell_ids[:,0] == cell_id)[0], np.where(face_cell_ids[:,1] == cell_id)[0]])
 
@@ -95,30 +96,33 @@ def get_refinement_intervals(max_resolution: float, min_resolution: float, inner
 def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution:float, orig_resolution: int, subsurface_properties:dict[str, np.ndarray], hp_temp: float, hp_rate: float, decrease_factor:float=1.0):
     # Get parameters
     hp_id = (center / orig_resolution).astype(int)
-    hydr_cond, thickness, v_a = subsurface_properties["hydraulic_conductivity"][hp_id[0], hp_id[1]], subsurface_properties["thickness"][hp_id[0], hp_id[1]], subsurface_properties["darcy_velocity"][hp_id[0], hp_id[1]]
+    hydr_cond = sample_median(subsurface_properties["hydraulic_conductivity"], [hp_id[1],hp_id[0]], [3,3]) # TODO orientation hp_id correct??
+    thickness = sample_median(subsurface_properties["thickness"], [hp_id[1],hp_id[0]], [3,3])
+    v_a = sample_median(subsurface_properties["darcy_velocity"], [hp_id[1],hp_id[0]], [3,3])
     T_inj_diff = hp_temp - groundwater_temp()
 
     # Estimate the radius of the "Absenktrichter" with Sichardt around each well
-    inner_radius = sichardt_distance(center/orig_resolution, hydr_cond, thickness, hp_rate) 
-    # inner_radius = 2.5 # for debug/testing
+    inner_radius = sichardt_distance(hydr_cond, thickness, hp_rate) 
+    inner_radius = 2.5 # for debug/testing todo
     inner_radius = np.min([inner_radius, 100]) # limit to 100m
     logging.info(f"sichardt distance (=inner_radius) {inner_radius}")
+    print("ACHTUNG Inner_radius set to", inner_radius)
     refinements_radius = get_refinement_intervals(max_resolution, min_resolution, inner_radius, decrease_factor)
 
     # Estimate the plume shape parameters (1K isoline) with LAHM
     safety_factor = 1
     # TODO check dass hp_rate in m^3/s
+    # print(f"{T_inj_diff=}, {hp_rate=}, {v_a=}, {thickness=}")
     length_1K, width_1K = estimate_plume_shape_lahm(T_inj_diff, hp_rate, v_a, thickness)
 
     length_1K *= (1+safety_factor)
-    # length_1K = 15 # for debug/testing
+    length_1K = 0 # for debug/testing TODO 
     width_1K *= (1+safety_factor)
-    # width_1K = 5 # for debug/testing
-    logging.info(f"downstream: {length_1K=}\nat half length: {width_1K=}")
+    width_1K = 0 # for debug/testing TODO
+    print(f"downstream: {length_1K=}\nat half length: {width_1K=}")
     min_resolution_plume = 1
     refinement_plume_length = get_refinement_intervals(max_resolution, min_resolution_plume, length_1K, decrease_factor)
     refinement_plume_width = get_refinement_intervals(max_resolution, min_resolution_plume, width_1K, decrease_factor)
-    
     return {"radius": refinements_radius, "plume_length": refinement_plume_length, "plume_width": refinement_plume_width}
 
 
@@ -133,7 +137,7 @@ def plot_grid(centers_new, vols_new, settings:Dict, hps=np.array([]), factor:int
     plt.ylim(0,settings["grid"]["size [m]"][1])
     plt.show()
 
-def sichardt_distance(hp_cell: np.array, hydr_cond: Union[float, np.array], thickness: Union[float, np.array], q_inj: float) -> List[np.array]:
+def sichardt_distance(hydr_cond: float, thickness: float, q_inj: float) -> List[np.array]:
     '''Sichardt  (1928)
     
     Returns distance in m, float.
@@ -143,13 +147,9 @@ def sichardt_distance(hp_cell: np.array, hydr_cond: Union[float, np.array], thic
         hydr_cond -- hydraulic conductivity, float or np.array
         thickness -- thickness of aquifer, float or np.array
     '''
-    if isinstance(hydr_cond, np.ndarray):
-        hydr_cond = sample_median(hydr_cond, [hp_cell[1],hp_cell[0]], [3,3])
-    if isinstance(thickness, np.ndarray):
-        thickness = sample_median(thickness, [hp_cell[1],hp_cell[0]], [3,3])
-
-    max_drawdown = 1/3 * thickness
     drawdown = drawdown_by_dupuit_thiem(hydr_cond, thickness, q_inj) # Absenkung mit Dupuit Thiem Brunnenformel, acc. to real pump rate - no need to estimate
+    # max_drawdown = 1/3 * thickness
+    # print("drawdown", drawdown, max_drawdown)
     return 3000 * drawdown * np.sqrt(hydr_cond)
 
 def calc_refined_cell_centers(old_cell_center, curr_resolution, bounds:List):
