@@ -25,21 +25,20 @@ def get_boundary_cells_and_resolutions(mesh_refined, max_resolution:float, dim:i
 
 
 def create_boundary_locs(mesh_refined, direction:str, max_resolution:float, window_shape: np.ndarray, orig_resolution: float, output_dir:Path=Path(".")):
-    
     if direction in ["west", "east"]:
-        dim = 0
-    elif direction in ["north", "south"]:
         dim = 1
+    elif direction in ["north", "south"]:
+        dim = 0
     elif direction in ["top", "bottom"]:
         dim = 2
         raise NotImplementedError("3D not implemented yet - produces false results")
     else:
         raise ValueError("Invalid direction")
 
-    if direction in ["west", "south", "bottom"]:
+    if direction in ["west", "north", "bottom"]:
         offset = 0
         sign = +1
-    elif direction in ["east", "north", "top"]:
+    elif direction in ["east", "south", "top"]:
         offset = window_shape[dim] * orig_resolution
         sign = -1
 

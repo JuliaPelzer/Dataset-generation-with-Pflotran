@@ -52,6 +52,7 @@ def estimate_box_rotation(direction_field: np.ndarray, start: Tuple[int,int], wi
     # estimate rotation of box in degrees;
     # 0 = flow FROM north TO south; clockwise rotation
     rotation = sample_median(direction_field, start, window_shape)
+    rotation -= 90
     return rotation
 
 # def calc_box_height(box_thickness_20):

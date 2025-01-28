@@ -6,10 +6,10 @@ grid:
   distance_to_border: 20
   ncells: automatic
   refinement: True
-  resolution: 2 #[m]
+  resolution: 5 #[m]
   size [m]:
-  - 320
   - 640
+  - 320
   loc_hp [m]:
   - 161
   - 111
