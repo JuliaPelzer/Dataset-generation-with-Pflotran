@@ -26,7 +26,7 @@ def estimate_box_size_and_pump_params(properties:dict[str,np.ndarray], center: T
     box_shape = safety_factor * np.array([plume_len, plume_width])
     return box_shape, {"temp": temperature, "rate": v_tech}
 
-def make_window_shape_and_pump_params(settings: Dict, resolution: int, properties_full: np.ndarray, start: Tuple[int,int], temp_default: float, rate_default: float) -> np.ndarray[int, int]:
+def make_window_shape_and_pump_params(settings: Dict, resolution: int, properties_full: np.ndarray, start: Tuple[int,int], temp_default: float, rate_default: float) -> Tuple[np.ndarray[int, int], Union[Dict[str, float], None]]:
     """
     this function estimates the size of the simulation box in cells if no window_shape is given manually"""
     window_shape_in_meters = settings["grid"]["size [m]"]

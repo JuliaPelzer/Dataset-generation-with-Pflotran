@@ -12,7 +12,6 @@ from scripts.visualisation_refined import plot_results
 from scripts.main_helpers import assert_combinations, groundwater_temp
 from scripts.create_parameter_set import realistic_hydrogeological_params_boxes_and_hp_params, interpolate_and_store_windows_and_bcs
 from scripts.mesh_generation import mesh_generation_all_dps
-from scripts.mesh_generation_utils import store_mesh
 from scripts.mesh_refinement import mesh_refinements_all_dps
 from scripts.mesh_generation_boundaries import create_boundary_locs
 from scripts.utils import load_yaml, save_yaml
@@ -67,7 +66,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         write_pump_param_files(output_dataset_run_dir, hps_cell_ids[run_id], hps_temps[run_id], hps_rates[run_id])
 
         bcs_cell_ids = {}
-        for direction in ["west", "east", "north", "south"]: #, "top", "bottom"]:
+        for direction in ["north", "south"]: #, "west", "east", "top", "bottom"]:
             bcs_cell_ids[direction] = create_boundary_locs(meshs_refined[run_id], direction, settings["grid"]["resolution"], windows_collected[run_id]["shape"], orig_resolution, output_dataset_run_dir)
 
         # evaluate and store (to h5) properties and BCs on refined mesh

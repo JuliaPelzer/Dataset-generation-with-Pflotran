@@ -110,14 +110,6 @@
   REGION north
   FILE north.ex
   END
-
-  REGION west
-  FILE west.ex
-  END
-
-  REGION east
-  FILE east.ex
-  END
   
   EXTERNAL_FILE regions_hps.txt
 
@@ -130,32 +122,6 @@
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
       EXTERNAL_FILE bc_initial.txt
-    /
-    LIQUID_PRESSURE 101325.d0
-    TEMPERATURE 10.6d0 C
-  /
-
-  FLOW_CONDITION west
-    TYPE
-      LIQUID_PRESSURE HYDROSTATIC
-      TEMPERATURE DIRICHLET
-    /
-    DATUM 200.d0 0.d0 85.d0
-    GRADIENT
-      EXTERNAL_FILE bc_west.txt
-    /
-    LIQUID_PRESSURE 101325.d0
-    TEMPERATURE 10.6d0 C
-  /
-
-  FLOW_CONDITION east
-    TYPE
-      LIQUID_PRESSURE HYDROSTATIC
-      TEMPERATURE DIRICHLET
-    /
-    DATUM 200.d0 0.d0 85.d0
-    GRADIENT
-      EXTERNAL_FILE bc_east.txt
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
@@ -194,17 +160,6 @@
   INITIAL_CONDITION
     FLOW_CONDITION initial
     REGION all
-  /
-
-  # boundary conditions
-  BOUNDARY_CONDITION
-    FLOW_CONDITION west
-    REGION west
-  /
-
-  BOUNDARY_CONDITION
-    FLOW_CONDITION east
-    REGION east
   /
 
   # boundary conditions

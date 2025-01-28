@@ -8,10 +8,8 @@ def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarr
     tok_min = np.nanmin(tok)
 
     bcs = {}
-    bcs["west"]   = - np.median(gwgl[bcs_cell_ids["west"]-1] - tok_min)/box_shape_in_m[0]
-    bcs["east"]  = - np.median(gwgl[bcs_cell_ids["east"]-1] - tok_min)/box_shape_in_m[0]
-    bcs["north"]     = - np.median(gwgl[bcs_cell_ids["north"]-1] - tok_min)/box_shape_in_m[1]  # in stream direction
-    bcs["south"]    = - np.median(gwgl[bcs_cell_ids["south"]-1] - tok_min)/box_shape_in_m[1]  # in stream direction
+    bcs["north"]     = - np.median(gwgl[bcs_cell_ids["north"]-1] - tok_min)/box_shape_in_m[0]  # in stream direction
+    bcs["south"]    = - np.median(gwgl[bcs_cell_ids["south"]-1] - tok_min)/box_shape_in_m[0]  # in stream direction
     # TODO top, bottom
     bcs["initial"]  = (bcs["north"] + bcs["south"])/2
     print("bcs", bcs, "box", box_shape_in_m)

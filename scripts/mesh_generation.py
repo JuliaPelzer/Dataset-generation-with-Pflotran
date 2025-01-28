@@ -33,7 +33,6 @@ def mesh_generation_all_dps(settings:Dict, destination_path:pathlib.Path, window
         # 9. generate mesh (height added to ncells, NOT to window_shape)
         # TODO include height
         ncells = window["shape"][...] * orig_resolution / desti_resolution
-        print(f"{ncells=}")
 
         if False:
             ncells = np.append(ncells, np.ceil(window_height_in_meters / desti_resolution))

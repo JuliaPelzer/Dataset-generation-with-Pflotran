@@ -96,17 +96,21 @@ def get_refinement_intervals(max_resolution: float, min_resolution: float, inner
 def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution:float, orig_resolution: int, subsurface_properties:dict[str, np.ndarray], hp_temp: float, hp_rate: float, decrease_factor:float=1.0):
     # Get parameters
     hp_id = (center / orig_resolution).astype(int)
-    hydr_cond = sample_median(subsurface_properties["hydraulic_conductivity"], [hp_id[1],hp_id[0]], [3,3]) # TODO orientation hp_id correct??
-    thickness = sample_median(subsurface_properties["thickness"], [hp_id[1],hp_id[0]], [3,3])
-    v_a = sample_median(subsurface_properties["darcy_velocity"], [hp_id[1],hp_id[0]], [3,3])
+    try:
+        hydr_cond = sample_median(subsurface_properties["hydraulic_conductivity"], [hp_id[1],hp_id[0]], [3,3]) # TODO orientation hp_id correct??
+        thickness = sample_median(subsurface_properties["thickness"], [hp_id[1],hp_id[0]], [3,3])
+        v_a = sample_median(subsurface_properties["darcy_velocity"], [hp_id[1],hp_id[0]], [3,3])
+    except:
+        hydr_cond = subsurface_properties["hydraulic_conductivity"][hp_id[1],hp_id[0]]
+        thickness = subsurface_properties["thickness"][hp_id[1],hp_id[0]]
+        v_a = subsurface_properties["darcy_velocity"][hp_id[1],hp_id[0]]
     T_inj_diff = hp_temp - groundwater_temp()
 
     # Estimate the radius of the "Absenktrichter" with Sichardt around each well
     inner_radius = sichardt_distance(hydr_cond, thickness, hp_rate) 
-    inner_radius = 2.5 # for debug/testing todo
-    inner_radius = np.min([inner_radius, 100]) # limit to 100m
-    logging.info(f"sichardt distance (=inner_radius) {inner_radius}")
-    print("ACHTUNG Inner_radius set to", inner_radius)
+    # inner_radius = 2.5 # for debug/testing todo
+    inner_radius = np.min([inner_radius, 20]) # limit to 20m
+    print(f"sichardt distance (=inner_radius) {inner_radius}") # logging.info
     refinements_radius = get_refinement_intervals(max_resolution, min_resolution, inner_radius, decrease_factor)
 
     # Estimate the plume shape parameters (1K isoline) with LAHM
@@ -116,9 +120,9 @@ def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution
     length_1K, width_1K = estimate_plume_shape_lahm(T_inj_diff, hp_rate, v_a, thickness)
 
     length_1K *= (1+safety_factor)
-    length_1K = 0 # for debug/testing TODO 
+    # length_1K = 0 # for debug/testing TODO 
     width_1K *= (1+safety_factor)
-    width_1K = 0 # for debug/testing TODO
+    # width_1K = 0 # for debug/testing TODO
     print(f"downstream: {length_1K=}\nat half length: {width_1K=}")
     min_resolution_plume = 1
     refinement_plume_length = get_refinement_intervals(max_resolution, min_resolution_plume, length_1K, decrease_factor)

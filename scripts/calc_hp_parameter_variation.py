@@ -33,7 +33,7 @@ def make_pump_params(v_dd:np.ndarray, temp_default:float = None, rate_default:fl
     else:
         delta_t = temp_default - groundwater_temp()
     if rate_default == None:
-        v_tech = random_thresholded_v_tech(v_dd) # [m^3/s]  #TODO schiefe Verteilung?
+        v_tech = random_thresholded_v_tech(v_dd) # [m^3/s]
     else:
         v_tech = rate_default
 
