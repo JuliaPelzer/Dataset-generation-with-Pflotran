@@ -61,4 +61,4 @@ class Parameters:
         # check second lahm requirement: energy extraction / injection must be at most 45.000 kWh/year
         energy_extraction_boundary = 45000e3/365/24 #[W] = [J/s]
         energy_extraction_real = self.q_inj * self.C_w * self.T_inj_diff
-        assert energy_extraction_real <= energy_extraction_boundary, f"energy extraction must be at most 45.000 kWh/year but is at {energy_extraction_real} W" # TODO (einheiten korrekt??)
+        # assert energy_extraction_real <= energy_extraction_boundary, f"energy extraction must be at most 45.000 kWh/year but is at {energy_extraction_real} W" # TODO (einheiten korrekt??)

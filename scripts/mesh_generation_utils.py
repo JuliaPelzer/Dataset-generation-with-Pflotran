@@ -40,7 +40,6 @@ def loc_to_id(cell_centers:np.ndarray, position:np.ndarray):
     # WARNING! this only works if no cells of 2 different resolutions are connected
     # if (position > cell_centers).any() or (position < 0).any():
     #     logging.info("loc_hp is outside/on boundary of domain")
-    
     return int(np.argmin(np.sum((cell_centers - position)**2, axis=1))+1)
 
 def id_to_loc(cell_centers:np.ndarray, cell_id:int):
@@ -128,7 +127,7 @@ def face_loc_to_line(face_centers:np.ndarray, position:np.ndarray):
 def store_mesh(destination_path:Path, mesh:Dict[str, np.ndarray]):
     '''store the mesh in a file'''
     out = h5py.File(destination_path/"mesh.h5", "w")
-
+    
     out.create_dataset("Domain/Cells/Centers", data=mesh["cell_centers"], dtype="f8")
     out.create_dataset("Domain/Cells/Volumes", data=mesh["cell_volumes"], dtype="f8")
     out.create_dataset("Domain/Connections/Areas", data=mesh["face_areas"], dtype="f8")

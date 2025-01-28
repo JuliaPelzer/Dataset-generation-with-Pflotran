@@ -46,7 +46,7 @@ def realistic_pump_params(windows_properties: list[dict], hps_locs: np.ndarray, 
     for dp_id, dp in enumerate(hps_locs):
         for hp_id, hp_loc in enumerate(dp):
             if temp_default == None:
-                delta_T = random_delta_t() # delta of injection temperature to groundwater temperature, TODO match to automatic window shape generation
+                delta_T = random_delta_t() # delta of injection temperature to groundwater temperature
                 injection_T = groundwater_temp() + delta_T
                 temps[dp_id, hp_id] = injection_T
             else:
@@ -55,7 +55,7 @@ def realistic_pump_params(windows_properties: list[dict], hps_locs: np.ndarray, 
             if rate_default == None:
                 v_dd = windows_properties[dp_id]["properties"]["drawdown"]
                 hp_loc = (hp_loc / orig_resolution).astype(int)
-                max_dd = sample_median(v_dd, [hp_loc[1], hp_loc[0]], [3,3]) # does not work if directly at border # 
+                max_dd = sample_median(v_dd, [hp_loc[1], hp_loc[0]], [3,3])
                 v_tech = random_thresholded_v_tech(max_dd) # [m^3/s]
                 rates[dp_id, hp_id] = np.round(v_tech, 8)
             else:

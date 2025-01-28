@@ -48,17 +48,15 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     if None in hps_params_collected:
         hps_temps, hps_rates = realistic_pump_params(windows_collected, hps_locs, orig_resolution, temp_default, rate_default)
     else:
-        # TODO test!
         hps_temps = np.array([dp["temp"] for dp in hps_params_collected])
         hps_rates = np.array([dp["rate"] for dp in hps_params_collected])
 
-    # TODO mesh generation + refinement
+    # mesh generation + refinement
     meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
 
     meshs_refined = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
 
     hps_cell_ids = hps_locs_to_ids(hps_locs, meshs_refined)
-    print(f"{hps_cell_ids=}") # TODO check after refinement
 
 
     for run_id in np.arange(args.num_dp):
@@ -92,6 +90,8 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
             plot_results(output_dataset_run_dir)
 
     shutil.rmtree(output_dataset_dir/"interim")
+    os.remove(output_dataset_dir/"settings.yaml")
+
     save_yaml({"timestamp": time.ctime(), "duration [s]": (time.perf_counter()-time_begin), "avg duration sim [s]": (avg_time_per_sim/len(run_ids))}, output_dataset_dir, "args")
     logging.info(f"Finished dataset creation at {time.ctime()} after {(time.perf_counter() - time_begin)//60} minutes and {((time.perf_counter() - time_begin)%60):.1f} seconds")
 
