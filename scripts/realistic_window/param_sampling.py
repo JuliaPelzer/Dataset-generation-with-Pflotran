@@ -28,8 +28,10 @@ def sample_median(field: np.ndarray, start_pos: Tuple[int,int], field_size: np.n
 def random_thresholded_v_tech(v_dd:float):
     """v_tech = random, with upper threshold (0.5l/s? - max-drawdown)"""
     lower_limit = 0.5 * 1E-3 # m^3/s
-    assert v_dd >= lower_limit, f"max-drawdown with {v_dd} too low for v_tech formula"
-    return np.random.uniform(lower_limit, v_dd * 1E-3)
+    assert v_dd >= lower_limit, f"max-drawdown with {v_dd} too low for v_tech formula" # TODO @Fabian, müsste hier nicht auch v_dd mit 1E-3 schon multipliziert sein?
+    # log-uniform distribution
+    v_tech = np.exp(np.random.uniform(np.log(lower_limit), np.log(v_dd * 1E-3))) 
+    return v_tech
 
 def slice_box(field: np.ndarray, start_pos: np.ndarray, field_size: np.array = np.array([100,100])):
     field = field[start_pos[1]-int(field_size[1]/2):start_pos[1]+int(field_size[1]/2), start_pos[0]-int(field_size[0]/2):start_pos[0]+int(field_size[0]/2)]
