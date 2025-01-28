@@ -2,6 +2,7 @@ import pathlib
 import numpy as np
 import os
 import filecmp
+import shutil
 
 from scripts.mesh_generation_boundaries import create_boundary_locs
 from scripts.main_helpers import groundwater_temp
@@ -12,24 +13,6 @@ from scripts.utils import save_yaml
 
 def test_refined_BCs():
     # Fixture
-    # settings = {
-    #     "grid": {
-    #         "resolution": 1,
-    #         "size [m]": [4, 3, 2], #100
-    #         "loc_hp [m]": [1, 2, 2],
-    #         "distance_to_border": [[0, 0], [0, 0], 0],
-    #         "min resolution well (m)": 0.1,
-    #         "min resolution plume (m)": 1,
-    #     },
-    #     "subsurface": {
-    #         "hydraulic conductivity": 1e-5,
-    #         "aquifer thickness": 5,
-    #         "darcy velocity": 1,
-    #     },
-    #     "max pump": {
-    #         "temperature": 5,
-    #     }
-    # }
     num_dp = 1
     num_hp = 1
     orig_resolution = 10
@@ -71,18 +54,20 @@ def test_refined_BCs():
     for direction in ["west", "east", "north", "south"]:
         create_boundary_locs(meshs_refined[0], direction, settings["grid"]["resolution"], np.array(settings["grid"]["size [m]"])/settings["grid"]["resolution"], orig_resolution=settings["grid"]["resolution"], output_dir=pathlib.Path.cwd())
 
-    # # Assertion
-    # for direction in ["west", "east", "north", "south"]:
-    #     assert filecmp.cmp(path_expected / f"{direction}.ex", pathlib.Path.cwd() / f"{direction}.ex"), f"{direction} not equal to reference file in ./unittests"
+    # Assertion
+    for direction in ["west", "east", "north", "south"]:
+        assert filecmp.cmp(path_expected / f"{direction}.ex", pathlib.Path.cwd() / f"{direction}.ex"), f"{direction} not equal to reference file in ./unittests"
     
 
-    # # Clean up
-    # os.remove(pathlib.Path.cwd() / "west.ex")
-    # os.remove(pathlib.Path.cwd() / "east.ex")
-    # os.remove(pathlib.Path.cwd() / "north.ex")
-    # os.remove(pathlib.Path.cwd() / "south.ex")
-    # try:
-    #     os.remove(pathlib.Path.cwd() / "top.ex")
-    #     os.remove(pathlib.Path.cwd() / "bottom.ex")
-    # except:
-    #     pass
+    # Clean up
+    os.remove(pathlib.Path.cwd() / "west.ex")
+    os.remove(pathlib.Path.cwd() / "east.ex")
+    os.remove(pathlib.Path.cwd() / "north.ex")
+    os.remove(pathlib.Path.cwd() / "south.ex")
+    try:
+        os.remove(pathlib.Path.cwd() / "top.ex")
+        os.remove(pathlib.Path.cwd() / "bottom.ex")
+    except:
+        pass
+
+    shutil.rmtree(pathlib.Path.cwd() / "dataset_tmp")

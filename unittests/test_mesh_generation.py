@@ -1,7 +1,7 @@
 import numpy as np
 import pathlib
-import os
 import matplotlib.pyplot as plt
+import shutil
 
 from scripts.hp_variation_2d import calc_hps_locs_float
 from scripts.mesh_generation_utils import loc_to_id, calc_face_cell_ids
@@ -176,3 +176,6 @@ def test_mesh_refinement():
     plt.xlim(0, 20)
     plt.ylim(0, 10)
     plt.show()
+
+    # Clean up
+    shutil.rmtree(output_dataset_dir)
