@@ -32,10 +32,10 @@ def make_window_shape_and_pump_params(settings: Dict, resolution: int, propertie
     window_shape_in_meters = settings["grid"]["size [m]"]
     if window_shape_in_meters is None:
         window_shape_in_meters, pump_params = estimate_box_size_and_pump_params(properties_full, start, method="LAHM", temp_default=temp_default, rate_default=rate_default)
-        print(f"estimated window size: {window_shape_in_meters} [m]")
+        logging.info(f"estimated window size: {window_shape_in_meters} [m]")
     else:
         pump_params = None
-        print(f"manually set window size: {window_shape_in_meters} [m]")
+        logging.info(f"manually set window size: {window_shape_in_meters} [m]")
         
     # convert to cells
     window_shape = np.array([window_shape_in_meters[0]/resolution, window_shape_in_meters[1]/resolution]) 
@@ -44,7 +44,7 @@ def make_window_shape_and_pump_params(settings: Dict, resolution: int, propertie
     for i in range(2):
         if window_shape[i] == 0:
             window_shape[i] = 2
-            print(f"WARNING: window_shape too small (zero in one direction) -> set to 2 cells")
+            logging.warning(f"window_shape too small (zero in one direction) -> set to 2 cells")
    
     return window_shape, pump_params
 
