@@ -5,9 +5,12 @@ import matplotlib.pyplot as plt
 
 from scripts.hp_variation_2d import calc_hps_locs_float
 from scripts.mesh_generation_utils import loc_to_id, calc_face_cell_ids
-from scripts.mesh_generation import create_regular_cell_centers, create_regular_cell_volumes, create_regular_grid
+from scripts.mesh_generation import create_regular_cell_centers, create_regular_cell_volumes, create_regular_grid, mesh_generation_all_dps
 from scripts.mesh_refinement_utils import calc_inner_face_centers
 from scripts.mesh_refinement import mesh_refinements_all_dps
+from scripts.main_helpers import groundwater_temp
+from scripts.utils import save_yaml
+
     
 
 def test_create_regular_cell_centers():
@@ -112,59 +115,64 @@ def test_calc_inner_face_centers():
     assert np.allclose(actual, expected)
 
 def test_mesh_refinement():
+    # Fixture
+    num_dp = 1
+    num_hp = 1
+    orig_resolution = 10
     settings = {
         "grid": {
             "resolution": 5,
-            "size [m]": [40, 30, 5], #100
-            "loc_hp [m]": [1, 7, 7],
-            "distance_to_border": [[0, 0], [0, 0], 0],
-            "min resolution well (m)": 0.1,
-            "min resolution plume (m)": 1,
+            "size [m]": [20, 10, 5],
+            "distance_to_border": 1,
         },
         "subsurface": {
             "hydraulic conductivity": 1e-5,
             "aquifer thickness": 5,
             "darcy velocity": 1,
         },
-        "max pump": {
-            "temperature": 5,
-        }
     }
-    num_hps = 4
 
-    out, _  = create_regular_grid(settings)
+    output_dataset_dir = pathlib.Path.cwd() / "dataset_tmp"
+    output_dataset_dir.mkdir(exist_ok=True)
+    for dp_id in range(num_dp):
+        output_run_dir = output_dataset_dir / f"RUN_{dp_id}"
+        output_run_dir.mkdir(exist_ok=True)
 
-    windows = [{"properties": {"hydraulic_conductivity": np.ones(settings["grid"]["size [m]"][:2])*settings["subsurface"]["hydraulic conductivity"], "thickness": np.ones(settings["grid"]["size [m]"][:2])*settings["subsurface"]["aquifer thickness"], "darcy_velocity": np.ones(settings["grid"]["size [m]"][:2])*settings["subsurface"]["darcy velocity"]}},]
+        save_yaml(settings, output_run_dir)
 
-    assert out["cell_centers"].shape == (48, 3), "Wrong shape of grids_global"
-    assert out["face_cell_ids"].shape == (82, 2), "Wrong shape of face_cell_ids_global"
-    assert out["face_centers"].shape == (82, 3), "Wrong shape of face_centers_global"
+    shape_inputs = (np.array(settings["grid"]["size [m]"][:2])/10).astype(int)
+    windows = [{"properties": {"hydraulic_conductivity": np.ones(shape_inputs)*settings["subsurface"]["hydraulic conductivity"], "thickness": np.ones(shape_inputs)*settings["subsurface"]["aquifer thickness"], "darcy_velocity": np.ones(shape_inputs)*settings["subsurface"]["darcy velocity"]}, "shape":shape_inputs},]*num_dp
 
+    meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows, orig_resolution)
+    assert meshs[0]["cell_centers"].shape == (8, 3), "Wrong shape of cell_centers"
+    assert meshs[0]["face_cell_ids"].shape == (10, 2), "Wrong shape of face_cell_ids"
+    assert meshs[0]["face_centers"].shape == (10, 3), "Wrong shape of face_centers"
+
+    
+    hps_locs = calc_hps_locs_float(True, num_dp, num_hp, settings)
     # TODO fix position of hps, then see actual number of cells and include assertions accordingly - for after refinement
-    dps_hps_locs_global = calc_hps_locs_float(True, 1, num_hps, settings)
-    print(f"{dps_hps_locs_global.shape=}")
+    hps_temps = np.ones_like(hps_locs[:,:,0])*(5+groundwater_temp())
+    hps_rates = np.ones_like(hps_locs[:,:,0])*0.00024
 
     plt.subplot(211)
-    plt.plot(out["cell_centers"][:, 0], out["cell_centers"][:, 1], "o")
-    plt.plot(out["face_centers"][:, 0], out["face_centers"][:, 1], "x")
-    plt.plot(dps_hps_locs_global[0,:,0], dps_hps_locs_global[0,:,1], "ro")
+    plt.plot(meshs[0]["cell_centers"][:, 0], meshs[0]["cell_centers"][:, 1], "o")
+    plt.plot(meshs[0]["face_centers"][:, 0], meshs[0]["face_centers"][:, 1], "x")
+    plt.plot(hps_locs[0,:,0], hps_locs[0,:,1], "ro")
     plt.grid()
-    plt.xlim(0, 40)
-    plt.ylim(0, 30)
+    plt.xlim(0, 20)
+    plt.ylim(0, 10)
 
-    meshs_refined = mesh_refinements_all_dps(1, settings, meshs_regular=[out,], dps_hps_locs=dps_hps_locs_global, dps_hps_temps=np.ones_like(dps_hps_locs_global[0])*5, windows_properties_collected=windows, orig_resolution=20)
-    assert len(meshs_refined) == 1, "Different length of refined meshes to num_dp"
+    meshs_refined = mesh_refinements_all_dps(num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows, orig_resolution, output_dataset_dir)
+
+    assert len(meshs_refined) == num_dp, "Different length of refined meshes to num_dp"
     assert meshs_refined[0]["cell_centers"].shape[0] == meshs_refined[0]["cell_volumes"].shape[0], "Different number of refined centers and volumes"
     assert meshs_refined[0]["face_cell_ids"].shape[0] == meshs_refined[0]["face_centers"].shape[0], "Different number of refined face cell ids and centers"
     assert meshs_refined[0]["cell_centers"].shape[1] == 3, "Refined centers have wrong shape"
 
     plt.subplot(212)
     plt.plot(meshs_refined[0]["cell_centers"][:, 0], meshs_refined[0]["cell_centers"][:, 1], "o")
-    plt.plot(dps_hps_locs_global[0,:,0], dps_hps_locs_global[0,:,1], "ro")
+    plt.plot(hps_locs[0,:,0], hps_locs[0,:,1], "ro")
     plt.grid()
-    plt.xlim(0, 40)
-    plt.ylim(0, 30)
+    plt.xlim(0, 20)
+    plt.ylim(0, 10)
     plt.show()
-
-if __name__ == "__main__":
-    test_loc_to_id()
