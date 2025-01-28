@@ -12,7 +12,7 @@ def load_geotiff(file_path):
 
 def load_properties_after_R_prep(data_path: Path) -> tuple[dict[str, np.ndarray], int]:
     properties = {"dtw": "Depth_to_water_20m_resolution.tif",
-                  "drawdown": "Drawdown_20m_resolution.tif", # max. Pumprate des Förderbrunnens an der Stelle #TODO Einheit
+                  "drawdown": "Drawdown_20m_resolution.tif", # max. Pumprate des Förderbrunnens an der Stelle , [l/s]
                   "hydraulic_conductivity": "Hydraulic_conductivity_20m_resolution.tif",# [m/s]
                   "hydraulic_gradient": "Hydraulic_gradient_20m_resolution.tif", # [m/m]
                   "thickness": "Aquifer_thickness_20m_resolution.tif", # [m]
