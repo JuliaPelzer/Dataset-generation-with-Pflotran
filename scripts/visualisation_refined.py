@@ -36,7 +36,10 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plo
         values = generate_regular_cell_values(plot_res, mesh, data_point)
         plt.sca(axes[index])
         plt.title(f"{data_point['property']} at time {data_point['time_years']}")
-        plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
+        if data_point["property"] == "Material ID":
+            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper", vmin=1, vmax=3)
+        else:
+            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
         # offset of 0.5*plot_res to center the cells, i.e. to x-,y-scale
         if plot_area == (0, -1, 0, -1):
             if index == 0:
