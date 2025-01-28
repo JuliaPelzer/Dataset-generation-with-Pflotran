@@ -79,8 +79,6 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
     # for each dp:
     for id in tqdm(range(num_dp), desc="Runs"):
         output_run_dir = output_dir / f"RUN_{id}"
-        # if not (output_run_dir / "mesh.h5").exists():
-
         # get cell centers in region
         resolutions_cells = np.array([settings["grid"]["resolution"],]*len(meshs_regular[id]["cell_centers"]))
         grid_and_resolutions = np.concatenate([meshs_regular[id]["cell_centers"], resolutions_cells.reshape(-1, 1)], axis=1)
@@ -99,11 +97,8 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
         # refined_cell_volumes: grid_and_resolutions[:,-1]**3 # TODO **3 is currently bullshit since CURRENTLY only refined in 2 directions
         # refined_face_areas: faces_and_res_and_orient[:,-2]**2 # TODO **2 is currently bullshit since CURRENTLY only refined in 2 directions
 
-        # store refined mesh
+        # store refined mesh: overwrite normal mesh
         store_mesh(output_run_dir, mesh_refined)
-        # else:
-        #     mesh_refined = load_mesh(output_run_dir)
-        #     # TODO
 
         meshs_refined.append(mesh_refined)
         

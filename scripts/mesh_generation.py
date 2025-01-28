@@ -1,12 +1,11 @@
 import numpy as np
-import h5py
 import pathlib
 from typing import Dict, Tuple
 import logging
 
 from scripts.utils import save_yaml
 from scripts.mesh_generation_utils import create_regular_cell_centers, create_regular_cell_volumes, calc_n_faces, create_regular_face_areas, create_regular_faces_ids, create_regular_faces_centers, correct_face_ids, calc_n_cells_array
-# from scripts.mesh_generation_boundaries import create_SN_boundaries, create_WE_boundaries, create_TB_boundaries
+from scripts.mesh_generation_utils import store_mesh
 
 # REGULAR GRID GENERATION
 def create_regular_grid(settings:Dict) -> Tuple[Dict[str, np.ndarray], np.array]:
@@ -23,10 +22,10 @@ def create_regular_grid(settings:Dict) -> Tuple[Dict[str, np.ndarray], np.array]
 
     return {"cell_centers": cell_centers, "cell_volumes": volumes, "face_areas": face_areas, "face_cell_ids": face_cell_ids, "face_centers": face_centers}, n_cells
 
-def mesh_generation_all_dps(settings:Dict, destination_path:pathlib.Path, windows_collected:list[dict], orig_resolution:float) -> list[Dict[str, np.ndarray]]:
+def mesh_generation_all_dps(settings:Dict, output_dir:pathlib.Path, windows_collected:list[dict], orig_resolution:float) -> list[Dict[str, np.ndarray]]:
     meshs = []
-    for i, window in enumerate(windows_collected):
-        filename = destination_path / f"RUN_{i}"
+    for id, window in enumerate(windows_collected):
+        output_run_dir = output_dir / f"RUN_{id}"
         desti_resolution = settings["grid"]["resolution"]
         assert desti_resolution >=1, "not implemented for resolution <1 yet"
 
@@ -43,9 +42,12 @@ def mesh_generation_all_dps(settings:Dict, destination_path:pathlib.Path, window
             settings["grid"]["size [m]"].append(int(ncells[2] * desti_resolution))
         else:
             settings["grid"]["size [m]"][2] = int(ncells[2] * desti_resolution)
-        save_yaml(settings, filename)
-        mesh_dict, _ = create_regular_grid(settings)
+        save_yaml(settings, output_run_dir)
+        mesh, _ = create_regular_grid(settings)
 
-        meshs.append(mesh_dict)
+        # store mesh
+        store_mesh(output_run_dir, mesh)
+
+        meshs.append(mesh)
 
     return meshs

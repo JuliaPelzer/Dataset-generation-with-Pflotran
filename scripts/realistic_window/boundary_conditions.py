@@ -12,7 +12,7 @@ def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarr
     bcs["north"]     = - np.median(gwgl[bcs_cell_ids["north"]-1] - tok_min)/box_shape_in_m[0]  # in stream direction
     bcs["south"]    = - np.median(gwgl[bcs_cell_ids["south"]-1] - tok_min)/box_shape_in_m[0]  # in stream direction
     bcs["initial"]  = (bcs["north"] + bcs["south"])/2
-    logging.info("bcs", bcs, "box", box_shape_in_m)
+    logging.info(f"bcs {bcs}, box {box_shape_in_m}")
     return bcs
 
 def save_bcs(filename: Path, bcs:Dict):

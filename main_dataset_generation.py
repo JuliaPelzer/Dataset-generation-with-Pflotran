@@ -23,8 +23,8 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
 
     (output_dataset_dir / "interim").mkdir(exist_ok=True, parents=True)
     for run_id in np.arange(args.num_dp):
-        output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
-        output_dataset_run_dir.mkdir(exist_ok=True, parents=True)
+        output_run_dir = output_dataset_dir / f"RUN_{run_id}"
+        output_run_dir.mkdir(exist_ok=True, parents=True)
         
     # if varying (automatic) window shape: load subsurface params directly from RUN folder, in every run -> no need to load and change location of files
     if not args.vary_inflow:
@@ -53,40 +53,41 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     # mesh generation + refinement
     meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
 
-    meshs_refined = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
+    if settings["grid"]["refinement"]:
+        meshs = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
 
-    hps_cell_ids = hps_locs_to_ids(hps_locs, meshs_refined)
+    hps_cell_ids = hps_locs_to_ids(hps_locs, meshs)
 
 
     for run_id in np.arange(args.num_dp):
-        output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
-        shutil.copytree(output_dataset_dir/"interim", output_dataset_run_dir, dirs_exist_ok=True)
+        output_run_dir = output_dataset_dir / f"RUN_{run_id}"
+        shutil.copytree(output_dataset_dir/"interim", output_run_dir, dirs_exist_ok=True)
 
         # store realistic pump params for hp-cell_id, generate files regions_hps and inj-conditions_hps
-        write_pump_param_files(output_dataset_run_dir, hps_cell_ids[run_id], hps_temps[run_id], hps_rates[run_id])
+        write_pump_param_files(output_run_dir, hps_cell_ids[run_id], hps_temps[run_id], hps_rates[run_id])
 
         bcs_cell_ids = {}
         for direction in ["north", "south"]: #, "west", "east", "top", "bottom"]:
-            bcs_cell_ids[direction] = create_boundary_locs(meshs_refined[run_id], direction, settings["grid"]["resolution"], windows_collected[run_id]["shape"], orig_resolution, output_dataset_run_dir)
+            bcs_cell_ids[direction] = create_boundary_locs(meshs[run_id], direction, settings["grid"]["resolution"], windows_collected[run_id]["shape"], orig_resolution, output_run_dir)
 
         # evaluate and store (to h5) properties and BCs on refined mesh
-        interpolate_and_store_windows_and_bcs(output_dataset_run_dir, windows_collected[run_id], meshs_refined[run_id], bcs_cell_ids, orig_resolution)
+        interpolate_and_store_windows_and_bcs(output_run_dir, windows_collected[run_id], meshs[run_id], bcs_cell_ids, orig_resolution)
 
     # RUN SIMULATIONS
     for run_id in run_ids:
-        output_dataset_run_dir = output_dataset_dir / f"RUN_{run_id}"
-        shutil.copy(f"input_files/{pflotran_file}", f"{output_dataset_run_dir}/pflotran.in")
+        output_run_dir = output_dataset_dir / f"RUN_{run_id}"
+        shutil.copy(f"input_files/{pflotran_file}", f"{output_run_dir}/pflotran.in")
     
-        if (output_dataset_run_dir / "pflotran.h5").exists():
+        if (output_run_dir / "pflotran.h5").exists():
             continue
         else:
-            os.chdir(output_dataset_run_dir)
+            os.chdir(output_run_dir)
             call_pflotran(avg_time_per_sim, run_id)
 
             os.chdir("../../../")
 
         if args.visu:
-            plot_results(output_dataset_run_dir)
+            plot_results(output_run_dir)
 
     shutil.rmtree(output_dataset_dir/"interim")
     os.remove(output_dataset_dir/"settings.yaml")
