@@ -135,53 +135,53 @@
     TEMPERATURE 10.6d0 C
   /
 
-  FLOW_CONDITION inflow
+  FLOW_CONDITION west
     TYPE
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
-      EXTERNAL_FILE bc_inflow.txt
+      EXTERNAL_FILE bc_west.txt
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
 
-  FLOW_CONDITION outflow
+  FLOW_CONDITION east
     TYPE
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
-      EXTERNAL_FILE bc_outflow.txt
+      EXTERNAL_FILE bc_east.txt
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
 
-  FLOW_CONDITION left_of_stream
+  FLOW_CONDITION north
     TYPE
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
-      EXTERNAL_FILE bc_left.txt
+      EXTERNAL_FILE bc_north.txt
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
   /
 
-  FLOW_CONDITION right_of_stream
+  FLOW_CONDITION south
     TYPE
       LIQUID_PRESSURE HYDROSTATIC
       TEMPERATURE DIRICHLET
     /
     DATUM 200.d0 0.d0 85.d0
     GRADIENT
-      EXTERNAL_FILE bc_right.txt
+      EXTERNAL_FILE bc_south.txt
     /
     LIQUID_PRESSURE 101325.d0
     TEMPERATURE 10.6d0 C
@@ -198,24 +198,24 @@
 
   # boundary conditions
   BOUNDARY_CONDITION
-    FLOW_CONDITION inflow
-    REGION north
+    FLOW_CONDITION west
+    REGION west
   /
 
   BOUNDARY_CONDITION
-    FLOW_CONDITION outflow
-    REGION south
+    FLOW_CONDITION east
+    REGION east
   /
 
   # boundary conditions
   BOUNDARY_CONDITION
-    FLOW_CONDITION left_of_stream
-    REGION east
+    FLOW_CONDITION north
+    REGION north
   /
 
   BOUNDARY_CONDITION
-    FLOW_CONDITION right_of_stream
-    REGION west
+    FLOW_CONDITION south
+    REGION south
   /
 
   EXTERNAL_FILE conditions_hps.txt
