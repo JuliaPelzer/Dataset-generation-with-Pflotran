@@ -13,6 +13,8 @@ from scripts.realistic_window.cut_and_rotate_box import cut_out_values, calc_rot
 from scripts.realistic_window.boundary_conditions import get_bcs_values, save_bcs
 from scripts.realistic_window.param_sampling import get_start_positions
 
+logging.basicConfig(level=logging.WARNING)
+
 @timing
 def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:int, temp_default:float, rate_default:float):
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
@@ -21,7 +23,7 @@ def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:i
 
     # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
     start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], settings["general"])
-    print("Number of start positions:", len(start_positions_in_orig_cells))
+    logging.info(f"Number of start positions:{len(start_positions_in_orig_cells)}")
 
     windows_collected = []
     pumps_collected = []
@@ -74,7 +76,7 @@ def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:i
 
     logging.info(n_valid_windows, " valid windows found within", i+1, "tries")
     if n_valid_windows < num_dp:
-        logging.error("Not enough windows found. Only", n_valid_windows, "found.")
+        logging.error(f"Not enough windows found. Only {n_valid_windows} found.")
 
     return windows_collected, pumps_collected, orig_resolution, settings
 
