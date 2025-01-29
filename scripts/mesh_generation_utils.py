@@ -35,12 +35,29 @@ def create_regular_cell_volumes(resolution:int, n_cells:np.ndarray):
     cell_volumes = cell_volumes.flatten()
     return cell_volumes
 
-def loc_to_id(cell_centers:np.ndarray, position:np.ndarray):
+def loc_to_id(centers_and_ress:np.ndarray, position:np.ndarray):
     '''find the cell id of a location'''
     # WARNING! this only works if no cells of 2 different resolutions are connected
     # if (position > cell_centers).any() or (position < 0).any():
     #     logging.info("loc_hp is outside/on boundary of domain")
-    return int(np.argmin(np.sum((cell_centers - position)**2, axis=1))+1)
+    id = np.where(np.all(centers_and_ress[:,:3] == position, axis=1))[0]
+    # print("id", id)
+    if len(id) == 1:
+        return id[0]+1
+    else:
+        return loc_to_id_closest(centers_and_ress, position)
+
+def loc_to_id_closest(cell_centers_and_ress:np.ndarray, position:np.ndarray):
+    # robust but very slow...
+    x_min_max = np.array([cell_centers_and_ress[:,0] - cell_centers_and_ress[:,3]/2, cell_centers_and_ress[:,0] + cell_centers_and_ress[:,3]/2]).T
+    y_min_max = np.array([cell_centers_and_ress[:,1] - cell_centers_and_ress[:,3]/2, cell_centers_and_ress[:,1] + cell_centers_and_ress[:,3]/2]).T
+    z_min_max = np.array([cell_centers_and_ress[:,2] - cell_centers_and_ress[:,3]/2, cell_centers_and_ress[:,2] + cell_centers_and_ress[:,3]/2]).T
+    for i in range(len(cell_centers_and_ress)):
+        if position[0] >= x_min_max[i,0] and position[0] < x_min_max[i,1] and position[1] >= y_min_max[i,0] and position[1] < y_min_max[i,1] and position[2] >= z_min_max[i,0] and position[2] < z_min_max[i,1]:
+            # if it's on the boundary of two cells, it will be assigned to the cell with the smaller cell-center
+            # TODO check influence of changing <= to <max
+            return i+1
+    return None
 
 def id_to_loc(cell_centers:np.ndarray, cell_id:int):
     '''find the location of a cell id'''
@@ -91,24 +108,11 @@ def get_neighboring_2cells_ids_of_face_pos(face_center, resolution, orientation,
     neighbors = np.array([face_center.copy()]*2)
     sign = np.array([-1, 1])
     offset = 0.75 * resolution
-    neighbors[0,int(orientation)] += sign[0] * offset
-    neighbors[1,int(orientation)] += sign[1] * offset
+    neighbors[:,int(orientation)] += sign * offset
+
     neighbor_ids = np.zeros(2)
     for id in range(2):
-        neighbor_ids[id] = loc_to_id(cell_centers_and_res[:,:3], neighbors[id])
-    if neighbor_ids[0] == neighbor_ids[1]:
-        logging.info(f"neighbors should be different, but are {neighbor_ids}")
-        for id in range(2):
-            found_neighbor_and_res = id_to_loc(cell_centers_and_res, neighbor_ids[id])
-            if np.abs(found_neighbor_and_res[int(orientation)] - neighbors[id, int(orientation)]) > found_neighbor_and_res[3]:
-                logging.info(f"this neighbor is wrong: {found_neighbor_and_res} != {neighbors[id]}, {id}")
-                neighbors[id, int(orientation)] 
-                neighbors[id, int(orientation)] -= sign[id] * offset
-                neighbors[id, int(orientation)] += sign[id] * 0.75 * 4* resolution
-                neighbor_ids[id] = loc_to_id(cell_centers_and_res[:,:3], neighbors[id])
-                logging.info(f"corrected to {neighbors[id]}")
-        assert neighbor_ids[0] != neighbor_ids[1], f"neighbors should be different, but are {neighbor_ids}"
-
+        neighbor_ids[id] = loc_to_id_closest(cell_centers_and_res, neighbors[id])
     return neighbor_ids
 
 def calc_face_cell_ids(faces_and_res_and_orient, cell_centers):
@@ -117,12 +121,6 @@ def calc_face_cell_ids(faces_and_res_and_orient, cell_centers):
         neighbors = get_neighboring_2cells_ids_of_face_pos([x,y,z], res, orientation, cell_centers)
         face_cell_ids.append(neighbors)
     return np.array(face_cell_ids)
-
-def face_loc_to_line(face_centers:np.ndarray, position:np.ndarray):
-    '''find the cell id of a location'''
-    if (position > face_centers).any() or (position < 0).any():
-        logging.info("position is not a valid face")
-    return np.argmin(np.linalg.norm(face_centers - position, axis=1))
 
 def store_mesh(destination_path:Path, mesh:Dict[str, np.ndarray]):
     '''store the mesh in a file'''

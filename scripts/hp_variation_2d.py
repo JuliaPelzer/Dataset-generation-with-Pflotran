@@ -2,7 +2,7 @@ import numpy as np
 from typing import Dict
 import logging
 
-from scripts.mesh_generation_utils import loc_to_id
+from scripts.mesh_generation_utils import loc_to_id_closest
 
 def write_hps_strata_conditions_files(dataset_folder_interim: str, number_of_hps: int):
     with open(f"{dataset_folder_interim}/strata_hps.txt", "w") as f:
@@ -22,7 +22,7 @@ def hps_locs_to_ids(hps_locs: np.ndarray, meshs_refined: np.ndarray):
     hps_cell_ids = np.zeros((hps_locs.shape[0], hps_locs.shape[1]))
     for run_id, dp in enumerate(hps_locs):
         for hp_id, hp_loc in enumerate(dp):
-            hp_cell_id = loc_to_id(meshs_refined[run_id]["cell_centers"], hp_loc)
+            hp_cell_id = loc_to_id_closest([*meshs_refined[run_id]["cell_centers"], np.cbrt(meshs_refined[run_id]["cell_volumes"])], hp_loc)
             hps_cell_ids[run_id, hp_id] = hp_cell_id
             
     hps_cell_ids = hps_cell_ids.astype(int)
