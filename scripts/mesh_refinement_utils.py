@@ -120,9 +120,9 @@ def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution
     length_1K, width_1K = estimate_plume_shape_lahm(T_inj_diff, hp_rate, v_a, thickness)
 
     length_1K *= (1+safety_factor)
-    # length_1K = 0 # for debug/testing TODO 
+    length_1K = np.max([length_1K, 20]) # for debug/testing TODO 
     width_1K *= (1+safety_factor)
-    # width_1K = 0 # for debug/testing TODO
+    width_1K = np.max([width_1K, 10]) # for debug/testing TODO
     print(f"downstream: {length_1K=}\nat half length: {width_1K=}")
     min_resolution_plume = 1
     refinement_plume_length = get_refinement_intervals(max_resolution, min_resolution_plume, length_1K, decrease_factor)
