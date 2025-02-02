@@ -88,6 +88,8 @@ def estimate_plume_shape_lahm(T_inj_diff: float, q_inj: float, v_a: float, m_aqu
         # print("At y=", y_pos, "m:", round(delta_T, 2), "°C Temperaturdifferenz")
     y_pos *= 2
 
+    # TODO Fahne anschauen: plot
+
     return x_pos, y_pos
 
 if __name__ == "__main__":

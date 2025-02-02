@@ -73,7 +73,7 @@ def test_loc_to_id():
     cell_id_expected = 10
 
     # Actual result
-    cell_id_calc = loc_to_id(out['cell_centers'], np.array(settings['grid']['loc_hp [m]']))
+    cell_id_calc = loc_to_id([*out['cell_centers'],np.cbrt(out["cell_volumes"])], np.array(settings['grid']['loc_hp [m]']))
 
     # Test
     assert cell_id_expected == cell_id_calc, f"Expected: {cell_id_expected}, Actual: {cell_id_calc}"
@@ -97,17 +97,29 @@ def test_calc_face_cell_ids():
 
 def test_calc_inner_face_centers():
     # Fixture
-    centers = np.array([[22.65625,  2.03125,  2.5,      0.3125 ],
-    [22.65625,  2.34375,  2.5,      0.3125 ],
-    [22.96875,  2.03125,  2.5,      0.3125 ],
-    [22.96875,  2.34375,  2.5,      0.3125 ]])
+    centers = np.array([[251.25,  86.25,   1.25,   2.5 ],
+    [251.25,  86.25,   3.75,   2.5 ],
+    [251.25,  88.75,   1.25,   2.5 ],
+    [251.25,  88.75,   3.75,   2.5 ],
+    [253.75,  86.25,   1.25,   2.5 ],
+    [253.75,  86.25,   3.75,   2.5 ],
+    [253.75,  88.75,   1.25,   2.5 ],
+    [253.75,  88.75,   3.75,   2.5 ]])
 
     # Expected result
-    expected = np.array([[22.65625, 2.1875, 2.5, 0.3125, 1],
-    [22.8125, 2.34375, 2.5, 0.3125, 0],
-    [22.96875, 2.1875, 2.5, 0.3125, 1],
-    [22.8125, 2.03125, 2.5, 0.3125, 0]])
-
+    expected = np.array([[251.25,  86.25, 2.5, 2.5, 2 ],
+    [251.25,  88.75,   2.5, 2.5, 2 ],
+    [253.75,  86.25,   2.5, 2.5, 2 ],
+    [253.75,  88.75,   2.5, 2.5, 2 ],
+    [252.5,   86.25,   1.25, 2.5, 0],
+    [252.5,   86.25,   3.75, 2.5, 0],
+    [252.5,   88.75,   1.25, 2.5, 0],
+    [252.5,   88.75,   3.75, 2.5, 0],
+    [251.25,  87.5,    1.25, 2.5, 1],
+    [251.25,  87.5,    3.75, 2.5, 1],
+    [253.75,  87.5,    1.25, 2.5, 1],
+    [253.75,  87.5,    3.75, 2.5, 1]])
+    
     # Actual result
     actual = calc_inner_face_centers(centers)
 

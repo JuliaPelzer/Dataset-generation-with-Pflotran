@@ -21,7 +21,7 @@ def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_
             # refine cell
             curr_resolution = cells_to_refine_and_res[id][-1]
             if curr_resolution / 2 >= goal_resolution:
-                curr_cell_id = loc_to_id(grid_and_resolutions[:,:-1], cells_to_refine_and_res[id][:-1])
+                curr_cell_id = loc_to_id(grid_and_resolutions, cells_to_refine_and_res[id][:-1])
                 new_cell_and_res_tmp = calc_refined_cell_centers(cells_to_refine_and_res[id][:-1], curr_resolution / 2, bounds)
                 # get old face centers, calc new face centers
                 new_outer_face_centers_and_res_and_orient, old_face_ids, already_refined_faces = calc_refined_face_centers(cells_to_refine_and_res[id], face_cell_ids, faces_and_res_and_orient, grid_and_resolutions, new_cell_and_res_tmp)
@@ -36,8 +36,7 @@ def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_
                 grid_and_resolutions[curr_cell_id-1] = new_cell_and_res_tmp[0]
                 grid_and_resolutions = np.concatenate([grid_and_resolutions, new_cell_and_res_tmp[1:]])
 
-                # old face ids: old_face_ids; # new faces: new_face_centers_tmp, new_face_cell_ids_tmp
-                # print("here", new_face_centers_and_res_and_orient_tmp)
+                # new faces: new_face_centers_tmp, new_face_cell_ids_tmp
                 new_face_cell_ids_tmp = calc_face_cell_ids(new_face_centers_and_res_and_orient_tmp, grid_and_resolutions)
 
                 collect_already_faces_cell_ids = []
@@ -59,7 +58,7 @@ def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_
     return grid_and_resolutions, faces_and_res_and_orient, face_cell_ids
 
 
-def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, dps_hps_rates:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int, output_dir: Path) -> list[Dict[str, np.ndarray]]:
+def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, dps_hps_rates:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int, output_dir: Path, min_resolution:float=0.1) -> list[Dict[str, np.ndarray]]:
     """
     Refine regular-grid around hp according to hps and settings
     Outputs:
@@ -70,7 +69,6 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
     - face_cell_ids: list of np.arrays (#faces, 2) with cell ids of faces
     - face_centers: list of np.arrays (#faces, 3) with face centers
     """
-    interim_orig_res = settings["grid"]["resolution"]
     meshs_refined = []
 
     # for each dp:
@@ -79,7 +77,7 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
         # get cell centers in region
         resolutions_cells = np.array([settings["grid"]["resolution"],]*len(meshs_regular[id]["cell_centers"]))
         grid_and_resolutions = np.concatenate([meshs_regular[id]["cell_centers"], resolutions_cells.reshape(-1, 1)], axis=1)
-        bounds = [[0, settings["grid"]["size [m]"][0]], [0, settings["grid"]["size [m]"][1]]]
+        bounds = [[0, settings["grid"]["size [m]"][0]], [0, settings["grid"]["size [m]"][1]], [0, settings["grid"]["size [m]"][2]]]
         resolutions_faces = np.array([settings["grid"]["resolution"],]*len(meshs_regular[id]["face_centers"]))
         faces_and_res_and_orient = np.concatenate([meshs_regular[id]["face_centers"], resolutions_faces.reshape(-1,1), np.ones_like(resolutions_faces.reshape(-1,1))*(-1)], axis=1)
         face_cell_ids_tmp = meshs_regular[id]["face_cell_ids"]
@@ -88,11 +86,9 @@ def mesh_refinements_all_dps(num_dp:int, settings:Dict, meshs_regular: list, dps
         print(f"num hps: {len(dps_hps_locs[id])}")
         for hp_loc, hp_temp, hp_rate in zip(dps_hps_locs[id], dps_hps_temps[id], dps_hps_rates[id]):
             # refine region around hp
-            grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp = refine_region_acc_to_hp(grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp, orig_resolution, hp_loc, hp_temp, hp_rate, windows_properties_collected[id]["properties"], bounds, max_resolution=settings["grid"]["resolution"])
+            grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp = refine_region_acc_to_hp(grid_and_resolutions, faces_and_res_and_orient, face_cell_ids_tmp, orig_resolution, hp_loc, hp_temp, hp_rate, windows_properties_collected[id]["properties"], bounds, max_resolution=settings["grid"]["resolution"], min_resolution=min_resolution)
 
-        mesh_refined = {"cell_centers": grid_and_resolutions[:,:-1], "cell_volumes": grid_and_resolutions[:,-1]**2*interim_orig_res, "face_areas": faces_and_res_and_orient[:,-2]*interim_orig_res, "face_cell_ids": face_cell_ids_tmp, "face_centers": faces_and_res_and_orient[:,:-2]}
-        # refined_cell_volumes: grid_and_resolutions[:,-1]**3 # TODO **3 is currently bullshit since CURRENTLY only refined in 2 directions
-        # refined_face_areas: faces_and_res_and_orient[:,-2]**2 # TODO **2 is currently bullshit since CURRENTLY only refined in 2 directions
+        mesh_refined = {"cell_centers": grid_and_resolutions[:,:-1], "cell_volumes": grid_and_resolutions[:,-1]**3, "face_areas": faces_and_res_and_orient[:,-2]**2, "face_cell_ids": face_cell_ids_tmp, "face_centers": faces_and_res_and_orient[:,:-2]}
 
         # store refined mesh: overwrite normal mesh
         store_mesh(output_run_dir, mesh_refined)

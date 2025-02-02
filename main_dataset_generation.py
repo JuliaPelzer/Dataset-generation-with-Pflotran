@@ -51,7 +51,6 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         hps_rates = np.array([dp["rate"] for dp in hps_params_collected])
 
     # mesh generation + refinement
-
     if not settings["grid"]["refinement"]:
         meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
         # hps_cell_ids = hps_locs_to_ids(hps_locs, meshs) TODO something like this: get cell ids of hp locations
@@ -70,6 +69,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         bcs_cell_ids = {}
         for direction in ["north", "south"]: #, "west", "east", "top", "bottom"]:
             bcs_cell_ids[direction] = create_boundary_locs(meshs[run_id], direction, settings["grid"]["resolution"], windows_collected[run_id]["shape"], orig_resolution, output_run_dir)
+            # TODO check for 1layer3D
 
         # evaluate and store (to h5) properties and BCs on refined mesh
         interpolate_and_store_windows_and_bcs(output_run_dir, windows_collected[run_id], meshs[run_id], bcs_cell_ids, orig_resolution)

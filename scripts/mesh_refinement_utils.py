@@ -37,7 +37,7 @@ def get_face_orientation(cell_position, face_position):
 
 def calc_refined_face_centers(old_cell_and_res:np.ndarray, face_cell_ids:np.ndarray, faces_and_res_and_orient:np.ndarray, grid_and_res:np.ndarray, new_cell_centers_and_ress:np.ndarray):
     logging.getLogger().setLevel(logging.WARNING)
-    cell_id = loc_to_id(grid_and_res[:,:-1], old_cell_and_res[:-1])
+    cell_id = loc_to_id(grid_and_res, old_cell_and_res[:-1])
     curr_face_ids = np.concatenate([np.where(face_cell_ids[:,0] == cell_id)[0], np.where(face_cell_ids[:,1] == cell_id)[0]])
 
     new_face_and_res_and_orient = []
@@ -54,7 +54,7 @@ def calc_refined_face_centers(old_cell_and_res:np.ndarray, face_cell_ids:np.ndar
             continue
         face_dir = get_face_orientation(old_cell_and_res[:3], face_pos_and_res_and_orient[:3])
         
-        # get neighboring new cells -> new face => 2 new faces for one face
+        # get neighboring new cells -> new face => 4 new faces for one face
         for new_cell_and_res in new_cell_centers_and_ress:
             if np.abs(new_cell_and_res[face_dir] - face_pos_and_res_and_orient[face_dir]) == new_cell_and_res[3]*0.5:
                 new_face_pos = new_cell_and_res.copy()
@@ -66,13 +66,13 @@ def calc_refined_face_centers(old_cell_and_res:np.ndarray, face_cell_ids:np.ndar
 
     return np.array(new_face_and_res_and_orient), curr_face_ids, np.array(already_refined_faces)
 
-def calc_inner_face_centers(new_4cell_centers:np.ndarray):
-    # 4 new faces between new cells
+def calc_inner_face_centers(new_8cell_centers:np.ndarray):
+    # 3x4 new faces between new cells
     new_face_centers = []
-    for inter1, inter2 in [(0, 1), (1, 3), (3, 2), (2, 0)]:
-        new_face_center = (new_4cell_centers[inter1,:-1] + new_4cell_centers[inter2,:-1])/2
-        new_face_orient = get_face_orientation(new_4cell_centers[inter1,:-1], new_face_center) # TODO changed to use new cell center
-        new_face_centers.append([*new_face_center, new_4cell_centers[0,-1], new_face_orient])
+    for inter1, inter2 in [(0,1), (2,3), (4,5), (6,7), (0,4), (1,5), (2,6), (3,7), (0,2), (1,3), (4,6), (5,7)]:
+        new_face_center = (new_8cell_centers[inter1,:-1] + new_8cell_centers[inter2,:-1])/2
+        new_face_orient = get_face_orientation(new_8cell_centers[inter1,:-1], new_face_center)
+        new_face_centers.append([*new_face_center, new_8cell_centers[0,-1], new_face_orient])
     return np.array(new_face_centers)
 
 def calc_cells_to_refine(grid_and_resolutions, hp, goal_resolution, refinement_steps, curr_radius):
@@ -108,8 +108,8 @@ def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution
 
     # Estimate the radius of the "Absenktrichter" with Sichardt around each well
     inner_radius = sichardt_distance(hydr_cond, thickness, hp_rate) 
-    # inner_radius = 2.5 # for debug/testing todo
     inner_radius = np.min([inner_radius, 20]) # limit to 20m
+    inner_radius = 1 #2.5 # for debug/testing todo
     print(f"sichardt distance (=inner_radius) {inner_radius}") # logging.info
     refinements_radius = get_refinement_intervals(max_resolution, min_resolution, inner_radius, decrease_factor)
 
@@ -120,9 +120,9 @@ def calc_refinement_steps(center: np.array, max_resolution:float, min_resolution
     length_1K, width_1K = estimate_plume_shape_lahm(T_inj_diff, hp_rate, v_a, thickness)
 
     length_1K *= (1+safety_factor)
-    length_1K = np.max([length_1K, 20]) # for debug/testing TODO 
+    length_1K = 0# np.max([length_1K, 20]) # for debug/testing TODO 
     width_1K *= (1+safety_factor)
-    width_1K = np.max([width_1K, 10]) # for debug/testing TODO
+    width_1K = 0# np.max([width_1K, 10]) # for debug/testing TODO
     print(f"downstream: {length_1K=}\nat half length: {width_1K=}")
     min_resolution_plume = 1
     refinement_plume_length = get_refinement_intervals(max_resolution, min_resolution_plume, length_1K, decrease_factor)
@@ -158,10 +158,10 @@ def sichardt_distance(hydr_cond: float, thickness: float, q_inj: float) -> List[
 
 def calc_refined_cell_centers(old_cell_center, curr_resolution, bounds:List):
     new_cell_centers = []
-    offset_list = [[-1, -1, 0], [-1, 1, 0], [1, -1, 0], [1, 1, 0]]
+    offset_list = [[-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1]]
     for offset in offset_list:
         new_pos = old_cell_center + np.array(offset) * curr_resolution / 2
-        if new_pos[0] < bounds[0][0] or new_pos[0] > bounds[0][1] or new_pos[1] < bounds[1][0] or new_pos[1] > bounds[1][1]:
+        if new_pos[0] < bounds[0][0] or new_pos[0] > bounds[0][1] or new_pos[1] < bounds[1][0] or new_pos[1] > bounds[1][1] or new_pos[2] < bounds[2][0] or new_pos[2] > bounds[2][1]:
             continue
         new_cell_centers.append([*new_pos, curr_resolution])
     return np.array(new_cell_centers)

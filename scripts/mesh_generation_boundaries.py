@@ -8,14 +8,15 @@ def get_boundary_cells_and_resolutions(mesh_refined, max_resolution:float, dim:i
     # get boundary cell ids, calc their positions and get their resolution
 
     # get all cells with position = 1/2 their own resolution
-    boundary = np.where(mesh_refined["cell_centers"][:, dim] == offset + sign * np.cbrt(mesh_refined["cell_volumes"])/2)
+    boundary = np.where(mesh_refined["cell_centers"][:, dim] == offset + sign * np.cbrt(mesh_refined["cell_volumes"])/2) 
     
     cells = mesh_refined["cell_centers"][boundary]
-    resolutions = np.cbrt(mesh_refined["cell_volumes"][boundary]) 
+    resolutions = np.cbrt(mesh_refined["cell_volumes"][boundary])
 
     cell_ids = np.zeros_like(cells[:, 0])
     for line, pos in enumerate(cells):
-        cell_ids[line] = loc_to_id(mesh_refined["cell_centers"], pos)
+        centers_and_ress = np.column_stack([mesh_refined["cell_centers"], np.cbrt(mesh_refined["cell_volumes"])])
+        cell_ids[line] = loc_to_id(centers_and_ress, pos)
 
     boundary_locs = cells.copy()
     boundary_locs[:, dim] = boundary_locs[:, dim] - sign*resolutions/2 # TODO NOW if east: + resolutions
