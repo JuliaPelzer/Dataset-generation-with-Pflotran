@@ -6,8 +6,6 @@ from tqdm import tqdm
 
 from scripts.mesh_refinement_utils import *
 from scripts.mesh_generation_utils import store_mesh, calc_face_cell_ids
-
-# @profile
 def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_orient:np.ndarray, face_cell_ids:np.ndarray, orig_resolution: int, hp_loc: np.ndarray, hp_temperature:float, hp_rate: float, subsurface_properties:dict[str,np.ndarray], bounds, max_resolution: int, min_resolution:float=0.1):
     refinement_steps = calc_refinement_steps(hp_loc, max_resolution, min_resolution, orig_resolution, subsurface_properties, hp_temperature, hp_rate, decrease_factor=1)
     
@@ -19,7 +17,6 @@ def refine_region_acc_to_hp(grid_and_resolutions: np.ndarray, faces_and_res_and_
         cells_to_refine_and_res = calc_cells_to_refine(grid_and_resolutions, hp_loc, goal_resolution, refinement_steps, curr_radius)
         print(f"For resolution {goal_resolution}: {len(cells_to_refine_and_res)=}")
         # refine cells in region
-        # TODO make into numpy array functions
         for id in tqdm(range(len(cells_to_refine_and_res)), desc="Cells"):
             # refine cell
             curr_resolution = cells_to_refine_and_res[id][-1]

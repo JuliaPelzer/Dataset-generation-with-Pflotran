@@ -45,6 +45,7 @@ def get_sichardt_lahm_distances(hp_cells:np.ndarray, hp_temps: np.ndarray, hp_ra
             hydr_cond = subsurface_properties["hydraulic_conductivity"][hp_cell[1],hp_cell[0]]
             thickness = subsurface_properties["thickness"][hp_cell[1],hp_cell[0]]
             v_a = subsurface_properties["darcy_velocity"][hp_cell[1],hp_cell[0]]
+        print(f"{hp_id=}, {hp_cell=}, {hydr_cond=}, {thickness=}, {v_a=}")
     
         # Estimate the radius of the "Absenktrichter" with Sichardt around each well
         inner_radius = sichardt_distance(hydr_cond, thickness, hp_rates[hp_id])
@@ -72,6 +73,7 @@ def refinement_all_dps(num_dp:int, grid_settings:Dict, dps_hps_locs:np.ndarray, 
     print("lwh", length, width, height, "res", max_resolution)
 
     meshs_refined = []
+    dps_hps_ids = []
     for dp_id in tqdm(range(num_dp), desc="Runs"):
         output_run_dir = output_dir / f"RUN_{dp_id}"
 
@@ -81,19 +83,45 @@ def refinement_all_dps(num_dp:int, grid_settings:Dict, dps_hps_locs:np.ndarray, 
 
         sichardt_dists, lahm_w, lahm_l = get_sichardt_lahm_distances((hp_locs//orig_resolution).astype(int), dps_hps_temps[dp_id], dps_hps_rates[dp_id], windows_properties_collected[dp_id]["properties"])
         
-        cells_to_refine_later_and_res = generate_refinement_masks(num_hp, width, length, height, max_resolution, hp_locs//max_resolution, sichardt_dists, lahm_w, lahm_l)
-        cell_centers, face_centers, face_ids, face_areas, cell_volumes = calc_refined_grid_3D(cells_to_refine_later_and_res)
-        print(f"{cell_centers.shape=}, {face_centers.shape=}, {face_ids.shape=}, {face_areas.shape=}, {cell_volumes.shape=}")
-        # plot_grid_2D(cell_centers, face_centers, face_ids, face_areas, length)
+        cells_to_refine_later_and_res, hp_cells = generate_refinement_masks(num_hp, width, length, height, max_resolution, hp_locs//max_resolution, sichardt_dists, lahm_w, lahm_l)
+        cell_centers, face_centers, face_ids, face_areas, cell_volumes, hp_ids = calc_refined_grid_3D(cells_to_refine_later_and_res, hp_cells)
+
+        # scaling
+        cell_centers[:,0] *= width * max_resolution
+        cell_centers[:,1] *= length * max_resolution
+        cell_centers[:,2] *= height * max_resolution
+        face_centers[:,0] *= width * max_resolution
+        face_centers[:,1] *= length * max_resolution
+        face_centers[:,2] *= height * max_resolution
+
+        # switch axes () switch axis 0, 1 (w,l) to (l,w) of cell centers and face centers)
+        print(f"{cell_centers.shape=}, {face_centers.shape=}")
+        print(f"{cell_centers[:,0].max()=}, {cell_centers[:,1].max()=}, {cell_centers[:,2].max()=}")
+        print(f"{face_centers[:,0].max()=}, {face_centers[:,1].max()=}, {face_centers[:,2].max()=}")
+        cell_centers = np.array([cell_centers[:,1], cell_centers[:,0], cell_centers[:,2]]).T
+        face_centers = np.array([face_centers[:,1], face_centers[:,0], face_centers[:,2]]).T
+        print(f"{cell_centers.shape=}, {face_centers.shape=}")
+        print(f"{cell_centers[:,0].max()=}, {cell_centers[:,1].max()=}, {cell_centers[:,2].max()=}")
+        print(f"{face_centers[:,0].max()=}, {face_centers[:,1].max()=}, {face_centers[:,2].max()=}")
+        # TOODO ACTUAL : l, w, h ?? SOLL DAS SO? Wenn nciht, die dim in mesh_gen_boundaries tauschen
+        # assert np.max(cell_centers[:,0])+max_resolution > width*max_resolution, f"cell centers not correct {np.max(cell_centers[:,0])} < {width}"
+        # assert np.max(cell_centers[:,1])+max_resolution > length*max_resolution, f"cell centers not correct {np.max(cell_centers[:,1])} < {length}"
+        # assert np.max(cell_centers[:,2])+max_resolution > height*max_resolution, f"cell centers not correct {np.max(cell_centers[:,2])} < {height}"
+        # assert np.max(face_centers[:,0])+max_resolution > width*max_resolution, f"face centers not correct {np.max(face_centers[:,0])} < {width}"
+        # assert np.max(face_centers[:,1])+max_resolution > length*max_resolution, f"face centers not correct {np.max(face_centers[:,1])} < {length}"
+        # assert np.max(face_centers[:,2])+max_resolution > height*max_resolution, f"face centers not correct {np.max(face_centers[:,2])} < {height}"
+        assert np.max(face_ids) == len(cell_centers), f"face ids not correct; not+1? {np.max(face_ids)} != {len(cell_centers)}"
+        # exit()
     
         mesh_refined = {"cell_centers": cell_centers, "cell_volumes": cell_volumes, "face_areas": face_areas, "face_cell_ids": face_ids, "face_centers": face_centers}
-
+        
         # store refined mesh: overwrite normal mesh
         store_mesh(output_run_dir, mesh_refined)
 
         meshs_refined.append(mesh_refined)
+        dps_hps_ids.append(hp_ids)
         
-    return meshs_refined
+    return meshs_refined, dps_hps_ids
 
 def calc_refined_grid_2D(leave_outs: List[np.ndarray]):
     ids = None
@@ -128,7 +156,7 @@ def calc_refined_grid_2D(leave_outs: List[np.ndarray]):
     return cell_centers, face_centers, face_ids, face_areas, cell_volumes
 
 @timing
-def calc_refined_grid_3D(leave_outs_and_res: List[Tuple[np.ndarray, float]]):
+def calc_refined_grid_3D(leave_outs_and_res: List[Tuple[np.ndarray, float]], hp_cells: np.ndarray):
     ids = None
     cell_centerss = []
     face_centerss = []
@@ -161,13 +189,28 @@ def calc_refined_grid_3D(leave_outs_and_res: List[Tuple[np.ndarray, float]]):
         face_areass.append(face_areas)
         cell_volumess.append(cell_volumes)
 
-    max_res = leave_outs_and_res[0][1]
-    cell_centers = np.concatenate(cell_centerss) * max_res
-    face_centers = np.concatenate(face_centerss) * max_res
+    
+    # hp_cells to cell_ids from ids in finest level
+    hp_ids = np.zeros(hp_cells.shape[0])
+    for i in range(len(hp_ids)):
+        cell = hp_cells[i].astype(int)
+        hp_ids[i] = ids[cell[2], cell[1], cell[0]].astype(int) # TODO stimmt reihenfole???
+
+    cell_centers = np.concatenate(cell_centerss)
+    face_centers = np.concatenate(face_centerss)
     face_ids = np.concatenate(face_idss)
     face_areas = np.concatenate(face_areass)
     cell_volumes = np.concatenate(cell_volumess)
-    return cell_centers, face_centers, face_ids, face_areas, cell_volumes
+    cell_centers[:,0] /= aspect_wl
+    cell_centers[:,2] /= aspect_hl
+    face_centers[:,0] /= aspect_wl
+    face_centers[:,2] /= aspect_hl
+
+    # add 1 to all face ids, hp ids, because numbering starts at 1 in pflotran
+    face_ids += 1
+    hp_ids += 1
+
+    return cell_centers, face_centers, face_ids, face_areas, cell_volumes, hp_ids
 
 def get_grid_2D(w, h, minx, maxx, miny, maxy, larger_indices=None, leave_out=None):
 
@@ -295,7 +338,7 @@ def get_grid_3D(w, l, h, minx, maxx, miny, maxy, minz, maxz, larger_indices=None
     highest_index = np.max(larger_indices) if larger_indices is not None else -1
     ids = -np.ones((h,w,l))
     # fill the ids of all cells
-    ids[to_draw] = np.arange(to_draw.sum()) + highest_index + 1
+    ids[to_draw] = np.arange(to_draw.sum()) + highest_index + 1 
 
     # fill in ids from cells of larger grid
     if larger_indices is not None:
@@ -413,7 +456,7 @@ def generate_refinement_masks(num_hp, width, length, height, res, hp_locs, sicha
     plume_l_hps = []
     for id, hp in enumerate(range(num_hp)):
         # for now: radii = list of hp with dict of level:radius
-        radii_hps.append(get_refinement_intervals(res, 0.1, sichardt_dists[hp]))
+        radii_hps.append(get_refinement_intervals(res, 1, sichardt_dists[hp])) # TODO 0.1
         plume_w_hps.append(get_refinement_intervals(res, 1, lahm_w[hp]))
         plume_l_hps.append(get_refinement_intervals(res, 1, lahm_l[hp]))
     levels = len(radii_hps[0])
@@ -439,10 +482,10 @@ def generate_refinement_masks(num_hp, width, length, height, res, hp_locs, sicha
                 constraint_h = constraint_w
                 mask += np.logical_and(np.logical_and(diff_w < constraint_w, diff_h < constraint_h), np.logical_and(0 < diff_l, diff_l < constraint_l))
         cells_to_refine_later_and_res.append([mask, res / 2**i])
-        plt.imshow(mask[0])
-        plt.show()
 
-    return cells_to_refine_later_and_res
+    hp_locs_finest = hp_locs * 2**i
+
+    return cells_to_refine_later_and_res, hp_locs_finest
 
 def get_refinement_intervals(max_resolution: float, min_resolution: float, inner_distance: float, decrease_factor: float = 1.0) -> dict:
     n_refinement_steps = int(np.log2(max_resolution / min_resolution)) - 1

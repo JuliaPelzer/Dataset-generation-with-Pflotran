@@ -41,7 +41,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
 
     # generate sets of subsurface parameter fields (for whole dataset)
     windows_collected, hps_params_collected, orig_resolution, settings = realistic_hydrogeological_params_boxes_and_hp_params(settings, args.num_dp, temp_default, rate_default)
-    
+
     # generate operational heat pump parameters (location, pump rate, pump temperature)
     # TODO call of data_dir/"drawdown.h5" is wrong - get if form windows_collected?
     if None in hps_params_collected:
@@ -54,10 +54,10 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
 
     if not settings["grid"]["refinement"]:
         meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
+        # hps_cell_ids = hps_locs_to_ids(hps_locs, meshs) TODO something like this: get cell ids of hp locations
     else:
-        meshs = refinement_all_dps(args.num_dp, settings["grid"], hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
-
-    hps_cell_ids = hps_locs_to_ids(hps_locs, meshs)
+        meshs, hps_cell_ids = refinement_all_dps(args.num_dp, settings["grid"], hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
+    
 
 
     for run_id in np.arange(args.num_dp):

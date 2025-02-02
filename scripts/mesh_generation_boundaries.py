@@ -8,11 +8,10 @@ def get_boundary_cells_and_resolutions(mesh_refined, max_resolution:float, dim:i
     # get boundary cell ids, calc their positions and get their resolution
 
     # get all cells with position = 1/2 their own resolution
-    # boundary = np.where(meshs_refined[0]["cell_centers"][:, 0] == np.cbrt(meshs_refined[0]["cell_volumes"])/2)
-    boundary = np.where(mesh_refined["cell_centers"][:, dim] == offset + sign * np.sqrt(mesh_refined["cell_volumes"]/max_resolution)/2) # TODO anpassen, sobald 3D refinement implementiert
+    boundary = np.where(mesh_refined["cell_centers"][:, dim] == offset + sign * np.cbrt(mesh_refined["cell_volumes"])/2)
     
     cells = mesh_refined["cell_centers"][boundary]
-    resolutions = np.sqrt(mesh_refined["cell_volumes"][boundary]/max_resolution) # TODO anpassen, sobald 3D refinement implementiert auf np.cbrt ...
+    resolutions = np.cbrt(mesh_refined["cell_volumes"][boundary]) 
 
     cell_ids = np.zeros_like(cells[:, 0])
     for line, pos in enumerate(cells):
@@ -21,7 +20,7 @@ def get_boundary_cells_and_resolutions(mesh_refined, max_resolution:float, dim:i
     boundary_locs = cells.copy()
     boundary_locs[:, dim] = boundary_locs[:, dim] - sign*resolutions/2 # TODO NOW if east: + resolutions
 
-    return np.concatenate([cell_ids[:, None], boundary_locs, resolutions[:, None]*max_resolution], axis=1)#
+    return np.concatenate([cell_ids[:, None], boundary_locs, resolutions[:, None]*max_resolution], axis=1)
 
 
 def create_boundary_locs(mesh_refined, direction:str, max_resolution:float, window_shape: np.ndarray, orig_resolution: float, output_dir:Path=Path(".")):

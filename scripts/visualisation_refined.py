@@ -101,14 +101,13 @@ def load_data_for_visu(path_run: Path) -> Tuple[list[Property], np.ndarray]:
         cell_volumes = np.array(mesh_file["Domain/Cells/Volumes"])
         mesh = np.concatenate([cell_centers, cell_volumes[:,None]], axis=1)
 
-        orig_res = yaml.safe_load(open(path_run/"settings.yaml"))["grid"]["resolution"]
-        mesh[:, 3] = np.sqrt(mesh[:, 3]/orig_res) # TODO wenn 3D dann np.cbrt statt /orig_res
+        mesh[:, 3] = np.cbrt(mesh[:, 3])
 
     return list_to_plot, mesh
 
 def calc_shape_regular_plot_grid(plot_res: float, mesh: np.ndarray) -> Tuple[int, int]:
-    res_min = np.min(mesh[:, 3]) # TODO wenn 3D dann np.cbrt
-    res_max = np.max(mesh[:, 3]) # TODO wenn 3D dann np.cbrt
+    res_min = np.min(mesh[:, 3])
+    res_max = np.max(mesh[:, 3])
 
     # reihe mit verdopplungen von res_min bis res_max
     res_len = np.log2(res_max/res_min)
@@ -141,7 +140,7 @@ def generate_regular_cell_values(plot_res: float, mesh: np.ndarray, data: Proper
             assert np.abs(cell-(start_pos/plot_res)).all() == 0, f"{cell=}, {(start_pos/plot_res)=}"
             values[cell[0], cell[1]] = value
         elif curr_res < plot_res:
-            values[cell[0], cell[1]] += value * (curr_res/plot_res)**2
+            values[cell[0], cell[1]] += value * (curr_res/plot_res)**3
         elif curr_res > plot_res:
             # update all cells that are covered by the larger cell
             for i in range(int(curr_res/plot_res)):

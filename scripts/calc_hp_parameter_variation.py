@@ -71,7 +71,7 @@ def write_pump_param_files(destination_dir: str, loc_hps: np.ndarray, temps: np.
 
     with open(destination_dir / "regions_hps.txt", "w") as f:
         for hp_id, cell_id_hp in enumerate(loc_hps):
-            loc_text = f"""REGION heatpump_inject{hp_id}\n  LIST\n    {cell_id_hp}\n  /\n/\n\n"""
+            loc_text = f"""REGION heatpump_inject{hp_id}\n  LIST\n    {int(cell_id_hp)}\n  /\n/\n\n"""
             f.write(loc_text)
 
     with open(f"{destination_dir}/conditions_flow_inj.txt", "w") as f:
