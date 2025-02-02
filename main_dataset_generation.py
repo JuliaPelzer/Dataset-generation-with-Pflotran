@@ -12,7 +12,7 @@ from scripts.visualisation_refined import plot_results
 from scripts.main_helpers import assert_combinations, groundwater_temp
 from scripts.create_parameter_set import realistic_hydrogeological_params_boxes_and_hp_params, interpolate_and_store_windows_and_bcs
 from scripts.mesh_generation import mesh_generation_all_dps
-from scripts.mesh_refinement import mesh_refinements_all_dps
+from scripts.mesh_refinement2 import refinement_all_dps
 from scripts.mesh_generation_boundaries import create_boundary_locs
 from scripts.utils import load_yaml, save_yaml
 
@@ -51,10 +51,11 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         hps_rates = np.array([dp["rate"] for dp in hps_params_collected])
 
     # mesh generation + refinement
-    meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
 
-    if settings["grid"]["refinement"]:
-        meshs = mesh_refinements_all_dps(args.num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
+    if not settings["grid"]["refinement"]:
+        meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
+    else:
+        meshs = refinement_all_dps(args.num_dp, settings["grid"], hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
 
     hps_cell_ids = hps_locs_to_ids(hps_locs, meshs)
 

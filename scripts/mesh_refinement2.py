@@ -1,0 +1,585 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
+from typing import List, Tuple, Dict
+from tqdm import tqdm
+
+from scripts.utils import timing
+from scripts.mesh_generation_utils import store_mesh
+
+from scripts.realistic_window.param_sampling import sample_median
+from scripts.realistic_window.lahm.analytical_model_lahm import estimate_plume_shape_lahm
+from scripts.main_helpers import groundwater_temp
+from scripts.realistic_window.dupuit_thiem import drawdown_by_dupuit_thiem
+from scripts.mesh_generation_utils import loc_to_id
+
+def sichardt_distance(hydr_cond: float, thickness: float, q_inj: float) -> List[np.array]:
+    '''Sichardt  (1928)
+    
+    Returns distance in m, float.
+
+    Keyword arguments:
+        cell_hp -- location of heat pump in cell,  np.array
+        hydr_cond -- hydraulic conductivity, float or np.array
+        thickness -- thickness of aquifer, float or np.array
+    '''
+    drawdown = drawdown_by_dupuit_thiem(hydr_cond, thickness, q_inj) # Absenkung mit Dupuit Thiem Brunnenformel, acc. to real pump rate - no need to estimate
+    # max_drawdown = 1/3 * thickness
+    # print("drawdown", drawdown, max_drawdown)
+    return 3000 * drawdown * np.sqrt(hydr_cond)
+
+def get_sichardt_lahm_distances(hp_cells:np.ndarray, hp_temps: np.ndarray, hp_rates:np.ndarray, subsurface_properties:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+    sichardt_dists = []
+    lahm_w = []
+    lahm_l = []
+
+    for hp_id, hp_cell in enumerate(hp_cells):
+        assert hp_cell[0] < subsurface_properties["hydraulic_conductivity"].shape[0], "hp out of bounds x"
+        assert hp_cell[1] < subsurface_properties["hydraulic_conductivity"].shape[1], "hp out of bounds y"
+        try: #if isinstance(subsurface_properties["hydraulic_conductivity"], np.ndarray):
+            hydr_cond = sample_median(subsurface_properties["hydraulic_conductivity"],  [hp_cell[1],hp_cell[0]], [3,3]) 
+            thickness = sample_median(subsurface_properties["thickness"],               [hp_cell[1],hp_cell[0]], [3,3])
+            v_a = sample_median(subsurface_properties["darcy_velocity"],                [hp_cell[1],hp_cell[0]], [3,3])
+        except:
+            hydr_cond = subsurface_properties["hydraulic_conductivity"][hp_cell[1],hp_cell[0]]
+            thickness = subsurface_properties["thickness"][hp_cell[1],hp_cell[0]]
+            v_a = subsurface_properties["darcy_velocity"][hp_cell[1],hp_cell[0]]
+    
+        # Estimate the radius of the "Absenktrichter" with Sichardt around each well
+        inner_radius = sichardt_distance(hydr_cond, thickness, hp_rates[hp_id])
+        inner_radius = np.min([inner_radius, 50]) # limited to 20m
+
+        # Estimate the plume shape parameters (1K isoline) with LAHM
+        safety_factor = 1
+        length_1K, width_1K = estimate_plume_shape_lahm(hp_temps[hp_id] - groundwater_temp(), hp_rates[hp_id], v_a, thickness)
+        length_1K = np.max([length_1K * (1+safety_factor), 40]) # for debug/testing TODO
+        width_1K = np.max([width_1K * (1+safety_factor), 20]) # for debug/testing TODO
+        # print(f"downstream: {length_1K=}\nat half length: {width_1K=}")
+
+        sichardt_dists.append(inner_radius)
+        lahm_w.append(width_1K)
+        lahm_l.append(length_1K)
+    return sichardt_dists, lahm_w, lahm_l
+
+@timing
+def refinement_all_dps(num_dp:int, grid_settings:Dict, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, dps_hps_rates:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int, output_dir: Path) -> list[Dict[str, np.ndarray]]:
+
+    max_resolution = grid_settings["resolution"]
+    length, width, height = grid_settings["size [m]"][0] // max_resolution, grid_settings["size [m]"][1] // max_resolution, 1
+    if len(grid_settings["size [m]"]) > 2:
+        height = grid_settings["size [m]"][2] // max_resolution
+    print("lwh", length, width, height, "res", max_resolution)
+
+    meshs_refined = []
+    for dp_id in tqdm(range(num_dp), desc="Runs"):
+        output_run_dir = output_dir / f"RUN_{dp_id}"
+
+        hp_locs = dps_hps_locs[dp_id] #np.array([[width/2,length/8, height/2],[1,10, 1]]) #/res #, [10, 50]])/res #m 
+        num_hp = len(hp_locs)
+        print(hp_locs)
+
+        sichardt_dists, lahm_w, lahm_l = get_sichardt_lahm_distances((hp_locs//orig_resolution).astype(int), dps_hps_temps[dp_id], dps_hps_rates[dp_id], windows_properties_collected[dp_id]["properties"])
+        
+        cells_to_refine_later_and_res = generate_refinement_masks(num_hp, width, length, height, max_resolution, hp_locs//max_resolution, sichardt_dists, lahm_w, lahm_l)
+        cell_centers, face_centers, face_ids, face_areas, cell_volumes = calc_refined_grid_3D(cells_to_refine_later_and_res)
+        print(f"{cell_centers.shape=}, {face_centers.shape=}, {face_ids.shape=}, {face_areas.shape=}, {cell_volumes.shape=}")
+        # plot_grid_2D(cell_centers, face_centers, face_ids, face_areas, length)
+    
+        mesh_refined = {"cell_centers": cell_centers, "cell_volumes": cell_volumes, "face_areas": face_areas, "face_cell_ids": face_ids, "face_centers": face_centers}
+
+        # store refined mesh: overwrite normal mesh
+        store_mesh(output_run_dir, mesh_refined)
+
+        meshs_refined.append(mesh_refined)
+        
+    return meshs_refined
+
+def calc_refined_grid_2D(leave_outs: List[np.ndarray]):
+    ids = None
+    cell_centerss = []
+    face_centerss = []
+    face_idss = []
+    face_areass = []
+    cell_volumess = []
+    for leave_out in leave_outs + [None]:
+        w, h = leave_out.shape if leave_out is not None else np.array(ids.shape) * 2
+        aspect = w / h
+        cell_centers, face_centers, face_ids, face_areas, cell_volumes, ids = get_grid_2D(
+            w=w,
+            h=h,
+            minx=0,
+            maxx=aspect,
+            miny=0,
+            maxy=1,
+            larger_indices=ids,
+            leave_out=leave_out,
+        )
+        cell_centerss.append(cell_centers)
+        face_centerss.append(face_centers)
+        face_idss.append(face_ids)
+        face_areass.append(face_areas)
+        cell_volumess.append(cell_volumes)
+    cell_centers = np.concatenate(cell_centerss)
+    face_centers = np.concatenate(face_centerss)
+    face_ids = np.concatenate(face_idss)
+    face_areas = np.concatenate(face_areass)
+    cell_volumes = np.concatenate(cell_volumess)
+    return cell_centers, face_centers, face_ids, face_areas, cell_volumes
+
+@timing
+def calc_refined_grid_3D(leave_outs_and_res: List[Tuple[np.ndarray, float]]):
+    ids = None
+    cell_centerss = []
+    face_centerss = []
+    face_idss = []
+    face_areass = []
+    cell_volumess = []
+    # get last entry in leave_outs_and_res
+    _, last_res = leave_outs_and_res[-1]
+    for leave_out, res in leave_outs_and_res + [[None, last_res/2]]:
+        h,w,l = leave_out.shape if leave_out is not None else np.array(ids.shape) * 2
+        aspect_wl = w / l
+        aspect_hl = h / l
+        cell_centers, face_centers, face_ids, face_areas, cell_volumes, ids = get_grid_3D(
+            w=w,
+            l=l,
+            h=h,
+            minx=0,
+            maxx=aspect_wl, # w
+            miny=0,
+            maxy=1, #l, #
+            minz=0,
+            maxz=aspect_hl, #h
+            larger_indices=ids,
+            leave_out=leave_out,
+            res=res,
+        )
+        cell_centerss.append(cell_centers)
+        face_centerss.append(face_centers)
+        face_idss.append(face_ids)
+        face_areass.append(face_areas)
+        cell_volumess.append(cell_volumes)
+
+    max_res = leave_outs_and_res[0][1]
+    cell_centers = np.concatenate(cell_centerss) * max_res
+    face_centers = np.concatenate(face_centerss) * max_res
+    face_ids = np.concatenate(face_idss)
+    face_areas = np.concatenate(face_areass)
+    cell_volumes = np.concatenate(cell_volumess)
+    return cell_centers, face_centers, face_ids, face_areas, cell_volumes
+
+def get_grid_2D(w, h, minx, maxx, miny, maxy, larger_indices=None, leave_out=None):
+
+    # to_draw is a mask that tells us which cells to define
+    to_draw = np.ones((w, h), dtype=bool)
+
+    # don't draw cells that will be filled with finer resolution
+    if leave_out is not None:
+        to_draw[leave_out] = False
+
+    # don't draw cells that are already in the coarser grid
+    if larger_indices is not None:
+        dont_redraw = larger_indices != -1
+        to_draw[::2, ::2][dont_redraw] = False
+        to_draw[1::2, ::2][dont_redraw] = False
+        to_draw[::2, 1::2][dont_redraw] = False
+        to_draw[1::2, 1::2][dont_redraw] = False
+
+    highest_index = np.max(larger_indices) if larger_indices is not None else -1
+    ids = -np.ones((w, h))
+    # fill the ids of all cells
+    ids[to_draw] = np.arange(to_draw.sum()) + highest_index + 1
+
+    # fill in ids from cells of larger grid
+    if larger_indices is not None:
+        ids[::2, ::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[1::2, ::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[::2, 1::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[1::2, 1::2][dont_redraw] = larger_indices[dont_redraw]
+
+    # remove all faces that are inside the same cell
+    horizontal_mask = ids[:, :-1] - ids[:, 1:] != 0
+    vertical_mask = ids[:-1, :] - ids[1:, :] != 0
+    print(f"{horizontal_mask.shape=}")
+    print(f"{vertical_mask.shape=}")
+
+    sx = (maxx - minx) / w
+    sy = (maxy - miny) / h
+    cell_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + sx / 2, maxx - sx / 2, w),
+            np.linspace(miny + sy / 2, maxy - sy / 2, h),
+        )
+    ).T
+    print(f"{cell_centers.shape=}")
+
+    horizontal_faces_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + sx / 2, maxx - sx / 2, w),
+            np.linspace(miny + sx, maxy - sx, h - 1),
+        )
+    ).T
+    print(f"{horizontal_faces_centers.shape=}")
+
+    vertical_faces_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + sy, maxx - sy, w - 1),
+            np.linspace(miny + sy / 2, maxy - sy / 2, h),
+        )
+    ).T
+    print(f"{vertical_faces_centers.shape=}")
+    vertical_face_ids = np.zeros(vertical_faces_centers.shape, dtype=int)
+    vertical_face_ids[..., 0] = ids[:-1, :]
+    print(vertical_face_ids.shape)
+    print(f"{vertical_face_ids[...,0]=}")
+    vertical_face_ids[..., 1] = ids[1:, :]
+    vertical_mask &= vertical_face_ids[..., 0] != -1
+    vertical_mask &= vertical_face_ids[..., 1] != -1
+    vertical_mask &= ~(
+        (vertical_face_ids[..., 0] <= highest_index)
+        & (vertical_face_ids[..., 1] <= highest_index)
+    )
+    vertical_face_ids = vertical_face_ids[vertical_mask]
+    vertical_faces_centers = vertical_faces_centers[vertical_mask]
+    horizontal_face_ids = np.zeros(horizontal_faces_centers.shape, dtype=int)
+    horizontal_face_ids[..., 0] = ids[:, :-1]
+    horizontal_face_ids[..., 1] = ids[:, 1:]
+    horizontal_mask &= (
+        (horizontal_face_ids[..., 0] != -1)
+        & (horizontal_face_ids[..., 1] != -1)
+        & ~(
+            (horizontal_face_ids[..., 0] <= highest_index)
+            & (horizontal_face_ids[..., 1] <= highest_index)
+        )
+    )
+    horizontal_face_ids = horizontal_face_ids[horizontal_mask]
+    horizontal_faces_centers = horizontal_faces_centers[horizontal_mask]
+    cell_centers = cell_centers[to_draw]
+    cell_centers = cell_centers.reshape(-1, 2)
+    cell_volumes = np.full((w, h), 125)
+    cell_volumes = cell_volumes[to_draw]
+    cell_volumes = cell_volumes.flatten()
+    face_centers = np.concatenate(
+        [horizontal_faces_centers.reshape(-1, 2), vertical_faces_centers.reshape(-1, 2)]
+    )
+    face_ids = np.concatenate(
+        [horizontal_face_ids.reshape(-1, 2), vertical_face_ids.reshape(-1, 2)]
+    )
+    face_areas = np.full(face_centers.shape[0], (maxx - minx) / w * 5)
+    return cell_centers, face_centers, face_ids, face_areas, cell_volumes, ids
+
+@timing
+def get_grid_3D(w, l, h, minx, maxx, miny, maxy, minz, maxz, larger_indices=None, leave_out=None, res:float=1):
+
+    # to_draw is a mask that tells us which cells to define
+    to_draw = np.ones((h,w,l), dtype=bool)
+
+    # don't draw cells that will be filled with finer resolution
+    if leave_out is not None:
+        to_draw[leave_out] = False
+
+    # don't draw cells that are already in the coarser grid
+    if larger_indices is not None:
+        dont_redraw = larger_indices != -1
+        to_draw[::2, ::2, ::2][dont_redraw] = False
+        to_draw[1::2, ::2, ::2][dont_redraw] = False
+        to_draw[::2, 1::2, ::2][dont_redraw] = False
+        to_draw[1::2, 1::2, ::2][dont_redraw] = False
+        to_draw[::2, ::2, 1::2][dont_redraw] = False
+        to_draw[1::2, ::2, 1::2][dont_redraw] = False
+        to_draw[::2, 1::2, 1::2][dont_redraw] = False
+        to_draw[1::2, 1::2, 1::2][dont_redraw] = False
+
+
+    highest_index = np.max(larger_indices) if larger_indices is not None else -1
+    ids = -np.ones((h,w,l))
+    # fill the ids of all cells
+    ids[to_draw] = np.arange(to_draw.sum()) + highest_index + 1
+
+    # fill in ids from cells of larger grid
+    if larger_indices is not None:
+        ids[::2, ::2, ::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[1::2, ::2, ::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[::2, 1::2, ::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[1::2, 1::2, ::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[::2, ::2, 1::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[1::2, ::2, 1::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[::2, 1::2, 1::2][dont_redraw] = larger_indices[dont_redraw]
+        ids[1::2, 1::2, 1::2][dont_redraw] = larger_indices[dont_redraw]
+
+    # remove all faces that are inside the same cell
+    horizontal_mask = ids[:, :, :-1] - ids[:, :, 1:] != 0
+    vertical_mask = ids[:, :-1] - ids[:, 1:] != 0
+    depth_mask = ids[:-1] - ids[1:] != 0
+    
+    assert (maxx - minx) / w == (maxy - miny) / l == (maxz - minz) / h, "expects cubes not quader"
+    s = (maxx - minx) / w
+    cell_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + s / 2, maxx - s / 2, w),
+            np.linspace(miny + s / 2, maxy - s / 2, l),
+            np.linspace(minz + s / 2, maxz - s / 2, h),
+        )
+    ).T
+    horizontal_faces_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + s / 2, maxx - s / 2, w),
+            np.linspace(miny + s,     maxy - s,     l-1),
+            np.linspace(minz + s / 2, maxz - s / 2, h),
+        )
+    ).T
+
+    vertical_faces_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + s,     maxx - s,     w-1),
+            np.linspace(miny + s / 2, maxy - s / 2, l),
+            np.linspace(minz + s / 2, maxz - s / 2, h),
+        )
+    ).T
+
+    depth_faces_centers = np.stack(
+        np.meshgrid(
+            np.linspace(minx + s / 2, maxx - s / 2, w),
+            np.linspace(miny + s / 2, maxy - s / 2, l),
+            np.linspace(minz + s,     maxz - s,     h - 1),
+        )
+    ).T
+    
+    horizontal_face_ids = np.zeros(horizontal_faces_centers.shape, dtype=int)
+    horizontal_face_ids[..., 0] = ids[:, :, :-1]
+    horizontal_face_ids[..., 1] = ids[:, :, 1:]
+    horizontal_mask &= (
+        (horizontal_face_ids[..., 0] != -1)
+        & (horizontal_face_ids[..., 1] != -1)
+        & ~(
+            (horizontal_face_ids[..., 0] <= highest_index)
+            & (horizontal_face_ids[..., 1] <= highest_index)
+        )
+    )
+    horizontal_face_ids = horizontal_face_ids[horizontal_mask]
+    horizontal_faces_centers = horizontal_faces_centers[horizontal_mask]
+
+    vertical_face_ids = np.zeros(vertical_faces_centers.shape, dtype=int)
+    vertical_face_ids[..., 0] = ids[:, :-1, :]
+    vertical_face_ids[..., 1] = ids[:, 1:, :]
+    vertical_mask &= vertical_face_ids[..., 0] != -1
+    vertical_mask &= vertical_face_ids[..., 1] != -1
+    vertical_mask &= ~(
+        (vertical_face_ids[..., 0] <= highest_index)
+        & (vertical_face_ids[..., 1] <= highest_index)
+    )
+    vertical_face_ids = vertical_face_ids[vertical_mask]
+    vertical_faces_centers = vertical_faces_centers[vertical_mask]
+
+    depth_face_ids = np.zeros(depth_faces_centers.shape, dtype=int)
+    depth_face_ids[..., 0] = ids[:-1]
+    depth_face_ids[..., 1] = ids[1:]
+    depth_mask &= (
+        (depth_face_ids[..., 0] != -1)
+        & (depth_face_ids[..., 1] != -1)
+        & ~(
+            (depth_face_ids[..., 0] <= highest_index)
+            & (depth_face_ids[..., 1] <= highest_index)
+        )
+    )
+    depth_face_ids = depth_face_ids[depth_mask]
+    depth_faces_centers = depth_faces_centers[depth_mask]
+
+    cell_centers = cell_centers[to_draw]
+    cell_centers = cell_centers.reshape(-1, 3)
+    cell_volumes = np.full((h,w,l), res**3)
+    cell_volumes = cell_volumes[to_draw]
+    cell_volumes = cell_volumes.flatten()
+    face_centers = np.concatenate(
+        [horizontal_faces_centers.reshape(-1, 3), vertical_faces_centers.reshape(-1, 3), depth_faces_centers.reshape(-1, 3)]
+    )
+    face_ids = np.concatenate(
+        [horizontal_face_ids.reshape(-1, 3), vertical_face_ids.reshape(-1, 3), depth_face_ids.reshape(-1, 3)]
+    )
+    face_areas = np.full(face_centers.shape[0], res**2)
+    return cell_centers, face_centers, face_ids, face_areas, cell_volumes, ids
+
+@timing
+def generate_refinement_masks(num_hp, width, length, height, res, hp_locs, sichardt_dists, lahm_w, lahm_l):
+    # transform sichardt etc to number of cells in highest resolution
+    sichardt_dists = np.array(sichardt_dists)/res
+    lahm_w = np.array(lahm_w)/res
+    lahm_l = np.array(lahm_l)/res
+
+    cells_to_refine_later_and_res = []
+    radii_hps = []
+    plume_w_hps = []
+    plume_l_hps = []
+    for id, hp in enumerate(range(num_hp)):
+        # for now: radii = list of hp with dict of level:radius
+        radii_hps.append(get_refinement_intervals(res, 0.1, sichardt_dists[hp]))
+        plume_w_hps.append(get_refinement_intervals(res, 1, lahm_w[hp]))
+        plume_l_hps.append(get_refinement_intervals(res, 1, lahm_l[hp]))
+    levels = len(radii_hps[0])
+    for i in range(levels):
+        coords = (
+            np.stack(np.meshgrid(
+                    np.linspace(0, width, width * 2**i, endpoint=False),
+                    np.linspace(0, length, length * 2**i, endpoint=False),
+                    np.linspace(0, height, height * 2**i, endpoint=False),
+                    )).T)
+
+        mask = np.zeros(coords.shape[:3], dtype=bool) # mask of n_cells_h,_w,_l in current resolution
+        for hp_id, hp_coords in enumerate(hp_locs):
+            hp_coords = [hp_coords[1], hp_coords[0], hp_coords[2]]
+            radius = radii_hps[hp_id][i]
+            mask += (coords[..., 0]-hp_coords[0]) ** 2 + (coords[..., 1]-hp_coords[1]) ** 2 + (coords[..., 2]-hp_coords[2]) ** 2 < (radius + 0.75/(2**i)) ** 2 # +0.75 so that no cells with more than 1 difference in resolution steps are adjacent
+            if i in plume_l_hps[hp_id].keys():
+                diff_l = coords[...,1] - hp_coords[1] #+ 0.5/(2**i)
+                constraint_l = plume_l_hps[hp_id][i]
+                diff_w = np.abs(coords[..., 0] - hp_coords[0])
+                constraint_w =  plume_w_hps[hp_id][i] / 2 #+ 0.5 / (2 ** i)
+                diff_h = np.abs(coords[..., 2] - hp_coords[2]) 
+                constraint_h = constraint_w
+                mask += np.logical_and(np.logical_and(diff_w < constraint_w, diff_h < constraint_h), np.logical_and(0 < diff_l, diff_l < constraint_l))
+        cells_to_refine_later_and_res.append([mask, res / 2**i])
+        plt.imshow(mask[0])
+        plt.show()
+
+    return cells_to_refine_later_and_res
+
+def get_refinement_intervals(max_resolution: float, min_resolution: float, inner_distance: float, decrease_factor: float = 1.0) -> dict:
+    n_refinement_steps = int(np.log2(max_resolution / min_resolution)) - 1
+    refinements = {}
+    for i in range(n_refinement_steps + 1):
+        tmp = i / n_refinement_steps if n_refinement_steps > 0 else 1
+        max_distance = inner_distance * (1 + decrease_factor * (1 - tmp))
+        refinements[i] = np.round(max_distance, 1)
+    return refinements
+
+@timing
+def plot_grid_2D(cell_centers, face_centers, face_cell_ids, face_areas, factor):
+    plt.scatter(
+        cell_centers[:, 0], cell_centers[:, 1], c="r", label="cell centers", marker="."
+    )
+    n1 = cell_centers[face_cell_ids[:, 0]]
+    n2 = cell_centers[face_cell_ids[:, 1]]
+    direction = n2 - n1
+    lens = np.sqrt(face_areas) / (factor*1.5)
+    updown = np.abs(direction[:, 1]) > np.abs(direction[:, 0])
+    leftright = ~updown
+
+    plt.scatter(
+        face_centers[:, 0],
+        face_centers[:, 1],
+        c="b",
+        label="face centers",
+        marker=".",
+    )
+    ys = face_centers[:, 1][updown]
+    xmins = face_centers[:, 0][updown] - lens[updown] / 2
+    xmaxs = face_centers[:, 0][updown] + lens[updown] / 2
+    plt.hlines(ys, xmins, xmaxs, colors="black")
+    xs = face_centers[:, 0][leftright]
+    ymins = face_centers[:, 1][leftright] - lens[leftright] / 2
+    ymaxs = face_centers[:, 1][leftright] + lens[leftright] / 2
+    plt.vlines(xs, ymins, ymaxs, colors="black")
+    plt.axis("equal")
+    plt.legend()
+    plt.show()
+
+def test_run_2D():
+    num_dp = 4
+    num_hp = 3
+    orig_resolution = 10
+    settings = {
+        "grid": {
+            "resolution": 5,
+            "size [m]": [100, 60, 5],
+            "distance_to_border": 1,
+        },
+        "subsurface": {
+            "hydraulic_conductivity": 1e-5,
+            "thickness": 5,
+            "darcy_velocity": 1,
+        },
+    }
+
+    length, width, height = 100, 50, 1#= settings["grid"]["size [m]"]
+    res = settings["grid"]["resolution"]
+    width, length = width//res, length//res
+    print("wh", width, length, "res", res)
+    cells_to_refine_later = []
+    num_hp = 2
+    hp_locs = np.array([[width/2,length/8],[1,10]]) #/res #, [10, 50]])/res #m # TODO achtung mit orientierung von hp, vllt taischen notwendig / später im aufruf vllt? # TODO in cells
+    print(hp_locs)
+
+    sichardt_dists = [1.5,] * num_hp
+    lahm_w = [4,] * num_hp
+    lahm_l = [8,] * num_hp
+    radii_hps = []
+    plume_w_hps = []
+    plume_l_hps = []
+    for hp in range(num_hp):
+        # TO DO more efficient, but for now: radii = list of hp with dict of level:radius
+        radii_hps.append(get_refinement_intervals(res, 0.1, sichardt_dists[hp]))
+        plume_w_hps.append(get_refinement_intervals(res, 1, lahm_w[hp]))
+        plume_l_hps.append(get_refinement_intervals(res, 1, lahm_l[hp]))
+
+    levels = len(radii_hps[0])
+    for i in range(levels):
+        coords = (
+            np.stack(np.meshgrid(
+                    np.linspace(0, width, width * 2**i, endpoint=False),
+                    np.linspace(0, length, length * 2**i, endpoint=False),)).T)
+
+        mask = np.zeros(coords.shape[:2], dtype=bool) # mask of n_cells_w,_l in current resolution
+        for hp_id, hp_coords in enumerate(hp_locs):
+            radius = radii_hps[hp_id][i]
+            mask += (coords[..., 0]-hp_coords[0]) ** 2 + (coords[..., 1]-hp_coords[1]) ** 2 < (radius + 0.75/(2**i)) ** 2 # +0.75 so that no cells with more than 1 difference in resolution steps are adjacent
+            if i in plume_l_hps[hp_id].keys():
+                diff_l = coords[...,1] - hp_coords[1] #+ 0.5/(2**i)
+                diff_w =  plume_w_hps[hp_id][i] / 2 #+ 0.5 / (2 ** i)
+                mask += np.logical_and(np.abs(coords[..., 0] - hp_coords[0]) < diff_w, np.logical_and(0 < diff_l, diff_l < plume_l_hps[hp_id][i]))
+        cells_to_refine_later.append(mask)
+
+    cell_centers, face_centers, face_ids, face_areas, cell_volumes = calc_refined_grid_2D(
+        cells_to_refine_later
+    )
+    plot_grid_2D(cell_centers, face_centers, face_ids, face_areas, cell_volumes)
+
+def test_run_3D():
+    num_dp = 4
+    num_hp = 3
+    orig_resolution = 10
+    settings = {
+        "grid": {
+            "resolution": 5,
+            "size [m]": [100, 60, 5],
+            "distance_to_border": 1,
+        },
+        "subsurface": {
+            "hydraulic_conductivity": 1e-5,
+            "thickness": 5,
+            "darcy_velocity": 1,
+        },
+    }
+
+    width, length, height = 50, 100, settings["grid"]["resolution"] #= settings["grid"]["size [m]"]
+    res = settings["grid"]["resolution"]
+    length, width, height = length // res, width // res, height // res
+    print("lwh", length, width, height, "res", res)
+    num_hp = 2
+    hp_locs = np.array([[width/2,length/8, height/2],[1,10, 1]]) #/res #, [10, 50]])/res #m # TODO achtung mit orientierung von hp, vllt taischen notwendig / später im aufruf vllt? # TODO in cells
+    print(hp_locs)
+
+    sichardt_dists = [1.5,] * num_hp
+    lahm_w = [4,] * num_hp
+    lahm_l = [8,] * num_hp
+
+    cells_to_refine_later_and_res = generate_refinement_masks(num_hp, width, length, height, res, hp_locs, sichardt_dists, lahm_w, lahm_l)
+
+    cell_centers, face_centers, face_ids, face_areas, cell_volumes = calc_refined_grid_3D(cells_to_refine_later_and_res)
+    # visu of depth wrong (faces, centers)
+    plot_grid_2D(cell_centers, face_centers, face_ids, face_areas, length)
+
+
+if __name__ == "__main__":
+    test_run_2D()
+    test_run_3D()
