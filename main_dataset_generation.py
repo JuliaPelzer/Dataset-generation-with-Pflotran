@@ -12,7 +12,7 @@ from scripts.visualisation_refined import plot_results
 from scripts.main_helpers import assert_combinations, groundwater_temp
 from scripts.create_parameter_set import realistic_hydrogeological_params_boxes_and_hp_params, interpolate_and_store_windows_and_bcs
 from scripts.mesh_generation import mesh_generation_all_dps
-from scripts.mesh_refinement2 import refinement_all_dps
+from scripts.mesh_refinement import refinement_all_dps
 from scripts.mesh_generation_boundaries import create_boundary_locs
 from scripts.utils import load_yaml, save_yaml
 
@@ -53,7 +53,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     # mesh generation + refinement
     if not settings["grid"]["refinement"]:
         meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
-        # hps_cell_ids = hps_locs_to_ids(hps_locs, meshs) TODO something like this: get cell ids of hp locations
+        hps_cell_ids = hps_locs_to_ids(hps_locs, meshs)
     else:
         meshs, hps_cell_ids = refinement_all_dps(args.num_dp, settings["grid"], hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
     
@@ -120,7 +120,7 @@ def call_pflotran(avg_time_per_sim, run_id:int, tmp_output:bool=False):
     print(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}") # TODO logging.info
     output_extension = " -screen_output off" if not tmp_output else ""
     # TODO mpirun -n 1 does not work
-    os.system(f"{os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
+    os.system(f"mpirun -n 32 {os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
     avg_time_per_sim += time.perf_counter() - start_sim
     print(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds") # TODO logging.info
 
