@@ -6,13 +6,13 @@ import time
 from pathlib import Path
 import numpy as np
 
-from scripts.hp_variation_2d import write_hps_strata_conditions_files, hps_locs_to_ids, calc_hps_locs_float
+from scripts.hp_variation_2d import write_hps_strata_conditions_files, calc_hps_locs_float
 from scripts.calc_hp_parameter_variation import realistic_pump_params, write_pump_param_files
 from scripts.visualisation_refined import plot_results
 from scripts.main_helpers import assert_combinations, groundwater_temp
 from scripts.create_parameter_set import realistic_hydrogeological_params_boxes_and_hp_params, interpolate_and_store_windows_and_bcs
 from scripts.mesh_generation import mesh_generation_all_dps
-from scripts.mesh_refinement2 import refinement_all_dps
+from scripts.mesh_refinement import refinement_all_dps
 from scripts.mesh_generation_boundaries import create_boundary_locs
 from scripts.utils import load_yaml, save_yaml
 
@@ -69,7 +69,6 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         bcs_cell_ids = {}
         for direction in ["north", "south"]: #, "west", "east", "top", "bottom"]:
             bcs_cell_ids[direction] = create_boundary_locs(meshs[run_id], direction, settings["grid"]["resolution"], windows_collected[run_id]["shape"], orig_resolution, output_run_dir)
-            # TODO check for 1layer3D
 
         # evaluate and store (to h5) properties and BCs on refined mesh
         interpolate_and_store_windows_and_bcs(output_run_dir, windows_collected[run_id], meshs[run_id], bcs_cell_ids, orig_resolution)
@@ -119,8 +118,7 @@ def call_pflotran(avg_time_per_sim, run_id:int, tmp_output:bool=False):
     start_sim = time.perf_counter()
     print(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}") # TODO logging.info
     output_extension = " -screen_output off" if not tmp_output else ""
-    # TODO mpirun -n 1 does not work
-    os.system(f"{os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
+    os.system(f"mpirun -n 32 {os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
     avg_time_per_sim += time.perf_counter() - start_sim
     print(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds") # TODO logging.info
 
