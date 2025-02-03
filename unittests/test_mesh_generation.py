@@ -6,12 +6,46 @@ import shutil
 from scripts.hp_variation_2d import calc_hps_locs_float
 from scripts.mesh_generation_utils import loc_to_id, calc_face_cell_ids
 from scripts.mesh_generation import create_regular_cell_centers, create_regular_cell_volumes, create_regular_grid, mesh_generation_all_dps
-from scripts.mesh_refinement_utils import calc_inner_face_centers
-from scripts.mesh_refinement import mesh_refinements_all_dps
+from scripts.mesh_refinement import refinement_all_dps
 from scripts.main_helpers import groundwater_temp
 from scripts.utils import save_yaml
-
+from scripts.mesh_refinement import generate_refinement_masks, calc_refined_grid_3D
+from scripts.mesh_refinement2D import plot_grid_2D
     
+def test_refine_3D():
+    num_dp = 4
+    num_hp = 3
+    orig_resolution = 10
+    settings = {
+        "grid": {
+            "resolution": 5,
+            "size [m]": [100, 60, 5],
+            "distance_to_border": 1,
+        },
+        "subsurface": {
+            "hydraulic_conductivity": 1e-5,
+            "thickness": 5,
+            "darcy_velocity": 1,
+        },
+    }
+
+    width, length, height = 50, 100, settings["grid"]["resolution"] #= settings["grid"]["size [m]"]
+    res = settings["grid"]["resolution"]
+    length, width, height = length // res, width // res, height // res
+    print("lwh", length, width, height, "res", res)
+    num_hp = 2
+    hp_locs = np.array([[width/2,length/8, height/2],[1,10, 1]]) #/res #, [10, 50]])/res #m # TODO achtung mit orientierung von hp, vllt taischen notwendig / später im aufruf vllt? # TODO in cells
+
+    sichardt_dists = [1.5,] * num_hp
+    lahm_w = [4,] * num_hp
+    lahm_l = [8,] * num_hp
+
+    cells_to_refine_later_and_res = generate_refinement_masks(num_hp, width, length, height, res, hp_locs, sichardt_dists, lahm_w, lahm_l)
+
+    cell_centers, face_centers, face_ids, face_areas, cell_volumes = calc_refined_grid_3D(cells_to_refine_later_and_res)
+    # visu of depth wrong (faces, centers)
+    plot_grid_2D(cell_centers, face_centers, face_ids, face_areas, length)
+
 
 def test_create_regular_cell_centers():
     # Fixture
@@ -95,37 +129,6 @@ def test_calc_face_cell_ids():
     # Test
     assert np.allclose(actual, expected)
 
-def test_calc_inner_face_centers():
-    # Fixture
-    centers = np.array([[251.25,  86.25,   1.25,   2.5 ],
-    [251.25,  86.25,   3.75,   2.5 ],
-    [251.25,  88.75,   1.25,   2.5 ],
-    [251.25,  88.75,   3.75,   2.5 ],
-    [253.75,  86.25,   1.25,   2.5 ],
-    [253.75,  86.25,   3.75,   2.5 ],
-    [253.75,  88.75,   1.25,   2.5 ],
-    [253.75,  88.75,   3.75,   2.5 ]])
-
-    # Expected result
-    expected = np.array([[251.25,  86.25, 2.5, 2.5, 2 ],
-    [251.25,  88.75,   2.5, 2.5, 2 ],
-    [253.75,  86.25,   2.5, 2.5, 2 ],
-    [253.75,  88.75,   2.5, 2.5, 2 ],
-    [252.5,   86.25,   1.25, 2.5, 0],
-    [252.5,   86.25,   3.75, 2.5, 0],
-    [252.5,   88.75,   1.25, 2.5, 0],
-    [252.5,   88.75,   3.75, 2.5, 0],
-    [251.25,  87.5,    1.25, 2.5, 1],
-    [251.25,  87.5,    3.75, 2.5, 1],
-    [253.75,  87.5,    1.25, 2.5, 1],
-    [253.75,  87.5,    3.75, 2.5, 1]])
-    
-    # Actual result
-    actual = calc_inner_face_centers(centers)
-
-    # Test
-    assert np.allclose(actual, expected)
-
 def test_mesh_refinement():
     # Fixture
     num_dp = 1
@@ -174,7 +177,7 @@ def test_mesh_refinement():
     plt.xlim(0, 20)
     plt.ylim(0, 10)
 
-    meshs_refined = mesh_refinements_all_dps(num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows, orig_resolution, output_dataset_dir)
+    meshs_refined = refinement_all_dps(num_dp, settings, meshs, hps_locs, hps_temps, hps_rates, windows, orig_resolution, output_dataset_dir)
 
     assert len(meshs_refined) == num_dp, "Different length of refined meshes to num_dp"
     assert meshs_refined[0]["cell_centers"].shape[0] == meshs_refined[0]["cell_volumes"].shape[0], "Different number of refined centers and volumes"

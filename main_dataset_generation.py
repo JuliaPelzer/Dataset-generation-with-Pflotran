@@ -119,7 +119,6 @@ def call_pflotran(avg_time_per_sim, run_id:int, tmp_output:bool=False):
     start_sim = time.perf_counter()
     print(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}") # TODO logging.info
     output_extension = " -screen_output off" if not tmp_output else ""
-    # TODO mpirun -n 1 does not work
     os.system(f"mpirun -n 32 {os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
     avg_time_per_sim += time.perf_counter() - start_sim
     print(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds") # TODO logging.info

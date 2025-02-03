@@ -59,7 +59,7 @@ def get_sichardt_lahm_distances(hp_cells:np.ndarray, hp_temps: np.ndarray, hp_ra
         lahm_l.append(length_1K)
     return sichardt_dists, lahm_w, lahm_l
 
-@timing
+# @timing
 def refinement_all_dps(num_dp:int, grid_settings:Dict, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, dps_hps_rates:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int, output_dir: Path) -> list[Dict[str, np.ndarray]]:
 
     max_resolution = grid_settings["resolution"]
@@ -172,7 +172,7 @@ def calc_refined_grid_3D(leave_outs_and_res: List[Tuple[np.ndarray, float]], hp_
 
     return cell_centers, face_centers, face_ids, face_areas, cell_volumes, hp_ids
 
-@timing
+# @timing
 def get_grid_3D(w, l, h, minx, maxx, miny, maxy, minz, maxz, larger_indices=None, leave_out=None, res:float=1):
 
     # to_draw is a mask that tells us which cells to define
@@ -303,7 +303,7 @@ def get_grid_3D(w, l, h, minx, maxx, miny, maxy, minz, maxz, larger_indices=None
     face_areas = np.full(face_centers.shape[0], res**2)
     return cell_centers, face_centers, face_ids, face_areas, cell_volumes, ids
 
-@timing
+# @timing
 def generate_refinement_masks(num_hp, width, length, height, res, hp_cells, sichardt_dists, lahm_w, lahm_l):
     # transform sichardt etc to number of cells in highest resolution
     sichardt_dists = np.array(sichardt_dists)/res

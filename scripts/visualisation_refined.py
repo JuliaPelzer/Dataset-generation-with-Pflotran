@@ -12,7 +12,7 @@ from scripts.utils import timing
 logging.basicConfig(level=logging.WARNING)
 
 @timing
-def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plot_area=(0,-1,0,-1), plot_heights=None, plot_res:float = None):
+def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plot_area=(0,-1,0,-1), plot_res:float = None):
     """
     Plots results on a refined mesh of the simulation in the folder path_run. The results are saved in a picture with the name plot_name.
 
@@ -34,40 +34,33 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plo
 
     plt.figure()
     n_subplots = len(data)
-    if plot_heights is None:
-        plot_heights = np.arange(n_cells[2])
-    _, axes = plt.subplots(len(plot_heights), n_subplots, sharex=True, figsize=(4 * n_subplots, 9))
-    for id_h, slice_height in enumerate(plot_heights):
+    _, axes = plt.subplots(1, n_subplots, sharex=True, figsize=(4 * n_subplots, 9))
     
-        for index, data_point in enumerate(data):
-            values = generate_regular_cell_values(plot_res, mesh_and_res, data_point, n_cells)
-
-            try:
-                plt.sca(axes[id_h][index])
-            except: 
-                plt.sca(axes[index])
-            plt.title(f"{data_point['property']}, {data_point['time_years']} years, cut at {slice_height}")
-            if data_point["property"] == "Material ID":
-                plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3], slice_height], cmap="jp", interpolation="nearest", origin="upper", vmin=1, vmax=3)
-            else:
-                plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3], slice_height], cmap="jp", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
-            # offset of 0.5*plot_res to center the cells, i.e. to x-,y-scale
-            if plot_area == (0, -1, 0, -1):
-                if index == 0:
-                    plt.yticks(np.arange(0, values.shape[0], 100//plot_res), (np.arange(0, values.shape[0], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
-                plt.xticks(np.arange(0, values.shape[1], 100//plot_res), (np.arange(0, values.shape[1], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
-            else:
-                logging.info("for cutouts no xticks, yticks implemented yet")
+    for index, data_point in enumerate(data):
+        values = generate_regular_cell_values(plot_res, mesh_and_res, data_point, n_cells)
+        plt.sca(axes[index])
+        plt.title(f"{data_point['property']}")
+        if data_point["property"] == "Material ID":
+            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper", vmin=1, vmax=3)
+        else:
+            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
+        # offset of 0.5*plot_res to center the cells, i.e. to x-,y-scale
+        if plot_area == (0, -1, 0, -1):
             if index == 0:
-                plt.ylabel("y [m]")
-            if id_h == 0:
-                plt.xlabel("x [m]")
-            aligned_colorbar(label=data_point["property"])
-            # print(f"property {data_point['property']} , min: {np.min(values)}, max: {np.max(values)}")
+                plt.yticks(np.arange(0, values.shape[0], 100//plot_res), (np.arange(0, values.shape[0], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
+            plt.xticks(np.arange(0, values.shape[1], 100//plot_res), (np.arange(0, values.shape[1], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
+        else:
+            logging.info("for cutouts no xticks, yticks implemented yet")
+        if index == 0:
+            plt.ylabel("y [m]")
+        plt.xlabel("x [m]")
+        aligned_colorbar(label=data_point["property"])
 
     plt.tight_layout()
 
-    pic_file_name = path_run/f"{plot_name}.png"
+    # overall pic title
+    plt.suptitle(f"Results of simulation after {data_point['time_years']} years, plot resolution {plot_res} m")
+    pic_file_name = path_run/f"{plot_name}_res{plot_res}.png"
     print(f"Resulting picture is at {pic_file_name}") #logging.info
     plt.savefig(pic_file_name, dpi=400)
 
@@ -99,7 +92,7 @@ def load_data_for_visu(path_run: Path) -> Tuple[list[Property], np.ndarray]:
     list_to_plot = []
     with h5py.File(path_run/"pflotran.h5", "r") as file:
         for time in file.keys():
-            if not time in ["   0 Time  0.00000E+00 y"]:
+            if "2.75" in time:
                 for property in file[time].keys():
                     if property not in ["Material ID", "Liquid Saturation", "Liquid X-Velocity [m_per_y]", "Liquid Pressure [Pa]" "Liquid Y-Velocity [m_per_y]", "Liquid Z-Velocity [m_per_y]", "Permeability X [m^2]"]:
                         data: Property = {
@@ -116,9 +109,6 @@ def load_data_for_visu(path_run: Path) -> Tuple[list[Property], np.ndarray]:
 
         mesh[:, 3] = np.round(np.cbrt(mesh[:, 3]),8)
     
-    refined1 = [dp for dp in mesh if dp[3] < 1]
-    print(refined1)
-    # print(wert von data dort) # TODO NEXT
     return list_to_plot, mesh
 
 def calc_shape_regular_plot_grid(plot_res: float, mesh: np.ndarray) -> Tuple[int, int, int]:
@@ -147,30 +137,30 @@ def calc_shape_regular_plot_grid(plot_res: float, mesh: np.ndarray) -> Tuple[int
 
 def generate_regular_cell_values(plot_res: float, mesh: np.ndarray, data: Property, n_cells: Tuple[int]) -> np.ndarray:
     # interpolate and average data to mesh
-    # TODO 3D
 
-    n_cells_x,n_cells_y, n_cells_z = n_cells
-    weights = np.zeros((n_cells_x, n_cells_y, n_cells_z))
-    values = np.zeros((n_cells_x, n_cells_y, n_cells_z))
-    for (curr_x,curr_y,curr_z,curr_res), value in zip(mesh, data["data"]): # tqdm
-        start_pos = np.array([curr_x, curr_y, curr_z])-curr_res/2
-        cell = (start_pos/plot_res).astype(int) # TODO correct this way? also for twice refined cells?
-        if curr_res == plot_res:
-            assert np.allclose(np.abs(cell-(start_pos/plot_res)), 0), f"{cell=}, {(start_pos/plot_res)=}"
-            values[cell[0], cell[1], cell[2]] = value
-            weights[cell[0], cell[1], cell[2]] += 1
-        elif curr_res < plot_res:
-            values[cell[0], cell[1], cell[2]] += value * (curr_res/plot_res)**3
-            weights[cell[0], cell[1], cell[2]] += (curr_res/plot_res)**3
+    n_cells_x,n_cells_y = n_cells[:2]
+    weights = np.zeros((n_cells_x, n_cells_y))
+    values = np.zeros((n_cells_x, n_cells_y))
+    for (curr_x,curr_y,curr_z,curr_res), value in zip(mesh, data["data"]):
+        start_pos = np.array([curr_x, curr_y])-curr_res/2
+        cell = (start_pos/plot_res).astype(int)
+        if curr_res <= plot_res:
+            values[cell[0], cell[1]] += value * (curr_res/plot_res)**3
+            weights[cell[0], cell[1]] += (curr_res/plot_res)**3
+            # if curr_res / plot_res != 1:
+            #     print(curr_res, plot_res, (curr_res/plot_res)**3)
         elif curr_res > plot_res:
             # update all cells that are covered by the larger cell
             for i in range(int(curr_res/plot_res)):
                 for j in range(int(curr_res/plot_res)):
-                    for k in range(int(curr_res/plot_res)):
-                        values[cell[0]+i, cell[1]+j, cell[2]+k] = value
-                        weights[cell[0]+i, cell[1]+j, cell[2]+k] += 1
+                    values[cell[0]+i, cell[1]+j] += value
+                    weights[cell[0]+i, cell[1]+j] += 1
         else:
             raise ValueError(f"{curr_res=}, {plot_res=}")
-
-    assert np.allclose(weights.reshape(-1), 1), f"weights not 1"
+    values /= weights
+    
     return values
+
+if __name__ == "__main__":
+    path_run = Path('outputs/test_refineD6/RUN_0')
+    plot_results(path_run, plot_res =2.5)

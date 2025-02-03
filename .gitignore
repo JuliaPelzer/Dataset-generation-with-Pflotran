@@ -5,6 +5,8 @@ input_files/real_Munich_input_fields/epsg_25832/
 run_*.sh
 scripts/test_perlinnoise.ipynb
 scripts/open_h5.ipynb
+*.ipynb
+run.py
 
 # Pflotran files
 *.vtk
