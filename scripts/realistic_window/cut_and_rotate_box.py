@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Tuple
+import logging
 
+logging.basicConfig(level=logging.ERROR)
 
 def cut_out_values(data:np.ndarray, rotated_box_cells: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:  
     cells_x = rotated_box_cells[0].flatten()
@@ -39,14 +41,14 @@ def check_validity_window(data:np.ndarray, window:Tuple[np.ndarray,np.ndarray]) 
 
     # check that window within data range
     if np.any(window[0] < 0) or np.any(window[1] < 0) or np.any(window[0] >= data.shape[1]) or np.any(window[1] >= data.shape[0]):
-        print("WARNING: window out of range")
+        logging.warning("window out of range")
         return False #, None
 
     # check window for nan values
     box = cut_out_values(data, window)
 
     if np.any(np.isnan(box)):
-        print("WARNING: window contains nan")
+        logging.warning("window contains nan")
         return False #, box
     else:
         return True #, box
