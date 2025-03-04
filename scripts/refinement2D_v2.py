@@ -1,30 +1,45 @@
 from dataclasses import field, dataclass
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Callable
+from typing import Callable, Dict
 from tqdm.auto import tqdm
 
-def target_resolution(cell_centers, hp_centers, sichardt_dists, max_cell_size):
-    min_cell_size = 0.1 #[m]
-    n_refinement_steps = int(np.log2(max_cell_size / min_cell_size)) - 1
-    final_cell_sizes = np.inf
-    for hp_center, min_radius in zip(hp_centers, sichardt_dists):
-        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1] - hp_center[1]) ** 2)
-        cell_sizes = np.zeros_like(cell_centers)
-        cell_sizes[dist < min_radius] = min_cell_size
-        for i in range(1, n_refinement_steps+1):
-            cell_sizes[dist >= min_radius*(1 + i/n_refinement_steps)] = min_cell_size * 2 ** i
-        cell_sizes[dist >= 2*min_radius] = max_cell_size
-        final_cell_sizes = np.maximum(np.minimum(final_cell_sizes, cell_sizes), min_cell_size)
+def target_resolution(cell_centers:np.ndarray, curr_cell_w:float, max_cell_size:float, hps:Dict):
+    hp_centers = hps["hp_centers"]
+    sichardt_dists = hps["sichardt_dists"]
+    lahm_w = hps["lahm_w"]
+    lahm_l = hps["lahm_l"]
+    min_cell_size_hp = hps["min_cell_size_hp"]
+    min_cell_size_plume = hps["min_cell_size_plume"]
 
-    # diff_l = cell_centers[...,1] - hp_centers[1] #+ 0.5/(2**i) 
-    # constraint_l = plume_l_hps # TODO several plumes
-    # diff_w = np.abs(cell_centers[..., 0] - hp_centers[0]) # TODO several hps
-    # constraint_w =  plume_w_hps / 2 #+ 0.5 / (2 ** i)
-    # diff_h = np.abs(cell_centers[..., 2] - hp_centers[2]) 
-    # constraint_h = constraint_w
-    # mask += np.logical_and(np.logical_and(diff_w < constraint_w, diff_h < constraint_h), np.logical_and(0 < diff_l, diff_l < constraint_l))
-    return final_cell_sizes
+    n_refinement_steps = int(np.log2(max_cell_size / min_cell_size_hp))
+    n_refinement_plumes = int(np.log2(max_cell_size / min_cell_size_plume))
+    ress_all = np.ones_like(cell_centers[...,0]) * max_cell_size
+    for plume_w, plume_l, hp_center, min_radius in zip(lahm_w, lahm_l, hp_centers, sichardt_dists):
+        ress_local = np.ones_like(cell_centers[..., 0]) * max_cell_size
+        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2)
+        for i in range(n_refinement_steps):
+            ress_local[dist <= 2*min_radius - i/n_refinement_steps*min_radius] = max_cell_size*2**(-i-1) # cells within 2x sichardt distance are exponentially refined
+        min_hp_region = np.logical_or(dist <= min_radius, dist <= curr_cell_w) # the cell around a hp should be properly refined no matter how small the calculated sichardt distances are
+        ress_local[min_hp_region] = min_cell_size_hp
+
+        for j in range(n_refinement_plumes):
+            ress_plume = np.ones_like(cell_centers[..., 0]) * max_cell_size
+            # set ress_plume to plume_res in the plume. plume is defined as a box with width lahm_w and length lahm_l
+            plume = np.logical_and(
+                np.abs(cell_centers[..., 1] - hp_center[1]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2,
+                np.logical_and(
+                    (cell_centers[...,0] - hp_center[0]) > 0,
+                    (cell_centers[...,0] - hp_center[0]) <= 2*plume_l - j/n_refinement_plumes*plume_l
+                )
+            )
+            ress_plume[plume] = max_cell_size*2**(-j-1)
+            ress_local = np.minimum(ress_local, ress_plume)
+
+        ress_all = np.minimum(ress_all, ress_local)
+
+    result = np.stack([ress_all, ress_all], axis=-1)
+    return result
 
 def plot_grid(cell_centers, face_centers, face_cell_ids, face_areas, cell_volumes):
     face_cell_ids -= 1
@@ -64,12 +79,12 @@ def get_grid(
     maxx: float,
     miny: float,
     maxy: float,
-    minz: float,
-    maxz: float,
     ids: np.ndarray[int],
     index_offset: int,
     prev_level_highest_id: int,
     target_resolution: Callable[[np.ndarray[float]], np.ndarray[float]],
+    max_cell_size:float,
+    hps: Dict,
     visualize=False,
 ):
     """
@@ -94,7 +109,8 @@ def get_grid(
         existing_ids = ids.copy()
 
     # these cells should not be added to the grid at the current resolution
-    target_res = target_resolution(cell_centers)
+    assert cell_w == cell_h, "square cells are expected in target_resolution rn"
+    target_res = target_resolution(cell_centers, np.maximum(cell_w, cell_h), max_cell_size, hps)
     leave_out = (target_res[..., 0] < cell_w) | (target_res[..., 1] < cell_h)
 
     # only add the cells that are not to be left out and where there is no existing cell
@@ -563,7 +579,7 @@ class Chunk:
 
 
 def refine_grid(
-    grid, max_depth, target_resolution, visualize_grid=False, visualize_steps=False
+    grid:Grid, max_depth:int, target_resolution:Callable, hps: np.ndarray, visualize_grid:bool=False, visualize_steps:bool=False
 ):
     grid.chunks = {}
     # breadth first, first process all chunks in the unrefined grid
@@ -586,12 +602,12 @@ def refine_grid(
                     maxx=chunk.maxx,
                     miny=chunk.miny,
                     maxy=chunk.maxy,
-                    minz=0,
-                    maxz=1,
                     ids=chunk.indices_with_neighbors(),
                     index_offset=index_offset,
                     prev_level_highest_id=prev_level_highest_id,
                     target_resolution=target_resolution,
+                    max_cell_size=np.maximum((grid.maxx-grid.minx)// grid.res_x, (grid.maxy-grid.miny)// grid.res_y),
+                    hps=hps,
                     visualize=visualize_steps,
                 )
             )
@@ -612,36 +628,35 @@ def refine_grid(
     return results
 
 if __name__ == "__main__":
-    size_x = 1280#0
-    size_y = 1280#0
-    cell_size = 5
-    res_x = size_x//cell_size
-    res_y = size_y//cell_size
+    size_x = 1000
+    size_y = 1000
     grid = Grid(
-        res_x=res_x,
-        res_y=res_y,
+        res_x=20,
+        res_y=20,
         minx=0,
         maxx=size_x,
         miny=0,
         maxy=size_y,
-        chunk_w=20,
-        chunk_h=20,
+        chunk_w=2,
+        chunk_h=2,
     )
-    max_depth = 6 # must be larger than #levels
+    max_depth = 5
+    hp_centers = np.array([[200.0, 500.0], [600.0,600.0], [800.0, 200.0]])
+    sichardt_dists = np.array([50, 100, 10])
+    lahm_l = np.array([500, 200, 100])
+    lahm_w = np.array([160, 200, 50]) 
+    # TODO CHECK hp_center orientation ([0],[1] maybe swapped?, check cell_centers orientation)
+    hps = {
+        "hp_centers": hp_centers,
+        "sichardt_dists": sichardt_dists,
+        "lahm_l": lahm_l,
+        "lahm_w": lahm_w,
+        "min_cell_size_hp": 10,
+        "min_cell_size_plume": 20,
+    }
 
-    n_hps = 100
-    hp_centers = np.random.rand(n_hps, 2) * np.array([size_x, size_y])
-    sichardt_dists = np.random.randint(30, 100, n_hps)
+    results = refine_grid(grid, max_depth, target_resolution, hps, visualize_grid=True)
 
-    # plt.figure(figsize=(10, 10))
-    # plt.xlim(grid.xlim)
-    # plt.ylim(grid.ylim)
-    results = refine_grid(grid, max_depth, lambda x: target_resolution(x,hp_centers, sichardt_dists, cell_size), visualize_grid=False)
-
+    plt.xlim(grid.xlim)
+    plt.ylim(grid.ylim)
     plot_grid(*results)
-    # plt.scatter(hp_centers[:, 0], hp_centers[:, 1], zorder=100, c='r', s=100)
-    # for radius, center in zip(sichardt_dists, hp_centers):
-    #     circle = plt.Circle(center, radius, color='r', fill=False)
-    #     circle2 = plt.Circle(center, radius*2, color='r', fill=False)
-    #     plt.gca().add_artist(circle)
-    #     plt.gca().add_artist(circle2)
