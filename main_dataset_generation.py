@@ -91,7 +91,6 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
             plot_results(output_run_dir)
 
     shutil.rmtree(output_dataset_dir/"interim")
-    os.remove(output_dataset_dir/"settings.yaml")
 
     save_yaml({"timestamp": time.ctime(), "duration [s]": (time.perf_counter()-time_begin), "avg duration sim [s]": (avg_time_per_sim/len(run_ids))}, output_dataset_dir, "args")
     logging.info(f"Finished dataset creation at {time.ctime()} after {(time.perf_counter() - time_begin)//60} minutes and {((time.perf_counter() - time_begin)%60):.1f} seconds")
