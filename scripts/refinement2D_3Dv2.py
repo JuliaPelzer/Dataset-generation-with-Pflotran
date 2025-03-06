@@ -17,7 +17,7 @@ def target_resolution(cell_centers:np.ndarray, curr_cell_size:float, max_cell_si
     ress_all = np.ones_like(cell_centers[...,0]) * max_cell_size
     for plume_w, plume_l, hp_center, min_radius in zip(lahm_w, lahm_l, hp_centers, sichardt_dists):
         ress_local = np.ones_like(cell_centers[..., 0]) * max_cell_size
-        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2) # + (cell_centers[..., 2]-hp_center[2]) ** 2) #TODO
+        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2 + (cell_centers[..., 2]-hp_center[2]) ** 2)
         for i in range(n_refinement_steps):
             ress_local[dist <= 2*min_radius - i/n_refinement_steps*min_radius] = max_cell_size*2**(-i-1) # cells within 2x sichardt distance are exponentially refined
         min_hp_region = np.logical_or(dist <= min_radius, dist <= curr_cell_size) # the cell around a hp should be properly refined no matter how small the calculated sichardt distances are
@@ -27,8 +27,10 @@ def target_resolution(cell_centers:np.ndarray, curr_cell_size:float, max_cell_si
             ress_plume = np.ones_like(cell_centers[..., 0]) * max_cell_size
             # set ress_plume to plume_res in the plume. plume is defined as a box with width lahm_w and length lahm_l
             plume = np.logical_and(
-                np.abs(cell_centers[..., 1] - hp_center[1]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2,
-                # TODO 3D
+                np.logical_and(
+                    np.abs(cell_centers[..., 1] - hp_center[1]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2,
+                    np.abs(cell_centers[..., 2] - hp_center[2]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2
+                ),
                 np.logical_and(
                     (cell_centers[...,0] - hp_center[0]) > 0,
                     (cell_centers[...,0] - hp_center[0]) <= 2*plume_l - j/n_refinement_plumes*plume_l
@@ -765,18 +767,18 @@ if __name__ == "__main__":
         chunk_h=10,
         chunk_d=1, #anzahl elemente in diese richtung in einem chunk (im ursprünglichen zustand oder immer?)
     )
-    max_depth = 5
-    hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,10.0]])
-    sichardt_dists = np.array([50, 100, 10]).astype(np.float32)
-    lahm_l = np.array([500, 200, 100])
-    lahm_w = np.array([160, 200, 50])
+    max_depth = 10
+    hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,5.0]])
+    sichardt_dists = np.array([50, 100, 3]).astype(np.float32)
+    lahm_l = np.array([500, 200, 0])
+    lahm_w = np.array([160, 200, 0])
     # TODO CHECK hp_center orientation ([0],[1] maybe swapped?, check cell_centers orientation)
     hps = {
         "hp_centers": hp_centers,
         "sichardt_dists": sichardt_dists,
         "lahm_l": lahm_l,
         "lahm_w": lahm_w,
-        "min_cell_size_hp": 5,
+        "min_cell_size_hp": 2.5,
         "min_cell_size_plume": 10,
     }
 
@@ -784,7 +786,7 @@ if __name__ == "__main__":
 
     plt.xlim(grid.xlim)
     plt.ylim(grid.ylim)
-    plot_grid(*results)
+    # plot_grid(*results)
     print(set(np.sqrt(results[3])))
     print(set(np.cbrt(results[4])))
 
