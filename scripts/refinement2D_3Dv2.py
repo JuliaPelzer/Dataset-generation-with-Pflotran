@@ -732,7 +732,7 @@ def refine_grid(
     results[2] += 1 # cell ids start at 1
     return results
 
-def plot_3d_cells(cell_centers, face_centers, face_cell_ids, face_areas, face_volumes=None):
+def plot_3d_cells(cell_centers, face_centers, face_cell_ids, face_areas, cell_volumes=None):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     
