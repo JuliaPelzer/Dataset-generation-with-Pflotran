@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from typing import Callable, Dict
 from tqdm.auto import tqdm
 
-def target_resolution(cell_centers:np.ndarray, curr_cell_w:float, max_cell_size:float, hps:Dict):
+def target_resolution(cell_centers:np.ndarray, curr_cell_size:float, max_cell_size:float, hps:Dict):
     hp_centers = hps["hp_centers"]
     sichardt_dists = hps["sichardt_dists"]
     lahm_w = hps["lahm_w"]
@@ -17,10 +17,10 @@ def target_resolution(cell_centers:np.ndarray, curr_cell_w:float, max_cell_size:
     ress_all = np.ones_like(cell_centers[...,0]) * max_cell_size
     for plume_w, plume_l, hp_center, min_radius in zip(lahm_w, lahm_l, hp_centers, sichardt_dists):
         ress_local = np.ones_like(cell_centers[..., 0]) * max_cell_size
-        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2 + (cell_centers[..., 2]-hp_center[2]) ** 2)
+        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2) # + (cell_centers[..., 2]-hp_center[2]) ** 2) #TODO
         for i in range(n_refinement_steps):
             ress_local[dist <= 2*min_radius - i/n_refinement_steps*min_radius] = max_cell_size*2**(-i-1) # cells within 2x sichardt distance are exponentially refined
-        min_hp_region = np.logical_or(dist <= min_radius, dist <= curr_cell_w) # the cell around a hp should be properly refined no matter how small the calculated sichardt distances are
+        min_hp_region = np.logical_or(dist <= min_radius, dist <= curr_cell_size) # the cell around a hp should be properly refined no matter how small the calculated sichardt distances are
         ress_local[min_hp_region] = min_cell_size_hp
 
         for j in range(n_refinement_plumes):
@@ -28,6 +28,7 @@ def target_resolution(cell_centers:np.ndarray, curr_cell_w:float, max_cell_size:
             # set ress_plume to plume_res in the plume. plume is defined as a box with width lahm_w and length lahm_l
             plume = np.logical_and(
                 np.abs(cell_centers[..., 1] - hp_center[1]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2,
+                # TODO 3D
                 np.logical_and(
                     (cell_centers[...,0] - hp_center[0]) > 0,
                     (cell_centers[...,0] - hp_center[0]) <= 2*plume_l - j/n_refinement_plumes*plume_l
@@ -48,7 +49,7 @@ def plot_grid(cell_centers, face_centers, face_cell_ids, face_areas, cell_volume
     n1 = cell_centers[face_cell_ids[:, 0]]
     n2 = cell_centers[face_cell_ids[:, 1]]
     direction = n2 - n1
-    lens = face_areas / 1.05
+    lens = np.sqrt(face_areas) / 1.05
     updown = np.abs(direction[:, 1]) > np.abs(direction[:, 0])
     leftright = ~updown
     plt.scatter(
@@ -97,17 +98,9 @@ def get_grid(
     index_offset: the first id to use for this grid
     target_resolution(cell_centers): function that the target resolution at the given positions. cell_centers.shape is (res_x,res_y, 2), output has the same shape, with resolution in x and y separate. calculate for each position, how large the cell should be in x and y direction
     """
-
     cell_w = (maxx - minx) / res_x
     cell_h = (maxy - miny) / res_y
     cell_d = (maxz - minz) / res_z
-    
-    # cell_centers = np.stack(
-    #     np.meshgrid(
-    #         np.linspace(minx + cell_w / 2, maxx - cell_w / 2, res_x, endpoint=True),
-    #         np.linspace(miny + cell_h / 2, maxy - cell_h / 2, res_y, endpoint=True),
-    #     )
-    # ).T
     cell_centers = np.stack(
         np.meshgrid(
             np.linspace(minx + cell_w / 2, maxx - cell_w / 2, res_x, endpoint=True),
@@ -115,14 +108,12 @@ def get_grid(
             np.linspace(minz + cell_d / 2, maxz - cell_d / 2, res_z, endpoint=True),
         )
     ).transpose(2,1,3,0)
-    # print("orig: (4,10,2), now:", cell_centers.shape, "y,x,z")
     if visualize:
         existing_ids = ids.copy()
 
     # these cells should not be added to the grid at the current resolution
     assert cell_w == cell_h, "square cells are expected in target_resolution rn"
     target_res = target_resolution(cell_centers, np.maximum(cell_w, cell_h), max_cell_size, hps)
-    # print("same same?",(((target_res[..., 0] < cell_w) | (target_res[..., 1] < cell_h) | (target_res[..., 2] < cell_d))==((target_res[..., 0] < cell_w) | (target_res[..., 1] < cell_h))).all())
     leave_out = (target_res[..., 0] < cell_w) | (target_res[..., 1] < cell_h) | (target_res[..., 2] < cell_d)
 
     # only add the cells that are not to be left out and where there is no existing cell
@@ -131,18 +122,26 @@ def get_grid(
 
     vertical_face_centers = np.stack(
         np.meshgrid(
-            np.linspace(minx, maxx, res_x + 1, endpoint=True),
+            np.linspace(minx,              maxx,              res_x + 1, endpoint=True),
             np.linspace(miny + cell_h / 2, maxy - cell_h / 2, res_y, endpoint=True),
-            np.linspace(minz, maxz, res_z, endpoint=True),
+            np.linspace(minz + cell_d / 2, maxz - cell_d / 2, res_z, endpoint=True),
         )
     ).transpose(2,1,3,0)
     horizontal_face_centers = np.stack(
         np.meshgrid(
             np.linspace(minx + cell_w / 2, maxx - cell_w / 2, res_x, endpoint=True),
-            np.linspace(miny, maxy, res_y + 1, endpoint=True),
-            np.linspace(minz, maxz, res_z, endpoint=True),
+            np.linspace(miny,              maxy,              res_y + 1, endpoint=True),
+            np.linspace(minz + cell_d / 2, maxz - cell_d / 2, res_z, endpoint=True),
         )
     ).transpose(2,1,3,0)
+    if ids.shape[2] != 1:
+        depth_face_centers = np.stack(  
+            np.meshgrid(
+                np.linspace(minx + cell_w / 2, maxx - cell_w / 2, res_x, endpoint=True),
+                np.linspace(miny + cell_h / 2, maxy - cell_h / 2, res_y, endpoint=True),
+                np.linspace(minz + cell_d,     maxz - cell_d,     res_z - 1, endpoint=True), # different because never chunking in z-dir, so there are no neighbours in z-dir
+            )
+        ).transpose(2,1,3,0)
 
     # mask out the centers that should not be added
     final_cell_centers = cell_centers[place_centers]
@@ -151,36 +150,54 @@ def get_grid(
     valid = ids != -1
     vertical_add = np.ones((res_x + 1, res_y, res_z), dtype=bool)
     horizontal_add = np.ones((res_x, res_y + 1, res_z), dtype=bool)
-
+    if ids.shape[2] != 1:
+        depth_add = np.ones((res_x, res_y, res_z - 1), dtype=bool)
+    
     left_valid = valid[:-1, 1:-1]
     right_valid = valid[1:, 1:-1]
     vertical_add &= left_valid
     vertical_add &= right_valid
 
-    up_valid = valid[1:-1:, 1:]
+    up_valid = valid[1:-1, 1:]
     down_valid = valid[1:-1, :-1]
     horizontal_add &= down_valid
     horizontal_add &= up_valid
+
+    if ids.shape[2] != 1:
+        front_valid = valid[1:-1, 1:-1, :-1]
+        back_valid = valid[1:-1, 1:-1, 1:]
+        depth_add &= front_valid
+        depth_add &= back_valid
 
     # no faces if both neighbors are from the larger grid
     larger_grid = ids <= prev_level_highest_id
     vertical_add &= ~(larger_grid[:-1, 1:-1] & larger_grid[1:, 1:-1])
     horizontal_add &= ~(larger_grid[1:-1, :-1] & larger_grid[1:-1, 1:])
-    
+    if ids.shape[2] != 1:
+        depth_add &= ~(larger_grid[1:-1, 1:-1, :-1] & larger_grid[1:-1, 1:-1, 1:])
+
     # no faces where both neighbors are the same (this is a face inside the same cell)
     vertical_diff_valid = np.diff(ids, axis=0)[:, 1:-1] != 0
     horizontal_diff_valid = np.diff(ids, axis=1)[1:-1, :] != 0
     vertical_add &= vertical_diff_valid
     horizontal_add &= horizontal_diff_valid
+    if ids.shape[2] != 1:
+        depth_diff_valid = np.diff(ids, axis=2)[1:-1, 1:-1] != 0
+        depth_add &= depth_diff_valid
 
     # apply the masks
     final_vertical_face_centers = vertical_face_centers[vertical_add]
     final_horizontal_face_centers = horizontal_face_centers[horizontal_add]
+    if ids.shape[2] != 1:
+        final_depth_face_centers = depth_face_centers[depth_add]
 
     vertical_face_left_neighbor = ids[:-1, 1:-1][vertical_add]
     vertical_face_right_neighbor = ids[1:, 1:-1][vertical_add]
     horizontal_face_down_neighbor = ids[1:-1, :-1][horizontal_add]
     horizontal_face_up_neighbor = ids[1:-1, 1:][horizontal_add]
+    if ids.shape[2] != 1:
+        depth_face_front_neighbor = ids[1:-1, 1:-1, :-1][depth_add]
+        depth_face_back_neighbor = ids[1:-1, 1:-1, 1:][depth_add]
 
     vertical_face_ids = np.stack(
         [vertical_face_left_neighbor, vertical_face_right_neighbor], axis=-1
@@ -188,20 +205,36 @@ def get_grid(
     horizontal_face_ids = np.stack(
         [horizontal_face_down_neighbor, horizontal_face_up_neighbor], axis=-1
     )
+    if ids.shape[2] != 1:
+        depth_face_ids = np.stack(
+            [depth_face_front_neighbor, depth_face_back_neighbor], axis=-1
+        )
 
-    cell_volume = cell_w * cell_h #TODO
+    if ids.shape[2] == 1: 
+        final_face_centers = np.concatenate(
+            [final_horizontal_face_centers, final_vertical_face_centers]
+        )
+        final_face_ids = np.concatenate([horizontal_face_ids, vertical_face_ids])
+        final_face_areas = np.concatenate(
+            [
+                np.full(final_horizontal_face_centers.shape[0], cell_w * cell_d),
+                np.full(final_vertical_face_centers.shape[0], cell_h * cell_d),
+            ]
+        )
+    else:
+        final_face_centers = np.concatenate(
+            [final_horizontal_face_centers, final_vertical_face_centers, final_depth_face_centers]
+        )
+        final_face_ids = np.concatenate([horizontal_face_ids, vertical_face_ids, depth_face_ids])
+        final_face_areas = np.concatenate(
+            [
+                np.full(final_horizontal_face_centers.shape[0], cell_w * cell_d),
+                np.full(final_vertical_face_centers.shape[0], cell_h * cell_d),
+                np.full(final_depth_face_centers.shape[0], cell_w * cell_h),
+            ]
+        )
 
-    final_face_centers = np.concatenate(
-        [final_horizontal_face_centers, final_vertical_face_centers]
-    )
-    final_face_ids = np.concatenate([horizontal_face_ids, vertical_face_ids])
-    final_face_areas = np.concatenate(
-        [
-            np.full(final_horizontal_face_centers.shape[0], cell_w), #TODO
-            np.full(final_vertical_face_centers.shape[0], cell_h),
-        ]
-    )
-
+    cell_volume = cell_w * cell_h * cell_d
     final_cell_volumes = np.full(final_cell_centers.shape[0], cell_volume)
 
     def plot():
@@ -314,11 +347,15 @@ def get_grid(
 
 def double_size(ids):
     w, h, d = ids.shape
-    new_ids = -np.ones((w * 2, h * 2, d), dtype=ids.dtype) # TODO
-    new_ids[::2, ::2] = ids
-    new_ids[1::2, ::2] = ids
-    new_ids[::2, 1::2] = ids
-    new_ids[1::2, 1::2] = ids
+    new_ids = -np.ones((w * 2, h * 2, d * 2), dtype=ids.dtype)
+    new_ids[::2, ::2, ::2] = ids
+    new_ids[1::2, ::2, ::2] = ids
+    new_ids[::2, 1::2, ::2] = ids
+    new_ids[1::2, 1::2, ::2] = ids
+    new_ids[::2, ::2, 1::2] = ids
+    new_ids[1::2, ::2, 1::2] = ids
+    new_ids[::2, 1::2, 1::2] = ids
+    new_ids[1::2, 1::2, 1::2] = ids
     return new_ids
 
 
@@ -343,7 +380,7 @@ class Grid:
     maxz: float
     chunk_w: int
     chunk_h: int
-    chunk_d: int = 1
+    chunk_d: int
     chunks: dict[tuple[int, int, int], "Chunk"] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -352,7 +389,7 @@ class Grid:
         if self.res_y % self.chunk_h != 0:
             raise ValueError("res_y has to be divisible by chunk_h")
         assert self.res_z == 1, "3D not implemented yet"
-        assert self.chunk_d == 1, "3D chunking not implemented yet"
+        assert self.res_z // self.chunk_d == 1, "3D chunking not implemented yet"
         
     @property
     def width(self):
@@ -476,15 +513,15 @@ class Chunk:
     indices: np.ndarray[int]
 
     def __post_init__(self):
-        ids = self.ids()
-        self.idx, self.idy = ids
+        self.idx, self.idy = self.ids()
         # register this chunk in the grid
-        index = (self.level, self.idx, self.idy)
-        if index in self.grid.chunks:
-            raise ValueError(f"Chunk {index} already exists")
-        self.grid.chunks[index] = self
+        chunk_id = (self.level, self.idx, self.idy)
+        if chunk_id in self.grid.chunks:
+            raise ValueError(f"Chunk {chunk_id} already exists")
+        self.grid.chunks[chunk_id] = self
 
     def ids(self):
+        """id of this chunk in the grid in x and y direction"""
         return self.grid.chunk_index(
             (self.minx + self.maxx) / 2, (self.miny + self.maxy) / 2, self.level
         )
@@ -503,7 +540,7 @@ class Chunk:
                     yield Chunk(
                         res_x=self.res_x,
                         res_y=self.res_y,
-                        res_z=self.res_z,
+                        res_z=self.res_z*2,
                         minx=self.minx + x * (self.maxx - self.minx) / 2,
                         maxx=self.minx + (x + 1) * (self.maxx - self.minx) / 2,
                         miny=self.miny + y * (self.maxy - self.miny) / 2,
@@ -517,7 +554,7 @@ class Chunk:
 
     def indices_with_neighbors(self):
         """
-        This function collects the indices from the neighboring chunks and returns a 2d array with the indices of this chunk and its neighbors, shape is (res_x+2, res_y+2)
+        This function collects the indices from the neighboring chunks and returns a 2d array with the indices of this chunk and its neighbors, shape is (res_x+2, res_y+2, res_z)
         The newly created array is stored in self.indices and a view returned, so that it can be modified in place by get_grid
         """
         all_indices = -np.ones((self.res_x + 2, self.res_y + 2, self.res_z), dtype=int)
@@ -540,7 +577,6 @@ class Chunk:
             right_position = (
                 self.maxx + (self.maxx - self.minx) / 2,
                 (self.miny + self.maxy) / 2,
-                #TODO
             )
             all_indices[-1, 1:-1] = self.grid.get_chunk(
                 target, right_position
@@ -597,19 +633,19 @@ class Chunk:
         return self.indices[:, 0]
 
     @property
-    def extent(self): #TODO
+    def extent_xy(self):
         # only used for plotting
         return self.minx, self.maxx, self.miny, self.maxy
 
     @property
-    def center(self): #TODO
+    def center(self):
         # not used
         return (self.minx + self.maxx) / 2, (self.miny + self.maxy) / 2
 
     def plot(self, ax=None, **kwargs):
         if ax is None:
             ax = plt.gca()
-        xmin, xmax, ymin, ymax = self.extent
+        xmin, xmax, ymin, ymax = self.extent_xy
         ax.add_patch(
             plt.Rectangle(
                 (xmin, ymin),
@@ -626,7 +662,7 @@ class Chunk:
         ax.imshow(
             self.indices.T,
             origin="lower",
-            extent=self.extent,
+            extent=self.extent_xy,
             **kwargs,
         )
 
@@ -662,7 +698,7 @@ def refine_grid(
                     index_offset=index_offset,
                     prev_level_highest_id=prev_level_highest_id,
                     target_resolution=target_resolution,
-                    max_cell_size=np.max([(grid.maxx-grid.minx)// grid.res_x, (grid.maxy-grid.miny)// grid.res_y]), #, (grid.maxz-grid.minz)//grid.res_z]), # to refine, actively excluding z-dim
+                    max_cell_size=np.max([(grid.maxx-grid.minx)// grid.res_x, (grid.maxy-grid.miny)// grid.res_y]), # to refine, actively excluding z-dim
                     hps=hps,
                     visualize=visualize_steps,
                 )
@@ -683,51 +719,16 @@ def refine_grid(
     results[2] += 1 # cell ids start at 1
     return results
 
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 def plot_3d_cells(cell_centers, face_centers, face_cell_ids, face_areas, face_volumes=None):
-    face_cell_ids -= 1
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     
     # Plot cell centers
     cell_centers = np.array(cell_centers)
-    ax.scatter(cell_centers[:, 0], cell_centers[:, 1], cell_centers[:, 2], c='b', marker='o', label='Cell Centers')
+    ax.scatter(cell_centers[:, 0], cell_centers[:, 1], cell_centers[:, 2], c='r', marker='o', label='Cell Centers')
     
-    # Plot face centers and faces
-    for i, (fc, (c1, c2), fa) in enumerate(zip(face_centers, face_cell_ids, face_areas)):
-        # fa = fa[0]  # Extract scalar from array
-        fc = np.array(fc)
-        
-        # Determine the face orientation
-        c1, c2 = np.array(cell_centers[c1]), np.array(cell_centers[c2])
-        normal = c2 - c1
-        
-        if abs(normal[0]) > 0:  # Face is yz-aligned
-            face_vertices = [
-                fc + [0, -fa/2, -fa/2],
-                fc + [0, fa/2, -fa/2],
-                fc + [0, fa/2, fa/2],
-                fc + [0, -fa/2, fa/2]
-            ]
-        elif abs(normal[1]) > 0:  # Face is xz-aligned
-            face_vertices = [
-                fc + [-fa/2, 0, -fa/2],
-                fc + [fa/2, 0, -fa/2],
-                fc + [fa/2, 0, fa/2],
-                fc + [-fa/2, 0, fa/2]
-            ]
-        else:  # Face is xy-aligned
-            face_vertices = [
-                fc + [-fa/2, -fa/2, 0],
-                fc + [fa/2, -fa/2, 0],
-                fc + [fa/2, fa/2, 0],
-                fc + [-fa/2, fa/2, 0]
-            ]
-        
-        # face_collection = Poly3DCollection([face_vertices], color='r', alpha=0.5)
-        # ax.add_collection3d(face_collection)
+    face_centers = np.array(face_centers)
+    ax.scatter(face_centers[:, 0], face_centers[:, 1], face_centers[:, 2], c='b', marker='o', label='Face Centers')
     
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
@@ -748,17 +749,18 @@ if __name__ == "__main__":
         miny=0,
         maxy=size_y,
         minz=0,
-        maxz=10, #000//20,
+        maxz=10, 
         chunk_w=4,
         chunk_h=10,
         chunk_d=1,
     )
     #TODO breaks if maxz too large
-    max_depth = 5
+    max_depth = 1
     hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,10.0]])
     sichardt_dists = np.array([50, 100, 10]).astype(np.float32)
     lahm_l = np.array([500, 200, 100])
     lahm_w = np.array([160, 200, 50])
+    # TODO CHECK hp_center orientation ([0],[1] maybe swapped?, check cell_centers orientation)
     hps = {
         "hp_centers": hp_centers,
         "sichardt_dists": sichardt_dists,
@@ -773,9 +775,5 @@ if __name__ == "__main__":
     plt.xlim(grid.xlim)
     plt.ylim(grid.ylim)
     plot_grid(*results)
-
-    plt.figure()
-    plt.scatter(results[0][...,0], results[0][...,1])
-    plt.show()
 
     plot_3d_cells(*results)
