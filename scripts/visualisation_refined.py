@@ -41,9 +41,9 @@ def plot_results(path_run: Path, plot_name: str = "plot_simulation_results", plo
         plt.sca(axes[index])
         plt.title(f"{data_point['property']}")
         if data_point["property"] == "Material ID":
-            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper", vmin=1, vmax=3)
+            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp_linear", interpolation="nearest", origin="upper", vmin=1, vmax=3)
         else:
-            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
+            plt.imshow(values[plot_area[0]:plot_area[1], plot_area[2]:plot_area[3]], cmap="jp_linear", interpolation="nearest", origin="upper") #, vmin=10, vmax=20)
         # offset of 0.5*plot_res to center the cells, i.e. to x-,y-scale
         if plot_area == (0, -1, 0, -1):
             if index == 0:
@@ -101,15 +101,18 @@ def load_data_for_visu(path_run: Path) -> Tuple[list[Property], np.ndarray]:
                         "time_years": time_from_pflotran_time(time)
                         }
                         list_to_plot.append(data)
-  
+    mesh = load_mesh(path_run)
+    
+    return list_to_plot, mesh
+
+def load_mesh(path_run):
     with h5py.File(path_run/"mesh.h5", "r") as mesh_file:
         cell_centers = np.array(mesh_file["Domain/Cells/Centers"])
         cell_volumes = np.array(mesh_file["Domain/Cells/Volumes"])
         mesh = np.concatenate([cell_centers, cell_volumes[:,None]], axis=1)
 
         mesh[:, 3] = np.round(np.cbrt(mesh[:, 3]),8)
-    
-    return list_to_plot, mesh
+    return mesh
 
 def calc_shape_regular_plot_grid(plot_res: float, mesh: np.ndarray) -> Tuple[int, int, int]:
     res_min = np.round(np.min(mesh[:, 3]),8)
@@ -137,6 +140,7 @@ def calc_shape_regular_plot_grid(plot_res: float, mesh: np.ndarray) -> Tuple[int
 
 def generate_regular_cell_values(plot_res: float, mesh: np.ndarray, data: Property, n_cells: Tuple[int]) -> np.ndarray:
     # interpolate and average data to mesh
+    # z-dimension: always averaged
 
     n_cells_x,n_cells_y = n_cells[:2]
     weights = np.zeros((n_cells_x, n_cells_y))
@@ -147,8 +151,6 @@ def generate_regular_cell_values(plot_res: float, mesh: np.ndarray, data: Proper
         if curr_res <= plot_res:
             values[cell[0], cell[1]] += value * (curr_res/plot_res)**3
             weights[cell[0], cell[1]] += (curr_res/plot_res)**3
-            # if curr_res / plot_res != 1:
-            #     print(curr_res, plot_res, (curr_res/plot_res)**3)
         elif curr_res > plot_res:
             # update all cells that are covered by the larger cell
             for i in range(int(curr_res/plot_res)):
