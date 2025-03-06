@@ -4,6 +4,7 @@ from typing import Dict, Union
 from scripts.utils import timing
 from h5py import File
 import logging
+import yaml
 
 from scripts.utils import save_yaml
 from scripts.realistic_window.load_and_align_tiffs import load_properties_after_R_prep
@@ -15,6 +16,7 @@ from scripts.realistic_window.param_sampling import get_start_positions
 
 logging.basicConfig(level=logging.WARNING)
 
+
 @timing
 def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:int, temp_default:float, rate_default:float):
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
@@ -23,6 +25,7 @@ def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:i
 
     # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
     start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], settings["general"])
+    #start_positions_in_orig_cells = np.array(yaml.load(open("valid_start_positions_for_box_len_16800_converted.yaml", "r"), Loader=yaml.FullLoader)).T
     logging.info(f"Number of start positions:{len(start_positions_in_orig_cells)}")
 
     windows_collected = []
@@ -104,3 +107,40 @@ def store_hdf5_field(filename, n_cells, values, vary_property:str = "permeabilit
         h5file.create_dataset(vary_property, data=values, dtype="f8")
 
     h5file.close()
+
+from tqdm.auto import tqdm
+def calc_number_windows(settings:Dict):
+    # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
+    orig_data_path = pathlib.Path("input_files/real_Munich_input_fields/prepared_with_R")
+    properties_full, orig_resolution = load_properties_after_R_prep(data_path=orig_data_path) 
+
+    # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
+    start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], settings["general"])
+    print(f"Number of start positions:{len(start_positions_in_orig_cells)}") #4.907.109
+
+    n_valid_windows = 0
+    valid_start_poss = []
+    for i, start_pos in enumerate(tqdm(start_positions_in_orig_cells, position=0)): #[[1883, 1241]][[2630, 2644],[2644,2630]]): #
+        try:
+            window_shape_in_meters = settings["grid"]["size [m]"]
+            window_shape = np.array([window_shape_in_meters[0]/orig_resolution, window_shape_in_meters[1]/orig_resolution]) 
+            window_shape = window_shape.astype(int)
+            settings["grid"]["size [m]"] = (window_shape*orig_resolution).tolist()
+            
+            # 4. define rotation angle
+            rotation_angle_degree = estimate_box_rotation(properties_full["darcy_dir"], start_pos, window_shape)
+            window_rotated_cells = calc_rotated_box(start_pos, window_shape, rotation_angle_degree)
+        except Exception as e:
+            continue
+        # 6. check window for nans
+        valid = check_validity_window(properties_full["dtw"], window_rotated_cells)
+
+        if valid:
+            n_valid_windows += 1
+            valid_start_poss.append(start_pos)
+
+    print(n_valid_windows, " valid windows found within", i+1, "tries")
+    # save valid start_pos to file
+    save_yaml({"valid_start_positions": valid_start_poss}, pathlib.Path("."), f"valid_start_positions_for_box_len_{settings['grid']['size [m]'][0]}", {"allow_unicode":True})
+    
+    return n_valid_windows
