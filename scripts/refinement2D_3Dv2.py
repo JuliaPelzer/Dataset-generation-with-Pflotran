@@ -345,17 +345,24 @@ def get_grid(
     )
 
 
-def double_size(ids):
+def double_size(ids, refine_z:bool=False):
     w, h, d = ids.shape
-    new_ids = -np.ones((w * 2, h * 2, d * 2), dtype=ids.dtype)
-    new_ids[::2, ::2, ::2] = ids
-    new_ids[1::2, ::2, ::2] = ids
-    new_ids[::2, 1::2, ::2] = ids
-    new_ids[1::2, 1::2, ::2] = ids
-    new_ids[::2, ::2, 1::2] = ids
-    new_ids[1::2, ::2, 1::2] = ids
-    new_ids[::2, 1::2, 1::2] = ids
-    new_ids[1::2, 1::2, 1::2] = ids
+    if refine_z:
+        new_ids = -np.ones((w * 2, h * 2, d * 2), dtype=ids.dtype)
+        new_ids[::2, ::2, ::2] = ids
+        new_ids[1::2, ::2, ::2] = ids
+        new_ids[::2, 1::2, ::2] = ids
+        new_ids[1::2, 1::2, ::2] = ids
+        new_ids[::2, ::2, 1::2] = ids
+        new_ids[1::2, ::2, 1::2] = ids
+        new_ids[::2, 1::2, 1::2] = ids
+        new_ids[1::2, 1::2, 1::2] = ids
+    else:
+        new_ids = -np.ones((w * 2, h * 2, d), dtype=ids.dtype)
+        new_ids[::2, ::2] = ids
+        new_ids[1::2, ::2] = ids
+        new_ids[::2, 1::2] = ids
+        new_ids[1::2, 1::2] = ids
     return new_ids
 
 
@@ -480,6 +487,10 @@ class Grid:
                 # This chunk exists already, overwriting it would reset the indices
                 if (level, id_x, id_y) in self.chunks:
                     continue
+
+                cell_size_x = parent.width/parent.res_x
+                cell_size_y = parent.height/parent.res_y
+                refine_z = np.max([cell_size_x, cell_size_y]) <= (parent.maxz-parent.minz)/parent.res_z
                 Chunk(
                     parent.res_x,
                     parent.res_y,
@@ -492,7 +503,7 @@ class Grid:
                     parent.maxz,
                     level,
                     self,
-                    double_size(region_of_interest),
+                    double_size(region_of_interest, refine_z=refine_z),
                 )
         return self.chunks[target]
 
@@ -537,10 +548,14 @@ class Chunk:
                     y * self.res_y // 2 : (y + 1) * self.res_y // 2,
                 ]
                 if (region_of_interest == -1).any():
+                    cell_size_x = (self.maxx - self.minx) / self.res_x
+                    cell_size_y = (self.maxy - self.miny) / self.res_y
+                    refine_z = np.max([cell_size_x, cell_size_y]) <= (self.maxz-self.minz)/self.res_z
+                    new_res_z = self.res_z * 2 if refine_z else self.res_z
                     yield Chunk(
                         res_x=self.res_x,
                         res_y=self.res_y,
-                        res_z=self.res_z*2,
+                        res_z=new_res_z,
                         minx=self.minx + x * (self.maxx - self.minx) / 2,
                         maxx=self.minx + (x + 1) * (self.maxx - self.minx) / 2,
                         miny=self.miny + y * (self.maxy - self.miny) / 2,
@@ -549,7 +564,7 @@ class Chunk:
                         maxz=self.maxz,
                         level=self.level + 1,
                         grid=self.grid,
-                        indices=double_size(region_of_interest),
+                        indices=double_size(region_of_interest,refine_z=refine_z),
                     )
 
     def indices_with_neighbors(self):
@@ -616,10 +631,6 @@ class Chunk:
     def height(self):
         return self.maxy - self.miny
     
-    # @property
-    # def depth(self):
-    #     return self.maxz - self.minz
-
     def right_border_slice(self):
         return self.indices[-1, :]
 
@@ -698,7 +709,7 @@ def refine_grid(
                     index_offset=index_offset,
                     prev_level_highest_id=prev_level_highest_id,
                     target_resolution=target_resolution,
-                    max_cell_size=np.max([(grid.maxx-grid.minx)// grid.res_x, (grid.maxy-grid.miny)// grid.res_y]), # to refine, actively excluding z-dim
+                    max_cell_size=np.max([(grid.maxx-grid.minx)// grid.res_x, (grid.maxy-grid.miny)// grid.res_y]), #, (grid.maxz-grid.minz)//grid.res_z]), # to refine, actively excluding z-dim
                     hps=hps,
                     visualize=visualize_steps,
                 )
@@ -749,13 +760,12 @@ if __name__ == "__main__":
         miny=0,
         maxy=size_y,
         minz=0,
-        maxz=10, 
+        maxz=12.5, #000//20,
         chunk_w=4,
         chunk_h=10,
-        chunk_d=1,
+        chunk_d=1, #anzahl elemente in diese richtung in einem chunk (im ursprünglichen zustand oder immer?)
     )
-    #TODO breaks if maxz too large
-    max_depth = 1
+    max_depth = 5
     hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,10.0]])
     sichardt_dists = np.array([50, 100, 10]).astype(np.float32)
     lahm_l = np.array([500, 200, 100])
@@ -766,8 +776,8 @@ if __name__ == "__main__":
         "sichardt_dists": sichardt_dists,
         "lahm_l": lahm_l,
         "lahm_w": lahm_w,
-        "min_cell_size_hp": 10,
-        "min_cell_size_plume": 20,
+        "min_cell_size_hp": 5,
+        "min_cell_size_plume": 10,
     }
 
     results = refine_grid(grid, max_depth, target_resolution, hps, visualize_grid=True)
@@ -775,5 +785,7 @@ if __name__ == "__main__":
     plt.xlim(grid.xlim)
     plt.ylim(grid.ylim)
     plot_grid(*results)
+    print(set(np.sqrt(results[3])))
+    print(set(np.cbrt(results[4])))
 
     plot_3d_cells(*results)
