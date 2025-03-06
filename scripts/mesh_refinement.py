@@ -9,6 +9,7 @@ from scripts.realistic_window.param_sampling import sample_median
 from scripts.realistic_window.lahm.analytical_model_lahm import estimate_plume_shape_lahm
 from scripts.main_helpers import groundwater_temp
 from scripts.realistic_window.dupuit_thiem import drawdown_by_dupuit_thiem
+from scripts.refinement2D_3Dv2 import Grid, refine_grid, target_resolution
 
 def sichardt_distance(hydr_cond: float, thickness: float, q_inj: float) -> List[np.array]:
     '''Sichardt  (1928)
@@ -32,16 +33,16 @@ def get_sichardt_lahm_distances(hp_cells:np.ndarray, hp_temps: np.ndarray, hp_ra
     lahm_l = []
 
     for hp_id, hp_cell in enumerate(hp_cells):
-        assert hp_cell[0] < subsurface_properties["hydraulic_conductivity"].shape[0], "hp out of bounds x"
-        assert hp_cell[1] < subsurface_properties["hydraulic_conductivity"].shape[1], "hp out of bounds y"
+        assert hp_cell[0] < subsurface_properties["hydraulic_conductivity"].shape[0], f"hp out of bounds x, {hp_cell},{subsurface_properties['hydraulic_conductivity'].shape}"
+        assert hp_cell[1] < subsurface_properties["hydraulic_conductivity"].shape[1], f"hp out of bounds y, {hp_cell},{subsurface_properties['hydraulic_conductivity'].shape}"
         try: #if isinstance(subsurface_properties["hydraulic_conductivity"], np.ndarray):
-            hydr_cond = sample_median(subsurface_properties["hydraulic_conductivity"],  [hp_cell[1],hp_cell[0]], [3,3]) 
-            thickness = sample_median(subsurface_properties["thickness"],               [hp_cell[1],hp_cell[0]], [3,3])
-            v_a = sample_median(subsurface_properties["darcy_velocity"],                [hp_cell[1],hp_cell[0]], [3,3])
+            hydr_cond = sample_median(subsurface_properties["hydraulic_conductivity"],  [hp_cell[0],hp_cell[1]], [3,3]) 
+            thickness = sample_median(subsurface_properties["thickness"],               [hp_cell[0],hp_cell[1]], [3,3])
+            v_a = sample_median(subsurface_properties["darcy_velocity"],                [hp_cell[0],hp_cell[1]], [3,3])
         except:
-            hydr_cond = subsurface_properties["hydraulic_conductivity"][hp_cell[1],hp_cell[0]]
-            thickness = subsurface_properties["thickness"][hp_cell[1],hp_cell[0]]
-            v_a = subsurface_properties["darcy_velocity"][hp_cell[1],hp_cell[0]]
+            hydr_cond = subsurface_properties["hydraulic_conductivity"][hp_cell[0],hp_cell[1]]
+            thickness = subsurface_properties["thickness"][hp_cell[0],hp_cell[1]]
+            v_a = subsurface_properties["darcy_velocity"][hp_cell[0],hp_cell[1]]
     
         # Estimate the radius of the "Absenktrichter" with Sichardt around each well
         inner_radius = sichardt_distance(hydr_cond, thickness, hp_rates[hp_id])
@@ -62,53 +63,58 @@ def get_sichardt_lahm_distances(hp_cells:np.ndarray, hp_temps: np.ndarray, hp_ra
 # @timing
 def refinement_all_dps(num_dp:int, grid_settings:Dict, dps_hps_locs:np.ndarray, dps_hps_temps:np.ndarray, dps_hps_rates:np.ndarray, windows_properties_collected: list[dict[str, np.ndarray]], orig_resolution: int, output_dir: Path) -> list[Dict[str, np.ndarray]]:
 
-    max_resolution = grid_settings["resolution"]
-    length, width, height = grid_settings["size [m]"][0] // max_resolution, grid_settings["size [m]"][1] // max_resolution, 1
+    max_cell_size = grid_settings["resolution"]
+    # length, width, height = grid_settings["size [m]"][0] // max_resolution, grid_settings["size [m]"][1] // max_resolution, 1
+    # if len(grid_settings["size [m]"]) > 2:
+    #     height = grid_settings["size [m]"][2] // max_resolution
+    length, width, height = grid_settings["size [m]"][0], grid_settings["size [m]"][1], max_cell_size
     if len(grid_settings["size [m]"]) > 2:
-        height = grid_settings["size [m]"][2] // max_resolution
-    # print("lwh", length, width, height, "res", max_resolution)
+        height = grid_settings["size [m]"][2]
 
     meshs_refined = []
     dps_hps_ids = []
     for dp_id in tqdm(range(num_dp), desc="Runs"):
         output_run_dir = output_dir / f"RUN_{dp_id}"
 
-        hp_locs = dps_hps_locs[dp_id] #np.array([[width/2,length/8, height/2],[1,10, 1]]) #/res #, [10, 50]])/res #m 
-        num_hp = len(hp_locs)
+        hp_locs = dps_hps_locs[dp_id]
+        hp_locs = np.array([hp_locs[...,0], hp_locs[...,1], hp_locs[...,2]]).T
 
         sichardt_dists, lahm_w, lahm_l = get_sichardt_lahm_distances((hp_locs//orig_resolution).astype(int), dps_hps_temps[dp_id], dps_hps_rates[dp_id], windows_properties_collected[dp_id]["properties"])
-        
-        # hp_locs = np.array([hp_locs[:,1], hp_locs[:,0], hp_locs[:,2]]).T
-        cells_to_refine_later_and_res, hp_cells = generate_refinement_masks(num_hp, width, length, height, max_resolution, hp_locs//max_resolution, sichardt_dists, lahm_w, lahm_l)
-        cell_centers, face_centers, face_ids, face_areas, cell_volumes, hp_ids = calc_refined_grid_3D(cells_to_refine_later_and_res, hp_cells)
 
-        # scaling
-        cell_centers[:,0] *= width * max_resolution
-        cell_centers[:,1] *= length * max_resolution
-        cell_centers[:,2] *= height * max_resolution
-        face_centers[:,0] *= width * max_resolution
-        face_centers[:,1] *= length * max_resolution
-        face_centers[:,2] *= height * max_resolution
+        hps_dict = {
+            "hp_centers": hp_locs,
+            "sichardt_dists": sichardt_dists,
+            "lahm_l": lahm_l,
+            "lahm_w": lahm_w,
+            "min_cell_size_hp": 0.5,
+            "min_cell_size_plume": 1,
+            }
 
-        # switch axes () switch axis 0, 1 (w,l) to (l,w) of cell centers and face centers)
-        cell_centers = np.array([cell_centers[:,1], cell_centers[:,0], cell_centers[:,2]]).T
-        face_centers = np.array([face_centers[:,1], face_centers[:,0], face_centers[:,2]]).T
-        # TOODO ACTUAL : l, w, h ?? SOLL DAS SO? Wenn nciht, die dim in mesh_gen_boundaries tauschen
-        # assert np.max(cell_centers[:,0])+max_resolution > width*max_resolution, f"cell centers not correct {np.max(cell_centers[:,0])} < {width}"
-        # assert np.max(cell_centers[:,1])+max_resolution > length*max_resolution, f"cell centers not correct {np.max(cell_centers[:,1])} < {length}"
-        # assert np.max(cell_centers[:,2])+max_resolution > height*max_resolution, f"cell centers not correct {np.max(cell_centers[:,2])} < {height}"
-        # assert np.max(face_centers[:,0])+max_resolution > width*max_resolution, f"face centers not correct {np.max(face_centers[:,0])} < {width}"
-        # assert np.max(face_centers[:,1])+max_resolution > length*max_resolution, f"face centers not correct {np.max(face_centers[:,1])} < {length}"
-        # assert np.max(face_centers[:,2])+max_resolution > height*max_resolution, f"face centers not correct {np.max(face_centers[:,2])} < {height}"
-        assert np.max(face_ids) == len(cell_centers), f"face ids not correct; not+1? {np.max(face_ids)} != {len(cell_centers)}"
-    
-        mesh_refined = {"cell_centers": cell_centers, "cell_volumes": cell_volumes, "face_areas": face_areas, "face_cell_ids": face_ids, "face_centers": face_centers}
+        grid = Grid(res_x=length//max_cell_size, res_y=width//max_cell_size, res_z=height//max_cell_size, 
+                    minx=0, maxx=length, miny=0, maxy=width, minz=0, maxz=height,
+                    chunk_w=length//max_cell_size, chunk_h=width//max_cell_size, chunk_d=1, max_cell_size=max_cell_size)
+        results, hps_ids = refine_grid(grid, max_depth=10, target_resolution=target_resolution, hps=hps_dict, visualize_grid=False)
+        cell_centers, face_centers, face_cell_ids, face_areas, cell_volumes = results
         
-        # store refined mesh: overwrite normal mesh
+        cell_centers = cell_centers[:, [0, 1, 2]]
+        assert (np.array([face_centers[:,0], face_centers[:,1], face_centers[:,2]]).T == face_centers[:,[0,1,2]]).all(), "face centers transpose not correct"
+        face_centers = face_centers[:, [0, 1, 2]]
+
+        # TOODo ACTUAL : l, w, h ?? SOLL DAS SO? Wenn nciht, die dim in mesh_gen_boundaries tauschen
+        assert np.max(cell_centers[:,0])+max_cell_size > length, f"cell centers not correct {np.max(cell_centers[:,0])} < {length}"
+        assert np.max(cell_centers[:,1])+max_cell_size > width, f"cell centers not correct {np.max(cell_centers[:,1])} < {width}"
+        assert np.max(cell_centers[:,2])+max_cell_size > height, f"cell centers not correct {np.max(cell_centers[:,2])} < {height}"
+        assert np.max(face_centers[:,0])+max_cell_size > length, f"face centers not correct {np.max(face_centers[:,0])} < {length}"
+        assert np.max(face_centers[:,1])+max_cell_size > width, f"face centers not correct {np.max(face_centers[:,1])} < {width}"
+        assert np.max(face_centers[:,2])+max_cell_size > height, f"face centers not correct {np.max(face_centers[:,2])} < {height}"
+        assert np.max(face_cell_ids) == len(cell_centers), f"face ids not correct; not+1? {np.max(face_cell_ids)} != {len(cell_centers)}"
+
+        # store refined mesh
+        mesh_refined = {"cell_centers": cell_centers, "cell_volumes": cell_volumes, "face_areas": face_areas, "face_cell_ids": face_cell_ids, "face_centers": face_centers}
         store_mesh(output_run_dir, mesh_refined)
 
         meshs_refined.append(mesh_refined)
-        dps_hps_ids.append(hp_ids)
+        dps_hps_ids.append(hps_ids)
         
     return meshs_refined, dps_hps_ids
 

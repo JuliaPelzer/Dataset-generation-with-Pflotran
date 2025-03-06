@@ -57,8 +57,6 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     else:
         meshs, hps_cell_ids = refinement_all_dps(args.num_dp, settings["grid"], hps_locs, hps_temps, hps_rates, windows_collected, orig_resolution, output_dataset_dir)
     
-
-
     for run_id in np.arange(args.num_dp):
         output_run_dir = output_dataset_dir / f"RUN_{run_id}"
         shutil.copytree(output_dataset_dir/"interim", output_run_dir, dirs_exist_ok=True)

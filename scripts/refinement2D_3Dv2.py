@@ -18,10 +18,9 @@ def target_resolution(cell_centers:np.ndarray, curr_cell_size:float, max_cell_si
     for plume_w, plume_l, hp_center, min_radius in zip(lahm_w, lahm_l, hp_centers, sichardt_dists):
         ress_local = np.ones_like(cell_centers[..., 0]) * max_cell_size
         dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2 + (cell_centers[..., 2]-hp_center[2]) ** 2)
-        for i in range(n_refinement_steps):
+        for i in range(n_refinement_steps+1):
             ress_local[dist <= 2*min_radius - i/n_refinement_steps*min_radius] = max_cell_size*2**(-i-1) # cells within 2x sichardt distance are exponentially refined
-        min_hp_region = np.logical_or(dist <= min_radius, dist <= curr_cell_size) # the cell around a hp should be properly refined no matter how small the calculated sichardt distances are
-        ress_local[min_hp_region] = min_cell_size_hp
+        ress_local[dist <= curr_cell_size] = min_cell_size_hp
 
         for j in range(n_refinement_plumes):
             ress_plume = np.ones_like(cell_centers[..., 0]) * max_cell_size
@@ -391,6 +390,7 @@ class Grid:
     chunk_h: int
     chunk_d: int
     chunks: dict[tuple[int, int, int], "Chunk"] = field(default_factory=dict)
+    max_cell_size: float = None
 
     def __post_init__(self):
         if self.res_x % self.chunk_w != 0:
@@ -399,6 +399,8 @@ class Grid:
             raise ValueError("res_y has to be divisible by chunk_h")
         assert self.res_z == 1, "3D not implemented yet"
         assert self.res_z // self.chunk_d == 1, "3D chunking not implemented yet"
+        if self.max_cell_size is None:
+            self.max_cell_size = np.max([(self.maxx-self.minx)// self.res_x, (self.maxy-self.miny)// self.res_y]) #, (self.maxz-self.minz)//self.res_z]), # to refine, actively excluding z-dim
         
     @property
     def width(self):
@@ -711,7 +713,7 @@ def refine_grid(
                     index_offset=index_offset,
                     prev_level_highest_id=prev_level_highest_id,
                     target_resolution=target_resolution,
-                    max_cell_size=np.max([(grid.maxx-grid.minx)// grid.res_x, (grid.maxy-grid.miny)// grid.res_y]), #, (grid.maxz-grid.minz)//grid.res_z]), # to refine, actively excluding z-dim
+                    max_cell_size=grid.max_cell_size,
                     hps=hps,
                     visualize=visualize_steps,
                 )
@@ -729,8 +731,25 @@ def refine_grid(
         todos = new_todos
     
     results = [np.concatenate(r) for r in zip(*results)]
-    results[2] += 1 # cell ids start at 1
-    return results
+
+    hps_cell_ids = calc_hp_cell_ids(results[0], hps, grid.max_cell_size)
+    hps_cell_ids += 1
+    results[2] += 1 # cell ids start at 1 in pflotran
+    return results, hps_cell_ids
+
+def calc_hp_cell_ids(cell_centers, hps_dict, max_cell_size):
+    n_refinement_steps = int(np.log2(max_cell_size/hps_dict["min_cell_size_hp"]))
+    smallest_cell_size = max_cell_size*2**(-n_refinement_steps-1)
+    hp_ids = []
+    # for each hp find cell center it belongs to by assuming all cells are resolved at n_refinement_step_
+    for hp_center in hps_dict["hp_centers"]:
+        hp_center = np.array(hp_center)//smallest_cell_size * smallest_cell_size + smallest_cell_size/2
+        # dist = np.linalg.norm(cell_centers - hp_center, axis=-1)
+        assert hp_center in cell_centers, f"hp_center {hp_center} not in cell_centers "
+        hp_line = np.where(np.all(cell_centers == hp_center, axis=-1))[0]
+        hp_ids.append(hp_line[0])
+    return np.array(hp_ids)
+
 
 def plot_3d_cells(cell_centers, face_centers, face_cell_ids, face_areas, cell_volumes=None):
     fig = plt.figure(figsize=(10, 8))
@@ -754,39 +773,39 @@ if __name__ == "__main__":
     size_x = 1000
     size_y = 1000
     grid = Grid(
-        res_x=20,
-        res_y=20,
+        res_x=10,
+        res_y=10,
         res_z=1,
         minx=0,
         maxx=size_x,
         miny=0,
         maxy=size_y,
         minz=0,
-        maxz=12.5, #000//20,
-        chunk_w=4,
+        maxz=50, #000//20,
+        chunk_w=2,
         chunk_h=10,
-        chunk_d=1, #anzahl elemente in diese richtung in einem chunk (im ursprünglichen zustand oder immer?)
+        chunk_d=1, #number of elements per chunk per direction
+        max_cell_size=100,
     )
-    max_depth = 10
-    hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,5.0]])
-    sichardt_dists = np.array([50, 100, 3]).astype(np.float32)
-    lahm_l = np.array([500, 200, 0])
-    lahm_w = np.array([160, 200, 0])
-    # TODO CHECK hp_center orientation ([0],[1] maybe swapped?, check cell_centers orientation)
+    max_depth = 5
+    hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,10.0]])
+    sichardt_dists = np.array([50, 100, 10]).astype(np.float32)
+    lahm_l = np.array([500, 200, 100])
+    lahm_w = np.array([160, 200, 50])
     hps = {
         "hp_centers": hp_centers,
         "sichardt_dists": sichardt_dists,
         "lahm_l": lahm_l,
         "lahm_w": lahm_w,
-        "min_cell_size_hp": 2.5,
-        "min_cell_size_plume": 10,
+        "min_cell_size_hp": 7,
+        "min_cell_size_plume": 20,
     }
 
-    results = refine_grid(grid, max_depth, target_resolution, hps, visualize_grid=True)
+    results, hps_ids = refine_grid(grid, max_depth, target_resolution, hps, visualize_grid=True)
 
     plt.xlim(grid.xlim)
     plt.ylim(grid.ylim)
-    # plot_grid(*results)
+    plot_grid(*results)
     print(set(np.sqrt(results[3])))
     print(set(np.cbrt(results[4])))
 

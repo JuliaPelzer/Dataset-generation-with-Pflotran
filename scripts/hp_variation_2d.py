@@ -85,11 +85,11 @@ def calc_hps_locs_float(vary_poss: bool, num_dps: int, num_hps: int, settings: D
         hps_locs = np.array([locs_x, locs_y, locs_z]).T # np.ones_like(locs_x)]).T
     else:
         try:
-            hps_locs = [settings["grid"]["loc_hp [m]"]]
+            hps_locs = np.array([settings["grid"]["loc_hp [m]"]])
 
         except:
             # if nothing specified: center position
-            hps_locs = [list((np.array(grid_size)/2))]
+            hps_locs = np.array([list((np.array(grid_size)/2))])
 
     hps_locs = hps_locs.reshape((num_hps, num_dps, 3))
     hps_locs = np.swapaxes(hps_locs, 0, 1)
