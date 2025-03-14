@@ -14,31 +14,36 @@ def target_resolution(cell_centers:np.ndarray, curr_cell_size:float, max_cell_si
 
     n_refinement_steps = int(np.log2(max_cell_size / min_cell_size_hp))
     n_refinement_plumes = int(np.log2(max_cell_size / min_cell_size_plume))
-    ress_all = np.ones_like(cell_centers[...,0]) * max_cell_size
-    for plume_w, plume_l, hp_center, min_radius in zip(lahm_w, lahm_l, hp_centers, sichardt_dists):
-        ress_local = np.ones_like(cell_centers[..., 0]) * max_cell_size
-        dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2 + (cell_centers[..., 2]-hp_center[2]) ** 2)
-        for i in range(n_refinement_steps+1):
-            ress_local[dist <= 2*min_radius - i/n_refinement_steps*min_radius] = max_cell_size*2**(-i-1) # cells within 2x sichardt distance are exponentially refined
-        ress_local[dist <= curr_cell_size] = min_cell_size_hp
+    to_refine = False
+    if to_refine:
+        ress_all = np.ones_like(cell_centers[...,0]) * max_cell_size
+        for plume_w, plume_l, hp_center, min_radius in zip(lahm_w, lahm_l, hp_centers, sichardt_dists):
+            ress_local = np.ones_like(cell_centers[..., 0]) * max_cell_size
+            dist = np.sqrt((cell_centers[..., 0]-hp_center[0]) ** 2 + (cell_centers[..., 1]-hp_center[1]) ** 2) # + (cell_centers[..., 2]-hp_center[2]) ** 2)
+            for i in range(n_refinement_steps+1):
+                ress_local[dist <= 2*min_radius - i/n_refinement_steps*min_radius] = max_cell_size*2**(-i-1) # cells within 2x sichardt distance are exponentially refined
+            ress_local[dist <= curr_cell_size] = min_cell_size_hp
 
-        for j in range(n_refinement_plumes):
-            ress_plume = np.ones_like(cell_centers[..., 0]) * max_cell_size
-            # set ress_plume to plume_res in the plume. plume is defined as a box with width lahm_w and length lahm_l
-            plume = np.logical_and(
-                np.logical_and(
+            for j in range(n_refinement_plumes):
+                ress_plume = np.ones_like(cell_centers[..., 0]) * max_cell_size
+                # set ress_plume to plume_res in the plume. plume is defined as a box with width lahm_w and length lahm_l
+                plume = np.logical_and(
                     np.abs(cell_centers[..., 1] - hp_center[1]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2,
-                    np.abs(cell_centers[..., 2] - hp_center[2]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2
-                ),
-                np.logical_and(
-                    (cell_centers[...,0] - hp_center[0]) > 0,
-                    (cell_centers[...,0] - hp_center[0]) <= 2*plume_l - j/n_refinement_plumes*plume_l
+                    # np.logical_and(
+                    #     np.abs(cell_centers[..., 2] - hp_center[2]) <= (2*plume_w - j/n_refinement_plumes*plume_w)/2
+                    # ),
+                    np.logical_and(
+                        (cell_centers[...,0] - hp_center[0]) > 0,
+                        (cell_centers[...,0] - hp_center[0]) <= 2*plume_l - j/n_refinement_plumes*plume_l
+                    )
                 )
-            )
-            ress_plume[plume] = max_cell_size*2**(-j-1)
-            ress_local = np.minimum(ress_local, ress_plume)
+                ress_plume[plume] = max_cell_size*2**(-j-1)
+                ress_local = np.minimum(ress_local, ress_plume)
 
-        ress_all = np.minimum(ress_all, ress_local)
+            ress_all = np.minimum(ress_all, ress_local)
+    else:
+        constant_cell_size = 0.2
+        ress_all = np.ones_like(cell_centers[...,0]) * constant_cell_size
     result = np.stack([ress_all, ress_all, ress_all], axis=-1)
     return result
 
@@ -498,7 +503,7 @@ class Grid:
                 Chunk(
                     parent.res_x,
                     parent.res_y,
-                    parent.res_z,
+                    parent.res_z*2 if refine_z else parent.res_z,
                     parent.minx + x * parent.width / 2,
                     parent.minx + (x + 1) * parent.width / 2,
                     parent.miny + y * parent.height / 2,
@@ -743,11 +748,17 @@ def calc_hp_cell_ids(cell_centers, hps_dict, max_cell_size):
     hp_ids = []
     # for each hp find cell center it belongs to by assuming all cells are resolved at n_refinement_step_
     for hp_center in hps_dict["hp_centers"]:
-        hp_center = np.array(hp_center)//smallest_cell_size * smallest_cell_size + smallest_cell_size/2
-        # dist = np.linalg.norm(cell_centers - hp_center, axis=-1)
-        assert hp_center in cell_centers, f"hp_center {hp_center} not in cell_centers "
-        hp_line = np.where(np.all(cell_centers == hp_center, axis=-1))[0]
-        hp_ids.append(hp_line[0])
+        try:
+            hp_center = np.array(hp_center)//smallest_cell_size * smallest_cell_size + smallest_cell_size/2
+            # dist = np.linalg.norm(cell_centers - hp_center, axis=-1)
+            assert hp_center in cell_centers, f"hp_center {hp_center} not in cell_centers "
+            hp_line = np.where(np.all(cell_centers == hp_center, axis=-1))[0]
+            hp_ids.append(hp_line[0])
+        except:
+            # get cell_center closest to hp_center
+            dist = np.linalg.norm(cell_centers - hp_center, axis=-1)
+            hp_line = np.argmin(dist)
+            hp_ids.append(hp_line)
     return np.array(hp_ids)
 
 
@@ -770,43 +781,63 @@ def plot_3d_cells(cell_centers, face_centers, face_cell_ids, face_areas, cell_vo
 
 if __name__ == "__main__":
 
-    size_x = 1000
-    size_y = 1000
-    grid = Grid(
-        res_x=10,
-        res_y=10,
-        res_z=1,
-        minx=0,
-        maxx=size_x,
-        miny=0,
-        maxy=size_y,
-        minz=0,
-        maxz=50, #000//20,
-        chunk_w=2,
-        chunk_h=10,
-        chunk_d=1, #number of elements per chunk per direction
-        max_cell_size=100,
-    )
-    max_depth = 5
-    hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,10.0]])
-    sichardt_dists = np.array([50, 100, 10]).astype(np.float32)
-    lahm_l = np.array([500, 200, 100])
-    lahm_w = np.array([160, 200, 50])
-    hps = {
-        "hp_centers": hp_centers,
-        "sichardt_dists": sichardt_dists,
-        "lahm_l": lahm_l,
-        "lahm_w": lahm_w,
-        "min_cell_size_hp": 7,
-        "min_cell_size_plume": 20,
-    }
+    # size_x = 1000
+    # size_y = 1000
+    # grid = Grid(
+    #     res_x=10,
+    #     res_y=10,
+    #     res_z=1,
+    #     minx=0,
+    #     maxx=size_x,
+    #     miny=0,
+    #     maxy=size_y,
+    #     minz=0,
+    #     maxz=50, #000//20,
+    #     chunk_w=2,
+    #     chunk_h=10,
+    #     chunk_d=1, #number of elements per chunk per direction
+    #     max_cell_size=100,
+    # )
+    # max_depth = 5
+    # hp_centers = np.array([[200.0, 500.0, 0.5], [600.0,600.0,20.0], [800.0, 200.0,10.0]])
+    # sichardt_dists = np.array([50, 100, 10]).astype(np.float32)
+    # lahm_l = np.array([500, 200, 100])
+    # lahm_w = np.array([160, 200, 50])
+    # hps = {
+    #     "hp_centers": hp_centers,
+    #     "sichardt_dists": sichardt_dists,
+    #     "lahm_l": lahm_l,
+    #     "lahm_w": lahm_w,
+    #     "min_cell_size_hp": 7,
+    #     "min_cell_size_plume": 20,
+    # }
 
-    results, hps_ids = refine_grid(grid, max_depth, target_resolution, hps, visualize_grid=True)
+    # results, hps_ids = refine_grid(grid, max_depth, target_resolution, hps, visualize_grid=True)
 
-    plt.xlim(grid.xlim)
-    plt.ylim(grid.ylim)
-    plot_grid(*results)
-    print(set(np.sqrt(results[3])))
-    print(set(np.cbrt(results[4])))
+    # plt.xlim(grid.xlim)
+    # plt.ylim(grid.ylim)
+    # plot_grid(*results)
+    # print(set(np.sqrt(results[3])))
+    # print(set(np.cbrt(results[4])))
 
-    plot_3d_cells(*results)
+    # plot_3d_cells(*results)
+    import pathlib
+    import h5py
+
+    data = h5py.File(pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/outputs/test_refine/RUN_0/pflotran.h5"), "r")
+    print(data["   0 Time  0.00000E+00 y"]["Liquid Pressure [Pa]"].shape)
+    print(data["   0 Time  0.00000E+00 y"]["Liquid Pressure [Pa]"][:10])
+    mesh = h5py.File(pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/outputs/test_refine/RUN_0/mesh.h5"), "r")
+    print(mesh["Domain"]["Cells"]["Centers"].shape)
+    print(mesh["Domain"]["Cells"]["Centers"][:10])
+    pressure_275 = np.array(data["   0 Time  0.00000E+00 y"]["Liquid Pressure [Pa]"])
+    mesh_cells = np.array(mesh["Domain"]["Cells"]["Centers"])
+    mesh_vols = np.array(mesh["Domain"]["Cells"]["Volumes"])
+    fig = plt.figure(figsize=(10, 8))
+    # top view
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(mesh_cells[:,0], mesh_cells[:,1], mesh_cells[:, 2],  c=np.cbrt(mesh_vols), s=np.sqrt(mesh_vols), cmap="flag")
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()

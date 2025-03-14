@@ -1,0 +1,11 @@
+grid:
+  distance_to_border: 1
+  resolution: 5
+  size [m]:
+  - 20
+  - 10
+  - 5
+subsurface:
+  aquifer thickness: 5
+  darcy velocity: 1
+  hydraulic conductivity: 1.0e-05

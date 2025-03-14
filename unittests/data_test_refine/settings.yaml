@@ -1,0 +1,19 @@
+general:
+  random_bool: True
+  seed_id: 2907
+  dimensions: 2
+grid:
+  distance_to_border: 
+  - 10
+  - 10
+  - 1
+  ncells: automatic
+  refinement: True
+  resolution: 5 #[m]
+  size [m]:
+  - 100
+  - 40
+  loc_hp [m]:
+  - 161
+  - 111
+  - 1

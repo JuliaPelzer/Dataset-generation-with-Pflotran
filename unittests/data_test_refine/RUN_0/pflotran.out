@@ -1,0 +1,870 @@
+
+================================
+  PFLOTRAN Development Version
+================================
+
+Opening group: Domain/Cells
+Opening group: Domain/Connections
+pflotran card:: TIME
+pflotran card:: REFERENCE_PRESSURE
+"Reference Pressure units" set to default value.
+pflotran card:: NUMERICAL_METHODS
+pflotran card:: FLUID_PROPERTY
+"FLUID_PROPERTY,diffusion_coefficient units" set to default value.
+pflotran card:: DATASET
+pflotran card:: MATERIAL_PROPERTY
+  Name :: gravel
+"MATERIAL_PROPERTY,rock density units" set to default value.
+"MATERIAL_PROPERTY,specific heat units" set to default value.
+"MATERIAL_PROPERTY,dry thermal conductivity units" set to default value.
+"MATERIAL_PROPERTY,wet thermal conductivity units" set to default value.
+pflotran card:: MATERIAL_PROPERTY
+  Name :: gravel_inj
+"MATERIAL_PROPERTY,rock density units" set to default value.
+"MATERIAL_PROPERTY,specific heat units" set to default value.
+"MATERIAL_PROPERTY,dry thermal conductivity units" set to default value.
+"MATERIAL_PROPERTY,wet thermal conductivity units" set to default value.
+pflotran card:: CHARACTERISTIC_CURVES
+  Name :: cc1
+ WARNING: Mualem-van Genuchten relative permeability function is being used without SMOOTH option.
+pflotran card:: GRID
+pflotran card:: REGION
+all
+pflotran card:: REGION
+south
+pflotran card:: REGION
+north
+pflotran card:: REGION
+heatpump_inject0
+pflotran card:: FLOW_CONDITION
+initial
+pflotran card:: FLOW_CONDITION
+north
+pflotran card:: FLOW_CONDITION
+south
+pflotran card:: FLOW_CONDITION
+injection0
+pflotran card:: INITIAL_CONDITION
+"Initial Condition name" set to default value.
+pflotran card:: BOUNDARY_CONDITION
+"Boundary Condition name" set to default value.
+pflotran card:: BOUNDARY_CONDITION
+"Boundary Condition name" set to default value.
+pflotran card:: SOURCE_SINK
+pflotran card:: STRATA
+pflotran card:: STRATA
+pflotran card:: OUTPUT
+"OUTPUT,SNAPSHOT_FILE,FORMAT,HDF5" set to default value.
+pflotran card:: END_SUBSURFACE
+ Extent of Gridded Domain
+  X: 2.5000000000000000 - 99.375000000000000
+  Y: 0.15625000000000000 - 39.687500000000000
+  Z: 0.15625000000000000 - 4.8437500000000000
+
+Testing group: permeability
+Group "permeability" in HDF5 file "permeability.h5" not found in file.  Therefore, assuming a cell-indexed dataset.
+Opening hdf5 file: permeability.h5
+Setting up grid cell indices
+Reading dataset: Cell Ids
+  0.06 Seconds to set up indices
+Reading dataset: permeability
+  0.03 Seconds to read real array
+Closing hdf5 file: permeability.h5
+Opening hdf5 file: permeability.h5
+Setting up grid cell indices
+Reading dataset: Cell Ids
+  0.06 Seconds to set up indices
+Reading dataset: permeability
+  0.03 Seconds to read real array
+Closing hdf5 file: permeability.h5
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Initial Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   initial
+                  Region:   all
+--------------------------------------------------------------------------------
+
+  Flow Condition: initial
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   north
+                  Region:   north
+--------------------------------------------------------------------------------
+
+  Flow Condition: north
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+          Flow Condition:   south
+                  Region:   south
+--------------------------------------------------------------------------------
+
+  Flow Condition: south
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+
+    Sub Condition: pressure
+      Type: hydrostatic
+      Gradient:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  3
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Transient: no
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Source Sink
+
+--------------------------------------------------------------------------------
+          Flow Condition:   injection0
+                  Region:   heatpump_inject0
+--------------------------------------------------------------------------------
+
+  Flow Condition: injection0
+    Synchronize time with update: no
+    Time units: yr
+    Length units: m
+      Datum:
+
+    Sub Condition: rate
+      Type: scaled volumetric rate
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Is transient?: yes
+          Number of times:      1
+          Is cyclic?: yes
+          Buffer:
+            Rank:  2
+            Dims:    1   1
+            Buffer Slice Size:   0
+          Array Rank:  1
+
+    Sub Condition: temperature
+      Type: dirichlet
+      Gradient:
+      Data:
+        Dataset: Unnamed Ascii Dataset
+          Type: dataset_ascii_type
+          Is transient?: yes
+          Number of times:      1
+          Is cyclic?: yes
+          Buffer:
+            Rank:  2
+            Dims:    1   1
+            Buffer Slice Size:   0
+          Array Rank:  1
+
+--------------------------------------------------------------------------------
+Default HDF5 method is used in Initialization
+
+ Requested processors =    32
+  Beginning setup of FLOW SNES
+ number of dofs =   2, number of phases =   1
+ mode = TH: p, T
+  Finished setting up FLOW SNES
+
+FLOW Time Stepper SNES
+      maximum number of steps: 999999
+constant time steps threshold: 5
+       maximum number of cuts: 16
+             reduction factor: 5.000000E-01
+        maximum growth factor: 2.000000E+00
+                 acceleration: on
+       acceleration threshold: 5
+       number of ramp entries: 5
+                ramp entry #1: 2.0000
+                ramp entry #2: 2.0000
+                ramp entry #3: 2.0000
+                ramp entry #4: 2.0000
+                ramp entry #5: 2.0000
+                ramp entry #6: 1.8000
+                ramp entry #7: 1.6000
+                ramp entry #8: 1.4000
+                ramp entry #9: 1.2000
+               ramp entry #10: 1.0000
+               ramp entry #11: 1.0000
+               ramp entry #12: 1.0000
+               ramp entry #13: 1.0000
+
+FLOW Newton Solver
+                         atol: 1.000000E-50
+                         rtol: 1.000000E-08
+                         stol: 1.000000E-08
+                         dtol: 1.000000E+04
+                      maxnorm: 1.000000E+20
+                    inftolres: -9.990000E+02
+                    inftolupd: 1.000000E+00
+                 inftolrelupd: -9.990000E+02
+                 inftolsclres: -9.990000E+02
+                     max iter: 50
+                     min iter: 1
+                         maxf: 10000
+                  matrix type: baij
+         precond. matrix type: baij
+               inexact newton: off
+            print convergence: on
+   print detailed convergence: off
+          check infinity norm: on
+
+FLOW Linear Solver
+                       solver: bcgs
+               preconditioner: bjacobi
+                         atol: 1.000000E-50
+                         rtol: 1.000000E-05
+                         dtol: 1.000000E+04
+            maximum iteration: 10000
+
+ --> creating hdf5 output file: pflotran.h5
+     92.50 Seconds to write HDF5 file.
+
+ Finished Initialization
+
+
+== TH FLOW =====================================================================
+  0 2r: 6.74E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 5.01E-01 iu: 0.00E+00 rsn:   0
+  1 2r: 1.32E-03 2x: 4.26E+08 2u: 5.76E+03 ir: 1.17E-03 iu: 3.01E+02 rsn:   0
+  2 2r: 1.61E-08 2x: 4.26E+08 2u: 3.32E+00 ir: 5.38E-09 iu: 1.37E-01 rsn: itol_upd
+
+ Step      1 Time=  3.17098E-08 Dt=  3.17098E-08 [y] conv_reason: 11
+  newton =   2 [       2] linear =   255 [       255] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 255 / 2
+  --> SNES Residual: 0.161230E-07 0.741922E-13 0.537846E-08
+  --> max change: dpmx=   3.0111E+02 dtmpmx=   2.7377E-02
+
+== TH FLOW =====================================================================
+  0 2r: 1.44E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 1.44E-01 iu: 0.00E+00 rsn:   0
+  1 2r: 1.97E-06 2x: 4.26E+08 2u: 5.99E+02 ir: 1.40E-06 iu: 1.53E+00 rsn:   0
+  2 2r: 7.41E-09 2x: 4.26E+08 2u: 6.43E-02 ir: 6.67E-11 iu: 1.20E-03 rsn: itol_upd
+
+ Step      2 Time=  9.51294E-08 Dt=  6.34196E-08 [y] conv_reason: 11
+  newton =   2 [       4] linear =   356 [       611] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 356 / 2
+  --> SNES Residual: 0.741426E-08 0.341177E-13 0.667460E-10
+  --> max change: dpmx=   1.5344E+00 dtmpmx=   5.4075E-02
+
+== TH FLOW =====================================================================
+  0 2r: 1.42E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 1.42E-01 iu: 0.00E+00 rsn:   0
+  1 2r: 2.56E-06 2x: 4.26E+08 2u: 4.75E+01 ir: 1.61E-06 iu: 4.33E-01 rsn: itol_upd
+
+ Step      3 Time=  2.21969E-07 Dt=  1.26839E-07 [y] conv_reason: 11
+  newton =   1 [       5] linear =   141 [       752] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 141 / 1
+  --> SNES Residual: 0.255984E-05 0.117794E-10 0.161495E-05
+  --> max change: dpmx=   4.3262E-01 dtmpmx=   1.0550E-01
+
+== TH FLOW =====================================================================
+  0 2r: 1.38E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 1.38E-01 iu: 0.00E+00 rsn:   0
+  1 2r: 5.98E-06 2x: 4.26E+08 2u: 2.15E+00 ir: 2.14E-06 iu: 1.02E+00 rsn: stol
+
+ Step      4 Time=  4.75647E-07 Dt=  2.53678E-07 [y] conv_reason: 4
+  newton =   1 [       6] linear =   103 [       855] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 103 / 1
+  --> SNES Residual: 0.598381E-05 0.275353E-10 0.213562E-05
+  --> max change: dpmx=   1.0206E+00 dtmpmx=   2.0091E-01
+
+== TH FLOW =====================================================================
+  0 2r: 1.32E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 1.32E-01 iu: 0.00E+00 rsn:   0
+  1 2r: 2.95E-05 2x: 4.26E+08 2u: 1.90E+00 ir: 1.81E-05 iu: 1.85E+00 rsn: stol
+
+ Step      5 Time=  9.83004E-07 Dt=  5.07357E-07 [y] conv_reason: 4
+  newton =   1 [       7] linear =    56 [       911] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 56 / 1
+  --> SNES Residual: 0.294686E-04 0.135604E-09 0.180526E-04
+  --> max change: dpmx=   1.8524E+00 dtmpmx=   3.6516E-01
+
+== TH FLOW =====================================================================
+  0 2r: 1.20E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 1.20E-01 iu: 0.00E+00 rsn:   0
+  1 2r: 9.97E-05 2x: 4.26E+08 2u: 3.16E+00 ir: 6.41E-05 iu: 3.06E+00 rsn: stol
+
+ Step      6 Time=  1.99772E-06 Dt=  1.01471E-06 [y] conv_reason: 4
+  newton =   1 [       8] linear =    57 [       968] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 57 / 1
+  --> SNES Residual: 0.997004E-04 0.458785E-09 0.640676E-04
+  --> max change: dpmx=   3.0582E+00 dtmpmx=   6.0820E-01
+
+== TH FLOW =====================================================================
+  0 2r: 1.01E-01 2x: 0.00E+00 2u: 0.00E+00 ir: 9.97E-02 iu: 0.00E+00 rsn:   0
+  1 2r: 2.19E-04 2x: 4.26E+08 2u: 4.54E+00 ir: 1.40E-04 iu: 4.32E+00 rsn:   0
+  2 2r: 3.42E-09 2x: 4.26E+08 2u: 1.59E+00 ir: 2.69E-09 iu: 4.27E-02 rsn: itol_upd
+
+ Step      7 Time=  4.02714E-06 Dt=  2.02943E-06 [y] conv_reason: 11
+  newton =   2 [      10] linear =   177 [      1145] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 177 / 2
+  --> SNES Residual: 0.341590E-08 0.157187E-13 0.269486E-08
+  --> max change: dpmx=   4.2796E+00 dtmpmx=   8.6797E-01
+
+== TH FLOW =====================================================================
+  0 2r: 7.62E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 7.11E-02 iu: 0.00E+00 rsn:   0
+  1 2r: 2.73E-04 2x: 4.26E+08 2u: 5.14E+00 ir: 1.80E-04 iu: 4.87E+00 rsn:   0
+  2 2r: 2.71E-09 2x: 4.26E+08 2u: 1.87E+00 ir: 2.14E-09 iu: 5.17E-02 rsn: itol_upd
+
+ Step      8 Time=  8.08600E-06 Dt=  4.05885E-06 [y] conv_reason: 11
+  newton =   2 [      12] linear =   165 [      1310] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 165 / 2
+  --> SNES Residual: 0.271497E-08 0.124933E-13 0.213814E-08
+  --> max change: dpmx=   4.8193E+00 dtmpmx=   9.6323E-01
+
+== TH FLOW =====================================================================
+  0 2r: 5.32E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 3.94E-02 iu: 0.00E+00 rsn:   0
+  1 2r: 1.35E-04 2x: 4.26E+08 2u: 4.97E+00 ir: 9.43E-05 iu: 4.10E+00 rsn:   0
+  2 2r: 3.34E-09 2x: 4.26E+08 2u: 1.62E+00 ir: 2.58E-09 iu: 2.84E-02 rsn: itol_upd
+
+ Step      9 Time=  1.62037E-05 Dt=  8.11771E-06 [y] conv_reason: 11
+  newton =   2 [      14] linear =   188 [      1498] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 188 / 2
+  --> SNES Residual: 0.334301E-08 0.153833E-13 0.257995E-08
+  --> max change: dpmx=   4.0681E+00 dtmpmx=   7.4034E-01
+
+== TH FLOW =====================================================================
+  0 2r: 3.98E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 1.52E-02 iu: 0.00E+00 rsn:   0
+  1 2r: 1.69E-04 2x: 4.26E+08 2u: 5.20E+00 ir: 4.46E-05 iu: 2.74E+00 rsn:   0
+  2 2r: 2.26E-09 2x: 4.26E+08 2u: 7.59E-01 ir: 1.33E-09 iu: 2.02E-02 rsn: itol_upd
+
+ Step     10 Time=  3.24391E-05 Dt=  1.62354E-05 [y] conv_reason: 11
+  newton =   2 [      16] linear =   214 [      1712] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 214 / 2
+  --> SNES Residual: 0.226264E-08 0.104119E-13 0.132683E-08
+  --> max change: dpmx=   2.7220E+00 dtmpmx=   1.0675E+00
+
+== TH FLOW =====================================================================
+  0 2r: 3.03E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 1.09E-02 iu: 0.00E+00 rsn:   0
+  1 2r: 1.79E-04 2x: 4.26E+08 2u: 6.45E+00 ir: 5.64E-05 iu: 1.83E+00 rsn:   0
+  2 2r: 4.40E-09 2x: 4.26E+08 2u: 2.11E-01 ir: 2.75E-09 iu: 2.98E-02 rsn: itol_upd
+
+ Step     11 Time=  6.49099E-05 Dt=  3.24708E-05 [y] conv_reason: 11
+  newton =   2 [      18] linear =   202 [      1914] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 202 / 2
+  --> SNES Residual: 0.439965E-08 0.202456E-13 0.274758E-08
+  --> max change: dpmx=   1.8038E+00 dtmpmx=   1.0680E+00
+
+== TH FLOW =====================================================================
+  0 2r: 2.20E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 5.47E-03 iu: 0.00E+00 rsn:   0
+  1 2r: 1.40E-04 2x: 4.26E+08 2u: 8.75E+00 ir: 2.91E-05 iu: 1.41E+00 rsn:   0
+  2 2r: 7.46E-09 2x: 4.26E+08 2u: 1.91E-01 ir: 2.40E-09 iu: 2.57E-02 rsn: itol_upd
+
+ Step     12 Time=  1.29852E-04 Dt=  6.49417E-05 [y] conv_reason: 11
+  newton =   2 [      20] linear =   207 [      2121] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 207 / 2
+  --> SNES Residual: 0.745541E-08 0.343071E-13 0.240126E-08
+  --> max change: dpmx=   1.3929E+00 dtmpmx=   1.2473E+00
+
+== TH FLOW =====================================================================
+  0 2r: 1.62E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 3.19E-03 iu: 0.00E+00 rsn:   0
+  1 2r: 1.49E-04 2x: 4.26E+08 2u: 1.27E+01 ir: 2.55E-05 iu: 1.33E+00 rsn:   0
+  2 2r: 1.53E-08 2x: 4.26E+08 2u: 3.11E-01 ir: 3.58E-09 iu: 2.45E-02 rsn: itol_upd
+
+ Step     13 Time=  2.59735E-04 Dt=  1.29883E-04 [y] conv_reason: 11
+  newton =   2 [      22] linear =   207 [      2328] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 207 / 2
+  --> SNES Residual: 0.153098E-07 0.704501E-13 0.357560E-08
+  --> max change: dpmx=   1.1801E+00 dtmpmx=   1.3324E+00
+
+== TH FLOW =====================================================================
+  0 2r: 1.18E-02 2x: 0.00E+00 2u: 0.00E+00 ir: 1.71E-03 iu: 0.00E+00 rsn:   0
+  1 2r: 1.64E-04 2x: 4.26E+08 2u: 1.91E+01 ir: 2.22E-05 iu: 1.44E+00 rsn:   0
+  2 2r: 2.65E-08 2x: 4.26E+08 2u: 4.71E-01 ir: 4.98E-09 iu: 2.96E-02 rsn: itol_upd
+
+ Step     14 Time=  5.19502E-04 Dt=  2.59767E-04 [y] conv_reason: 11
+  newton =   2 [      24] linear =   230 [      2558] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 230 / 2
+  --> SNES Residual: 0.265212E-07 0.122041E-12 0.498224E-08
+  --> max change: dpmx=   1.0141E+00 dtmpmx=   1.4355E+00
+
+== TH FLOW =====================================================================
+  0 2r: 8.58E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 9.19E-04 iu: 0.00E+00 rsn:   0
+  1 2r: 1.88E-04 2x: 4.26E+08 2u: 3.02E+01 ir: 1.56E-05 iu: 1.51E+00 rsn:   0
+  2 2r: 4.90E-07 2x: 4.26E+08 2u: 8.47E-01 ir: 2.33E-07 iu: 4.34E-02 rsn: itol_upd
+
+ Step     15 Time=  1.03903E-03 Dt=  5.19533E-04 [y] conv_reason: 11
+  newton =   2 [      26] linear =   222 [      2780] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 222 / 2
+  --> SNES Residual: 0.490015E-06 0.225487E-11 0.233483E-06
+  --> max change: dpmx=   9.9505E-01 dtmpmx=   1.5059E+00
+
+== TH FLOW =====================================================================
+  0 2r: 6.15E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 4.82E-04 iu: 0.00E+00 rsn:   0
+  1 2r: 2.17E-04 2x: 4.26E+08 2u: 4.96E+01 ir: 1.53E-05 iu: 1.62E+00 rsn:   0
+  2 2r: 5.88E-07 2x: 4.26E+08 2u: 1.48E+00 ir: 2.90E-07 iu: 6.74E-02 rsn: itol_upd
+
+ Step     16 Time=  2.07810E-03 Dt=  1.03907E-03 [y] conv_reason: 11
+  newton =   2 [      28] linear =   223 [      3003] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 223 / 2
+  --> SNES Residual: 0.587617E-06 0.270400E-11 0.290341E-06
+  --> max change: dpmx=   1.2027E+00 dtmpmx=   1.6115E+00
+
+== TH FLOW =====================================================================
+  0 2r: 4.38E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 2.58E-04 iu: 0.00E+00 rsn:   0
+  1 2r: 2.50E-04 2x: 4.26E+08 2u: 8.35E+01 ir: 1.42E-05 iu: 1.74E+00 rsn:   0
+  2 2r: 1.30E-06 2x: 4.26E+08 2u: 2.73E+00 ir: 5.23E-07 iu: 9.91E-02 rsn: itol_upd
+
+ Step     17 Time=  4.15623E-03 Dt=  2.07813E-03 [y] conv_reason: 11
+  newton =   2 [      30] linear =   226 [      3229] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 226 / 2
+  --> SNES Residual: 0.129954E-05 0.598000E-11 0.522635E-06
+  --> max change: dpmx=   1.6641E+00 dtmpmx=   1.7283E+00
+
+== TH FLOW =====================================================================
+  0 2r: 3.11E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 1.38E-04 iu: 0.00E+00 rsn:   0
+  1 2r: 3.03E-04 2x: 4.26E+08 2u: 1.41E+02 ir: 1.53E-05 iu: 2.13E+00 rsn:   0
+  2 2r: 9.82E-07 2x: 4.26E+08 2u: 4.31E+00 ir: 1.72E-07 iu: 1.19E-01 rsn: itol_upd
+
+ Step     18 Time=  8.20133E-03 Dt=  4.04510E-03 [y] conv_reason: 11
+  newton =   2 [      32] linear =   230 [      3459] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 230 / 2
+  --> SNES Residual: 0.982066E-06 0.451911E-11 0.171770E-06
+  --> max change: dpmx=   2.1952E+00 dtmpmx=   1.8049E+00
+
+== TH FLOW =====================================================================
+  0 2r: 2.22E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 7.42E-05 iu: 0.00E+00 rsn:   0
+  1 2r: 3.53E-04 2x: 4.26E+08 2u: 2.45E+02 ir: 1.16E-05 iu: 2.61E+00 rsn:   0
+  2 2r: 1.53E-06 2x: 4.26E+08 2u: 6.48E+00 ir: 2.23E-07 iu: 1.41E-01 rsn: itol_upd
+
+ Step     19 Time=  1.58267E-02 Dt=  7.62536E-03 [y] conv_reason: 11
+  newton =   2 [      34] linear =   263 [      3722] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 263 / 2
+  --> SNES Residual: 0.152520E-05 0.701842E-11 0.222710E-06
+  --> max change: dpmx=   2.6719E+00 dtmpmx=   1.8387E+00
+
+== TH FLOW =====================================================================
+  0 2r: 1.58E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 4.01E-05 iu: 0.00E+00 rsn:   0
+  1 2r: 4.03E-04 2x: 4.26E+08 2u: 4.30E+02 ir: 1.01E-05 iu: 3.02E+00 rsn:   0
+  2 2r: 2.45E-06 2x: 4.26E+08 2u: 8.29E+00 ir: 2.62E-07 iu: 1.68E-01 rsn: itol_upd
+
+ Step     20 Time=  3.00074E-02 Dt=  1.41807E-02 [y] conv_reason: 11
+  newton =   2 [      36] linear =   273 [      3995] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 273 / 2
+  --> SNES Residual: 0.245193E-05 0.112829E-10 0.262211E-06
+  --> max change: dpmx=   3.0617E+00 dtmpmx=   1.8120E+00
+
+== TH FLOW =====================================================================
+  0 2r: 1.04E-03 2x: 0.00E+00 2u: 0.00E+00 ir: 2.13E-05 iu: 0.00E+00 rsn:   0
+  1 2r: 3.03E-04 2x: 4.26E+08 2u: 5.53E+02 ir: 1.19E-05 iu: 2.97E+00 rsn:   0
+  2 2r: 1.71E-06 2x: 4.26E+08 2u: 6.35E+00 ir: 1.43E-07 iu: 1.74E-01 rsn: itol_upd
+
+ Step     21 Time=  5.66622E-02 Dt=  2.66548E-02 [y] conv_reason: 11
+  newton =   2 [      38] linear =   308 [      4303] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 308 / 2
+  --> SNES Residual: 0.171224E-05 0.787911E-11 0.143067E-06
+  --> max change: dpmx=   2.9839E+00 dtmpmx=   1.7005E+00
+
+== TH FLOW =====================================================================
+  0 2r: 4.50E-04 2x: 0.00E+00 2u: 0.00E+00 ir: 1.06E-05 iu: 0.00E+00 rsn:   0
+  1 2r: 6.87E-05 2x: 4.26E+08 2u: 3.37E+02 ir: 6.06E-06 iu: 1.84E+00 rsn:   0
+  2 2r: 1.49E-07 2x: 4.26E+08 2u: 3.23E+00 ir: 3.17E-08 iu: 7.46E-02 rsn: itol_upd
+
+ Step     22 Time=  1.09177E-01 Dt=  5.25148E-02 [y] conv_reason: 11
+  newton =   2 [      40] linear =   354 [      4657] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 354 / 2
+  --> SNES Residual: 0.148553E-06 0.683587E-12 0.317351E-07
+  --> max change: dpmx=   1.8318E+00 dtmpmx=   1.2096E+00
+
+== TH FLOW =====================================================================
+  0 2r: 9.21E-05 2x: 0.00E+00 2u: 0.00E+00 ir: 3.82E-06 iu: 0.00E+00 rsn:   0
+  1 2r: 3.80E-06 2x: 4.26E+08 2u: 8.25E+01 ir: 5.31E-07 iu: 5.23E-01 rsn: itol_upd
+
+ Step     23 Time=  2.14207E-01 Dt=  1.05030E-01 [y] conv_reason: 11
+  newton =   1 [      41] linear =   196 [      4853] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 196 / 1
+  --> SNES Residual: 0.379674E-05 0.174712E-10 0.530698E-06
+  --> max change: dpmx=   5.2288E-01 dtmpmx=   4.5331E-01
+
+== TH FLOW =====================================================================
+  0 2r: 9.11E-06 2x: 0.00E+00 2u: 0.00E+00 ir: 1.03E-06 iu: 0.00E+00 rsn:   0
+  1 2r: 3.57E-08 2x: 4.26E+08 2u: 8.16E+00 ir: 7.08E-09 iu: 6.07E-02 rsn: itol_upd
+
+ Step     24 Time=  4.24266E-01 Dt=  2.10059E-01 [y] conv_reason: 11
+  newton =   1 [      42] linear =   175 [      5028] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 175 / 1
+  --> SNES Residual: 0.356534E-07 0.164064E-12 0.708163E-08
+  --> max change: dpmx=   5.6621E-02 dtmpmx=   6.0673E-02
+
+== TH FLOW =====================================================================
+  0 2r: 3.57E-07 2x: 0.00E+00 2u: 0.00E+00 ir: 4.79E-08 iu: 0.00E+00 rsn:   0
+  1 2r: 9.50E-11 2x: 4.26E+08 2u: 3.85E-01 ir: 1.65E-11 iu: 3.24E-03 rsn: itol_upd
+
+ Step     25 Time=  8.44385E-01 Dt=  4.20119E-01 [y] conv_reason: 11
+  newton =   1 [      43] linear =   168 [      5196] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 168 / 1
+  --> SNES Residual: 0.949801E-10 0.437064E-15 0.164544E-10
+  --> max change: dpmx=   2.4313E-03 dtmpmx=   3.2392E-03
+
+== TH FLOW =====================================================================
+  0 2r: 8.46E-09 2x: 0.00E+00 2u: 0.00E+00 ir: 1.28E-09 iu: 0.00E+00 rsn:   0
+  1 2r: 4.96E-11 2x: 4.26E+08 2u: 1.16E-02 ir: 3.23E-12 iu: 7.56E-05 rsn: itol_upd
+
+ Step     26 Time=  1.68462E+00 Dt=  8.40238E-01 [y] conv_reason: 11
+  newton =   1 [      44] linear =   180 [      5376] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 180 / 1
+  --> SNES Residual: 0.496012E-10 0.228247E-15 0.323149E-11
+  --> max change: dpmx=   4.8374E-05 dtmpmx=   7.5607E-05
+
+== TH FLOW =====================================================================
+  0 2r: 1.52E-10 2x: 0.00E+00 2u: 0.00E+00 ir: 1.50E-11 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 2.61E-04 ir: 2.91E-13 iu: 7.84E-07 rsn: itol_upd
+
+ Step     27 Time=  2.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      45] linear =   148 [      5524] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 148 / 1
+  --> SNES Residual: 0.494174E-10 0.227401E-15 0.291398E-12
+  --> max change: dpmx=   6.2445E-07 dtmpmx=   7.8376E-07
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 2.91E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 6.04E-06 ir: 8.73E-13 iu: 1.46E-08 rsn: itol_upd
+
+ Step     28 Time=  3.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      46] linear =   157 [      5681] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 157 / 1
+  --> SNES Residual: 0.494707E-10 0.227646E-15 0.872717E-12
+  --> max change: dpmx=   1.4668E-08 dtmpmx=   9.1940E-09
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 8.73E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 1.40E-07 ir: 7.60E-13 iu: 4.05E-10 rsn: itol_upd
+
+ Step     29 Time=  4.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      47] linear =   146 [      5827] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 146 / 1
+  --> SNES Residual: 0.494690E-10 0.227638E-15 0.760019E-12
+  --> max change: dpmx=   3.4925E-10 dtmpmx=   2.1893E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 7.60E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.95E-08 ir: 4.51E-13 iu: 2.19E-10 rsn: itol_upd
+
+ Step     30 Time=  5.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      48] linear =   136 [      5963] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 136 / 1
+  --> SNES Residual: 0.495103E-10 0.227828E-15 0.451344E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.1299E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 4.51E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 3.24E-08 ir: 1.14E-12 iu: 2.01E-10 rsn: itol_upd
+
+ Step     31 Time=  6.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      49] linear =   125 [      6088] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 125 / 1
+  --> SNES Residual: 0.494251E-10 0.227436E-15 0.113602E-11
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2017E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.14E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 2.02E-08 ir: 6.14E-13 iu: 1.83E-10 rsn: itol_upd
+
+ Step     32 Time=  7.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      50] linear =   131 [      6219] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 131 / 1
+  --> SNES Residual: 0.494372E-10 0.227492E-15 0.613861E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.0863E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 6.14E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.04E-08 ir: 5.01E-13 iu: 1.95E-10 rsn: itol_upd
+
+ Step     33 Time=  8.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      51] linear =   133 [      6352] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 133 / 1
+  --> SNES Residual: 0.494804E-10 0.227691E-15 0.500847E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2922E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 5.01E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 2.06E-08 ir: 1.09E-12 iu: 1.54E-10 rsn: itol_upd
+
+ Step     34 Time=  9.68462E+00 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      52] linear =   106 [      6458] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 106 / 1
+  --> SNES Residual: 0.494464E-10 0.227535E-15 0.109191E-11
+  --> max change: dpmx=   1.1642E-10 dtmpmx=   1.2517E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.09E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.01E-08 ir: 4.63E-13 iu: 2.19E-10 rsn: itol_upd
+
+ Step     35 Time=  1.06846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      53] linear =    55 [      6513] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 55 / 1
+  --> SNES Residual: 0.494926E-10 0.227747E-15 0.463046E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2392E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 4.63E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 2.57E-08 ir: 1.02E-12 iu: 1.82E-10 rsn: itol_upd
+
+ Step     36 Time=  1.16846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      54] linear =   161 [      6674] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 161 / 1
+  --> SNES Residual: 0.494218E-10 0.227421E-15 0.101812E-11
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2385E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.02E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 3.68E-08 ir: 4.59E-13 iu: 3.00E-10 rsn: itol_upd
+
+ Step     37 Time=  1.26846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      55] linear =   122 [      6796] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 122 / 1
+  --> SNES Residual: 0.494336E-10 0.227476E-15 0.459067E-12
+  --> max change: dpmx=   3.4925E-10 dtmpmx=   1.1805E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 4.59E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 3.68E-08 ir: 1.29E-12 iu: 2.58E-10 rsn: itol_upd
+
+ Step     38 Time=  1.36846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      56] linear =   144 [      6940] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 144 / 1
+  --> SNES Residual: 0.494195E-10 0.227410E-15 0.128910E-11
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.1615E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.29E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.72E-08 ir: 6.04E-13 iu: 2.18E-10 rsn: itol_upd
+
+ Step     39 Time=  1.46846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      57] linear =   144 [      7084] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 144 / 1
+  --> SNES Residual: 0.495394E-10 0.227962E-15 0.604075E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2512E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 6.04E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 4.22E-08 ir: 7.74E-13 iu: 2.46E-10 rsn: itol_upd
+
+ Step     40 Time=  1.56846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      58] linear =   144 [      7228] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 144 / 1
+  --> SNES Residual: 0.495046E-10 0.227802E-15 0.774151E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.1695E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 7.74E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 4.71E-08 ir: 1.43E-12 iu: 3.60E-10 rsn: itol_upd
+
+ Step     41 Time=  1.66846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      59] linear =   145 [      7373] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 145 / 1
+  --> SNES Residual: 0.494773E-10 0.227676E-15 0.142944E-11
+  --> max change: dpmx=   3.4925E-10 dtmpmx=   1.1613E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.43E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 3.22E-08 ir: 2.69E-13 iu: 3.27E-10 rsn: itol_upd
+
+ Step     42 Time=  1.76846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      60] linear =   143 [      7516] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 143 / 1
+  --> SNES Residual: 0.493880E-10 0.227266E-15 0.269207E-12
+  --> max change: dpmx=   3.4925E-10 dtmpmx=   1.2533E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 2.69E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.18E-08 ir: 7.68E-13 iu: 1.92E-10 rsn: itol_upd
+
+ Step     43 Time=  1.86846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      61] linear =   131 [      7647] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 131 / 1
+  --> SNES Residual: 0.494697E-10 0.227642E-15 0.768352E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.1686E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 7.68E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.14E-08 ir: 1.48E-12 iu: 1.93E-10 rsn: itol_upd
+
+ Step     44 Time=  1.96846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      62] linear =   130 [      7777] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 130 / 1
+  --> SNES Residual: 0.494851E-10 0.227712E-15 0.148464E-11
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2265E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.48E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.71E-08 ir: 4.54E-13 iu: 2.43E-10 rsn: itol_upd
+
+ Step     45 Time=  2.06846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      63] linear =   138 [      7915] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 138 / 1
+  --> SNES Residual: 0.495329E-10 0.227932E-15 0.453819E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.3038E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 4.54E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 3.55E-08 ir: 6.33E-13 iu: 2.52E-10 rsn: itol_upd
+
+ Step     46 Time=  2.16846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      64] linear =   127 [      8042] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 127 / 1
+  --> SNES Residual: 0.494436E-10 0.227521E-15 0.632951E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.0705E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 6.33E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.94E-11 2x: 4.26E+08 2u: 2.37E-08 ir: 3.93E-13 iu: 1.74E-10 rsn: itol_upd
+
+ Step     47 Time=  2.26846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      65] linear =   119 [      8161] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 119 / 1
+  --> SNES Residual: 0.494363E-10 0.227488E-15 0.392625E-12
+  --> max change: dpmx=   1.1642E-10 dtmpmx=   1.1566E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.94E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 3.93E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.02E-08 ir: 7.32E-13 iu: 1.54E-10 rsn: itol_upd
+
+ Step     48 Time=  2.36846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      66] linear =   102 [      8263] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 102 / 1
+  --> SNES Residual: 0.494597E-10 0.227596E-15 0.731518E-12
+  --> max change: dpmx=   1.1642E-10 dtmpmx=   1.2091E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 7.32E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.03E-08 ir: 1.11E-12 iu: 1.60E-10 rsn: itol_upd
+
+ Step     49 Time=  2.46846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      67] linear =   131 [      8394] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 131 / 1
+  --> SNES Residual: 0.494974E-10 0.227769E-15 0.110600E-11
+  --> max change: dpmx=   1.1642E-10 dtmpmx=   1.1680E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 1.11E-12 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.26E-08 ir: 2.76E-13 iu: 1.86E-10 rsn: itol_upd
+
+ Step     50 Time=  2.56846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      68] linear =   115 [      8509] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 115 / 1
+  --> SNES Residual: 0.494612E-10 0.227603E-15 0.276159E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.2122E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 2.76E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.95E-11 2x: 4.26E+08 2u: 2.72E-08 ir: 5.27E-13 iu: 1.96E-10 rsn: itol_upd
+
+ Step     51 Time=  2.66846E+01 Dt=  1.00000E+00 [y] conv_reason: 11
+  newton =   1 [      69] linear =   112 [      8621] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 112 / 1
+  --> SNES Residual: 0.494974E-10 0.227769E-15 0.527372E-12
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.1754E-10
+
+== TH FLOW =====================================================================
+  0 2r: 4.95E-11 2x: 0.00E+00 2u: 0.00E+00 ir: 5.27E-13 iu: 0.00E+00 rsn:   0
+  1 2r: 4.96E-11 2x: 4.26E+08 2u: 3.70E-08 ir: 1.15E-12 iu: 2.84E-10 rsn: itol_upd
+
+ Step     52 Time=  2.75000E+01 Dt=  8.15378E-01 [y] conv_reason: 11
+  newton =   1 [      70] linear =   132 [      8753] cuts =  0 [   0]
+  --> SNES Linear/Non-Linear Iterations = 132 / 1
+  --> SNES Residual: 0.495584E-10 0.228050E-15 0.114869E-11
+  --> max change: dpmx=   2.3283E-10 dtmpmx=   1.1842E-10
+
+ --> appending to hdf5 output file: pflotran.h5
+     62.08 Seconds to write HDF5 file.
+
+PMCSubsurfaceFlow
+ Total Time: 1.0625E+01 seconds
+
+ FLOW TS SNES steps = 52  newton = 70  linear = 8753  cuts = 0
+ FLOW TS SNES Wasted Linear Iterations = 0
+ FLOW TS SNES Wasted Newton Iterations = 0
+ FLOW TS SNES time = 10.4 seconds
+
+ Wall Clock Time:  1.6521E+02 [sec]   2.7535E+00 [min]   4.5891E-02 [hr]
