@@ -2,9 +2,11 @@
 outputs/
 input_files/real_Munich_input_fields/originals/
 input_files/real_Munich_input_fields/epsg_25832/
+input_files/real_Munich_input_fields/GePo/
 run_*.sh
 scripts/test_perlinnoise.ipynb
 scripts/open_h5.ipynb
+scripts/dev_refinement/
 *.ipynb
 run.py
 
