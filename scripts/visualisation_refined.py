@@ -123,69 +123,6 @@ def plot_results_at_height(path_run: Path, plot_name: str = "plot_simulation_res
     print(f"Resulting picture is at {pic_file_name}") #logging.info
     plt.savefig(pic_file_name, **kwargs)
 
-
-# @timing
-# def plot_results_3D_scatter(path_run: Path, plot_name: str = "plot_simulation_results", plot_area=(0,-1,0,-1), plot_res:float = None, plot_height=0, **kwargs):
-#     """
-#     Plots results on a refined mesh of the simulation in the folder path_run. The results are saved in a picture with the name plot_name.
-
-#     Args:
-#         path_run: Path to the run folder
-#         plot_name: Name of the picture
-#         plot_area: Area to plot, default is the whole area
-#         plot_res: Resolution of the plot, default is 0.15625 [m]
-
-#     Returns:
-#         None
-#     """
-#     data, mesh_and_res = load_data_for_visu(path_run)
-    
-#     if plot_res is None:
-#         plot_res = np.min(mesh_and_res[:,3])
-#     print(f"plot_res set to {plot_res}")
-#     n_cells = calc_shape_regular_plot_grid(plot_res, mesh_and_res)
-
-#     n_subplots = len(data)
-#     fig = plt.figure(figsize=(40 * n_subplots, 90))
-
-#     views = [
-#         {"elev": 90, "azim": 0, "title": "Top View (XY plane)"},
-#         {"elev": 0, "azim": 0, "title": "Front View (XZ plane)"},
-#         {"elev": 0, "azim": 90, "title": "Side View (YZ plane)"},
-#     ]
-    
-#     for index, data_point in enumerate(data):
-#         values = generate_regular_cell_values(plot_res, mesh_and_res, data_point, n_cells)
-#         values = values[:, :, plot_height]
-#         for i_view, view in enumerate(views):
-#             ax = fig.add_subplot(3, n_subplots, (index)*3+i_view+1, projection='3d')
-#             plt.sca(ax)
-#             ax.view_init(elev=view["elev"], azim=view["azim"])
-#             if data_point["property"] == "Material ID":
-#                 ax.scatter(mesh_and_res[:,0], mesh_and_res[:,1], mesh_and_res[:,2], c=data_point["data"], cmap="jp_linear", s=np.cbrt(mesh_and_res[:,3])*10, marker="s", alpha=1, vmin=1, vmax=3)
-#             else:
-#                 ax.scatter(mesh_and_res[:,0], mesh_and_res[:,1], mesh_and_res[:,2], c=data_point["data"], cmap="jp_linear", s=np.cbrt(mesh_and_res[:,3])*10, marker="s", alpha=1)
-#             plt.title(f"{data_point['property']} - {view['title']}")
-#             # ax.set_ylabel("y [?]")
-#             # ax.set_xlabel("x [?]")
-#             # ax.set_zlabel("z [?]")
-#             # if plot_area == (0, -1, 0, -1):
-#             #     if index == 0:
-#             #         ax.set_yticks(np.arange(0, values.shape[0], 100//plot_res), (np.arange(0, values.shape[0], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
-#             #     ax.set_xticks(np.arange(0, values.shape[1], 100//plot_res), (np.arange(0, values.shape[1], 100//plot_res)*plot_res+0.5*plot_res).astype(int))
-#             # else:
-#             #     logging.info("for cutouts no xticks, yticks implemented yet")
-#             # aligned_colorbar(label=data_point["property"])
-
-#     plt.tight_layout()
-
-#     # overall pic title
-#     plt.suptitle(f"Results of simulation after {data_point['time_years']} years, plot resolution {plot_res} m")
-#     pic_file_name = path_run/f"{plot_name}_res{plot_res}_height{plot_height}.png"
-#     print(f"Resulting picture is at {pic_file_name}") #logging.info
-#     plt.savefig(pic_file_name, **kwargs)
-#     plt.show()
-
 # HELPFER FUNCTIONS AND CLASSES
 class Property(TypedDict):
     data: np.ndarray
@@ -316,34 +253,6 @@ def generate_regular_cell_values_at_height(plot_res: float, mesh: np.ndarray, da
     print(np.min(weights), np.max(weights), np.min(data["data"]), np.max(data["data"]), np.min(values), np.max(values))
     
     return values
-
-# def collect_cell_values(plot_res: float, mesh: np.ndarray, data: Property, n_cells: Tuple[int]) -> np.ndarray:
-#     # interpolate and average data to mesh
-#     # z-dimension: always averaged
-
-#     n_cells_x, n_cells_y, _ = n_cells
-#     unique_zs = np.unique(mesh[:, 2])
-#     n_cells_z = len(unique_zs)
-#     weights = np.zeros((n_cells_x, n_cells_y, n_cells_z))
-#     values = np.zeros((n_cells_x, n_cells_y, n_cells_z))
-#     for (curr_x,curr_y,curr_z,curr_res), value in zip(mesh, data["data"]):
-#         start_pos = np.array([curr_x, curr_y])-curr_res/2
-#         cell = (start_pos//plot_res).astype(int)
-#         height = np.where(unique_zs == curr_z)[0][0]
-#         if curr_res <= plot_res:
-#             values[cell[0], cell[1], height] += value * (curr_res/plot_res)**3
-#             weights[cell[0], cell[1], height] += (curr_res/plot_res)**3
-#         elif curr_res > plot_res:
-#             # update all cells that are covered by the larger cell
-#             for i in range(int(curr_res/plot_res)):
-#                 for j in range(int(curr_res/plot_res)):
-#                     values[cell[0]+i, cell[1]+j, height] += value
-#                     weights[cell[0]+i, cell[1]+j, height] += 1
-#         else:
-#             raise ValueError(f"{curr_res=}, {plot_res=}")
-#     values /= weights
-    
-#     return values
 
 if __name__ == "__main__":
     path_run = Path('outputs/test_refineD6/RUN_0')
