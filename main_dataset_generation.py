@@ -8,7 +8,7 @@ import numpy as np
 
 from scripts.hp_variation_2d import write_hps_strata_conditions_files, hps_locs_to_ids, calc_hps_locs_float
 from scripts.calc_hp_parameter_variation import realistic_pump_params, write_pump_param_files
-from scripts.visualisation_refined import plot_results
+from scripts.visualisation_refined import plot_results, plot_results_at_height
 from scripts.main_helpers import assert_combinations, groundwater_temp
 from scripts.create_parameter_set import realistic_hydrogeological_params_boxes_and_hp_params, interpolate_and_store_windows_and_bcs
 from scripts.mesh_generation import mesh_generation_all_dps
@@ -43,7 +43,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
     windows_collected, hps_params_collected, orig_resolution, settings = realistic_hydrogeological_params_boxes_and_hp_params(settings, args.num_dp, temp_default, rate_default)
 
     # generate operational heat pump parameters (location, pump rate, pump temperature)
-    # TODO call of data_dir/"drawdown.h5" is wrong - get if form windows_collected?
+    # TODO call of data_dir/"drawdown.h5" is wrong - get it from windows_collected?
     if None in hps_params_collected:
         hps_temps, hps_rates = realistic_pump_params(windows_collected, hps_locs, orig_resolution, temp_default, rate_default)
     else:
@@ -51,7 +51,7 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
         hps_rates = np.array([dp["rate"] for dp in hps_params_collected])
 
     # mesh generation + refinement
-    if not settings["grid"]["refinement"]:
+    if not settings["grid"]["refinement"] or settings["grid"]["refinement"] == "False":
         meshs = mesh_generation_all_dps(settings, output_dataset_dir, windows_collected, orig_resolution)
         hps_cell_ids = hps_locs_to_ids(hps_locs, meshs)
     else:
@@ -86,7 +86,10 @@ def run_simulation(output_dataset_dir:Path, args:argparse.Namespace, run_ids: li
             os.chdir("../../../")
 
         if args.visu:
-            plot_results(output_run_dir)
+            if settings["grid"]["refinement"] or settings["grid"]["refinement"] == "True":
+                plot_results_at_height(output_run_dir)
+            else:
+                plot_results(output_run_dir)
 
     shutil.rmtree(output_dataset_dir/"interim")
 
@@ -116,7 +119,7 @@ def call_pflotran(avg_time_per_sim, run_id:int, tmp_output:bool=False):
     start_sim = time.perf_counter()
     print(f"Starting PFLOTRAN simulation of RUN {run_id} at {time.ctime()}") # TODO logging.info
     output_extension = " -screen_output off" if not tmp_output else ""
-    os.system(f"mpirun -n 32 {os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
+    os.system(f"mpirun -n 64 {os.environ['PFLOTRAN_DIR']}/bin/pflotran -output_prefix pflotran{output_extension}")
     avg_time_per_sim += time.perf_counter() - start_sim
     print(f"Finished PFLOTRAN simulation at {time.ctime()} after {(time.perf_counter() - start_sim)//60} minutes and {((time.perf_counter() - start_sim)%60):.1f} seconds") # TODO logging.info
 
@@ -133,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--visu", type=bool, default=False)  # visualisation
     parser.add_argument("--num_hps", type=int, default=1)  # number of hp locations
     parser.add_argument("--vary_hp", type=bool, default=False)  # vary hp location
-    parser.add_argument("--vary_inflow", type=bool, default=False) 
+    parser.add_argument("--vary_inflow", type=bool, default=False) # vary inflow parameters from heat pumps: temperature and rate
     parser.add_argument("--domain_category", type=str, choices=["manual", "automatic"], default="manual")
     parser.add_argument("--dims", type=int, choices=[2,3], default=2)  # 2D or 3D
     
