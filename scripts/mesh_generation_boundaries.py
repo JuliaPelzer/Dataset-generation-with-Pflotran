@@ -8,7 +8,8 @@ def get_boundary_cells_and_resolutions(mesh_refined, max_resolution:float, dim:i
     # get boundary cell ids, calc their positions and get their resolution
 
     # get all cells with position = 1/2 their own resolution
-    boundary = np.where(mesh_refined["cell_centers"][:, dim] == offset + sign * np.cbrt(mesh_refined["cell_volumes"])/2)[0]
+    atol = 1e-5
+    boundary = np.where(np.abs(mesh_refined["cell_centers"][:, dim] - (offset + sign * np.cbrt(mesh_refined["cell_volumes"])/2)) < atol)[0]
     
     cells = mesh_refined["cell_centers"][boundary]
     resolutions = np.cbrt(mesh_refined["cell_volumes"][boundary])
@@ -47,7 +48,7 @@ def create_boundary_locs(mesh_refined, direction:str, max_resolution:float, wind
     # generate boundary file
     output_str = f"CONNECTIONS {len(boundary)}\n"
     for line in boundary:
-        output_str += f"{int(line[0])} {line[1]} {line[2]} {line[3]} {line[4]}\n"
+        output_str += f"{int(line[0])} {np.round(line[1],8)} {np.round(line[2],8)} {np.round(line[3],8)} {np.round(line[4],8)}\n"
 
     with open(output_dir / f"{direction}.ex", "w") as file:
         file.writelines(output_str)
