@@ -3,12 +3,12 @@ from typing import List, Tuple
 
 def get_start_positions(data: np.ndarray, info:dict) -> List[Tuple[int,int]]:
     '''calculates + shuffles all positions in data, returns [(id1x, id1y), (id2x,id2y), ...]'''
-    ids = [(i,j) for i in range(data.shape[0]) for j in range(data.shape[1])]
-    not_nan_ids = [id for id in ids if not np.isnan(data[id])]
+    ids = np.array([(j,i) for i in range(data.shape[0]) for j in range(data.shape[1])])
+    not_nan_ids = ids[~np.isnan(data).flatten()]
 
     if info["random_bool"]:
         print("Randomizing order of windows")
-        np.random.seed(info["seed_id"])
+        # np.random.seed(info["seed_id"])
         np.random.shuffle(not_nan_ids)
     else:
         print("Not randomizing order of windows")
