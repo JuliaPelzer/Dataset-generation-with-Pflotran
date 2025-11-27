@@ -167,8 +167,11 @@ def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_r
 
     return windows_collected, not_valid_windows_collected
 
-def export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, window_dir):
-    for case in ["valid", "not_valid"]:
+def export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, window_dir, export_not_valid:bool=True):
+    cases = ["valid"]
+    if export_not_valid:
+        cases.append("not_valid")
+    for case in cases:
         if case == "valid":
             windows = windows_collected
             file_path = window_dir / f"windows_{box_len}_collected.csv"
@@ -188,36 +191,41 @@ def export_windows_to_csv(windows_collected, not_valid_windows_collected, box_le
                     "rotation_angle": window["rotation_angle"] # TODO *-1?
                 })
 
-def check_windows():
-    with open("windows/windows_collected.csv", "r", newline='') as csvfile:
+def check_windows(box_len, subsurface_data, path_windows_collected="windows/windows_collected.csv"):
+    with open(path_windows_collected, "r", newline='') as csvfile:
         start_positions_in_orig_cells = []
         boxes_angle = []
+        run_ids = []
         reader = csv.DictReader(csvfile)
         for row in reader:
             start_positions_in_orig_cells.append((int(row["start_pos_x"]), int(row["start_pos_y"])) ) # passt
             boxes_angle.append(float(row["rotation_angle"]) ) # passt
+            run_ids.append(row.get("run_id", ""))
 
-            print(int(row["start_pos_x"]), int(row["start_pos_y"]), float(row["rotation_angle"]) )
+            # print(int(row["start_pos_x"]), int(row["start_pos_y"]), float(row["rotation_angle"]) )
 
-    with open("windows/windows_not_valid_collected.csv", "r", newline='') as csvfile:
-        not_valid_start_positions_in_orig_cells = []
-        not_valid_boxes_angle = []
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            not_valid_start_positions_in_orig_cells.append((int(row["start_pos_x"]), int(row["start_pos_y"])) ) # passt
-            not_valid_boxes_angle.append(float(row["rotation_angle"]) ) # passt
+    # with open("windows/windows_not_valid_collected.csv", "r", newline='') as csvfile:
+    #     not_valid_start_positions_in_orig_cells = []
+    #     not_valid_boxes_angle = []
+    #     reader = csv.DictReader(csvfile)
+    #     for row in reader:
+    #         not_valid_start_positions_in_orig_cells.append((int(row["start_pos_x"]), int(row["start_pos_y"])) ) # passt
+    #         not_valid_boxes_angle.append(float(row["rotation_angle"]) ) # passt
 
     # plot windows on map
-    plt.figure(figsize=(10,10))
-    plt.imshow(properties_full["gwgl"],cmap="tab20")
+    plt.figure(figsize=(15,15))
+    plt.imshow(subsurface_data,cmap="tab20")
     plt.colorbar()
     for i, (pos, angle) in enumerate(zip(start_positions_in_orig_cells, boxes_angle)):
-        plt.scatter(pos[0], pos[1], color="red")
-        window_rotated_cells = local_to_global([256,256], angle, pos).T # coords of rotated window
-        plt.scatter(window_rotated_cells[0], window_rotated_cells[1], color="black")
+        # plt.scatter(pos[0], pos[1], color="red")
+        plt.text(pos[0], pos[1], run_ids[i], color="red", fontsize=8, ha='center', va='center', fontweight='bold')
+        window_rotated_cells = local_to_global([box_len/20,box_len/20], angle, pos).T # coords of rotated window
+        plt.plot(window_rotated_cells[0], window_rotated_cells[1], color="black")
         # break
     plt.title("Start Positions and Boxes")
+    plt.savefig("windows/current_boxes.png", dpi=300)
     plt.show()
+    
 
 def reproject_tiff(src_path, dst_path, dst_crs):
     # reproject tiffs to epsg:25832
@@ -250,9 +258,19 @@ def reproject_tiff(src_path, dst_path, dst_crs):
                     resampling=Resampling.nearest)
     
     return transform_check
-               
 
-def generate_box_geometries(local_to_global, box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected):
+def load_windows_from_csv(path_windows_collected="windows/windows_collected.csv"):
+    windows_collected = []
+    with open(path_windows_collected, "r", newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            windows_collected.append({
+                "start_pos": (int(row["start_pos_x"]), int(row["start_pos_y"])),
+                "rotation_angle": float(row["rotation_angle"])
+            })
+    return windows_collected
+
+def generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected):
     start_positions_in_orig_cells = []
     boxes_angle = []
 
@@ -286,7 +304,7 @@ def generate_box_geometries(local_to_global, box_len, desti_epsg, trafo_epsg, or
     print("boxes extracted for epsg:", desti_epsg)
 
 if __name__ == "__main__":
-    box_len = 4000
+    box_len = 2500  # in meters
     desti_epsg = "EPSG:31468" #31468 5678
     num_dp = 100
     orig_res = 20
@@ -309,6 +327,6 @@ if __name__ == "__main__":
     properties_full, orig_resolution = load_properties_after_aggregation(data_path=aggregated_dir) 
 
     windows_collected, not_valid_windows_collected = realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp=num_dp)
-    export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, windows_dir)
+    export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, windows_dir, export_not_valid=False)
 
-    generate_box_geometries(local_to_global, box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected)
+    generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected)
