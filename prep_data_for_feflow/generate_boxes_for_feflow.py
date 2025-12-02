@@ -128,10 +128,11 @@ def check_box_validity_fast(data: np.ndarray, corners: np.ndarray) -> bool:
     return not np.isnan(values).any()
 
 # extract windows (start positions + rotations)
-def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp:int):
+def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp:int=None, start_positions_in_orig_cells:list=None):
 
     # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
-    start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], {"random_bool": True})
+    if start_positions_in_orig_cells is None:
+        start_positions_in_orig_cells = get_start_positions(properties_full["dtw"], {"random_bool": True})
 
     windows_collected = []
     n_valid_windows = 0
@@ -303,7 +304,8 @@ def generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, wi
     box_geoms.to_file(f"windows/boxes_{box_len}_epgs_{desti_epsg.split(':')[1]}.gpkg", driver='GPKG', mode='w')
     print("boxes extracted for epsg:", desti_epsg)
 
-if __name__ == "__main__":
+def make():
+
     box_len = 2500  # in meters
     desti_epsg = "EPSG:31468" #31468 5678
     num_dp = 100
@@ -315,7 +317,7 @@ if __name__ == "__main__":
     windows_dir = Path("windows")
     windows_dir.mkdir(parents=True, exist_ok=True)
 
-    # # aggregate with python
+    # aggregate with python
     aggregate_main(ORIG_dir, aggregated_dir, orig_res)
 
     # put into different epsg
@@ -330,3 +332,37 @@ if __name__ == "__main__":
     export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, windows_dir, export_not_valid=False)
 
     generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected)
+
+    
+def correct():
+    # WHEN MANUALLY CHANGING THE CENTER LOCATIONS, we want to visually check their new location in the png and in QGIS, and regenerate their rotation angle
+
+    box_len = 2500  # in meters
+    desti_epsg = "EPSG:31468" #31468 5678
+    aggregated_dir = Path("aggregated")
+    reprojected_dir = Path(f"aggregated_epsg{desti_epsg.split(':')[1]}")
+    windows_dir = Path("windows")
+    windows_dir.mkdir(parents=True, exist_ok=True)
+
+    # put into different epsg
+    for src_path in aggregated_dir.glob("*.tif"):
+        trafo_epsg = reproject_tiff(src_path, reprojected_dir / src_path.name, dst_crs=desti_epsg)
+    print(trafo_epsg)
+
+    # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
+    properties_full, orig_resolution = load_properties_after_aggregation(data_path=aggregated_dir) 
+
+    windows_collected = load_windows_from_csv(path_windows_collected=windows_dir / f"windows_{box_len}_collected_non_overlapping_aligned_w_cities.csv")
+
+    start_positions_in_orig_cells = [window["start_pos"] for window in windows_collected]
+    windows_collected, not_valid_windows_collected = realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp=len(start_positions_in_orig_cells), start_positions_in_orig_cells=start_positions_in_orig_cells)
+    export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, windows_dir, export_not_valid=False)
+    
+    check_windows(box_len, properties_full["dtw"], path_windows_collected=windows_dir / f"windows_{box_len}_collected_non_overlapping_aligned_w_cities.csv")
+
+    generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected)
+
+    
+if __name__ == "__main__":
+    # make_new()
+    correct()
