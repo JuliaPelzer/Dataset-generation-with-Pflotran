@@ -16,6 +16,7 @@ from scripts.realistic_window.param_sampling import get_start_positions
 
 logging.basicConfig(level=logging.WARNING)
 
+# NOTE ON FEFLOW VERSION: shortened version for only making boxes for feflow is in prep_data_for_feflow/
 
 @timing
 def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:int, temp_default:float, rate_default:float):
@@ -39,7 +40,6 @@ def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:i
             settings["grid"]["size [m]"] = (window_shape*orig_resolution).tolist()
 
             # 4. define rotation angle
-            #TODO check, dass 100% aligned
             rotation_angle_degree = estimate_box_rotation(properties_full["darcy_dir"], start_pos, window_shape)
             logging.info(f"Estimated rotation: {rotation_angle_degree} [°]")
 
@@ -59,7 +59,7 @@ def realistic_hydrogeological_params_boxes_and_hp_params(settings:Dict, num_dp:i
             window_properties = {}
             for name, value in properties_full.items():
                 window_properties[name] = cut_out_values(value, window_rotated_cells)
-            window_properties["permeability"] = window_properties["hydraulic_conductivity"]/7.5E06
+            window_properties["permeability"] = window_properties["hydraulic_conductivity"]/7.5E06  # TODO Fabian: MAL statt Geteilt??
 
             # 8. calc box height (max thickness)
             window_height_in_meters = calc_box_height_from_TOK_n_GWGL(window_properties["tok"], window_properties["gwgl"])

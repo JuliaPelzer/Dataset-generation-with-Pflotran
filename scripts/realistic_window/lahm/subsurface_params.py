@@ -40,7 +40,7 @@ class Parameters:
     rho_s : float = 2800
     g : float = 9.81
     # eta : float = 1e-3
-    alpha_L : float = 10 #[1,30]
+    alpha_L : float = 10 #[1,30] #TODO rather 1??
 
     time_sim : float = 27.5 #?[years]
     # Umweltministerium BW: für t > 10.000 Tage = 27.4 Jahre kann ein Steady state angenommen werden und das Ergebnis stimmt mit einer stationären Lösung überein

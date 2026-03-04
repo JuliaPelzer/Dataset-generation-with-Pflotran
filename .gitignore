@@ -8,6 +8,9 @@ scripts/test_perlinnoise.ipynb
 scripts/open_h5.ipynb
 scripts/dev_refinement/
 visualisations/
+prep_data_for_feflow/aggregated*
+prep_data_for_feflow/shared_data_Fabian/
+prep_data_for_feflow/windows*
 
 *.ipynb
 run.py
