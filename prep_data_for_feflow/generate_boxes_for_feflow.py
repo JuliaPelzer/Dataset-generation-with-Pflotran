@@ -20,9 +20,9 @@ def load_geotiff(file_path):
     with rasterio.open(file_path) as src:
         img = src.read()
         img = img.squeeze()
-    return np.array(img)
+    return np.array(img), src.transform
 
-def load_properties_after_aggregation(data_path: Path) -> tuple[dict[str, np.ndarray], int]:
+def load_properties_after_aggregation(data_path: Path) -> tuple[dict[str, np.ndarray], int, rasterio.transform.Affine]:
     properties = {"dtw": "Flur_20.tif",
                   "drawdown": "Drawdown_20.tif", # max. Pumprate des Förderbrunnens an der Stelle , [l/s]
                   "hydraulic_conductivity": "Cond_20.tif",# [m/s]
@@ -35,7 +35,7 @@ def load_properties_after_aggregation(data_path: Path) -> tuple[dict[str, np.nda
     
     data = {}
     for key, value in properties.items(): # load data
-        data[key] = load_geotiff(data_path / value)
+        data[key], transform_fct = load_geotiff(data_path / value)
         print(f"Loaded {key} from {value} with shape {data[key].shape} and dtype {data[key].dtype}")
         
     data = align_holes(data)
@@ -43,7 +43,7 @@ def load_properties_after_aggregation(data_path: Path) -> tuple[dict[str, np.nda
     data["darcy_velocity"][np.isnan(data["hydraulic_conductivity"])] = np.nan
     
     resolution = yaml.safe_load(open(data_path / "resolution.yaml", "r"))[0]  # in meters
-    return data, resolution
+    return data, resolution, transform_fct
 
 def align_holes(data:dict) -> dict:
     mask = data["gwgl"] < 0
@@ -86,11 +86,12 @@ def rot_matrix(angle_in_rad):
     ])
 
 def local_to_global(window_shape, angle_in_deg, start_pos):
+    offset=+20
     corners = np.array([
-    [- window_shape[0]/2, - window_shape[1]/2],
-    [- window_shape[0]/2, + window_shape[1]/2],
-    [+ window_shape[0]/2, + window_shape[1]/2],
-    [+ window_shape[0]/2, - window_shape[1]/2],
+    [- window_shape[0]/2, - window_shape[1]/2+offset],
+    [- window_shape[0]/2, + window_shape[1]/2+offset],
+    [+ window_shape[0]/2, + window_shape[1]/2+offset],
+    [+ window_shape[0]/2, - window_shape[1]/2+offset],
     ])
     angle_in_rad = np.deg2rad(angle_in_deg)
     return np.dot(corners, rot_matrix(angle_in_rad)) + start_pos
@@ -128,7 +129,7 @@ def check_box_validity_fast(data: np.ndarray, corners: np.ndarray) -> bool:
     return not np.isnan(values).any()
 
 # extract windows (start positions + rotations)
-def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp:int=None, start_positions_in_orig_cells:list=None):
+def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp:int=None, start_positions_in_orig_cells:list=None, well_ids:list=None):
 
     # 2. get all start points, randomized (NOT checked for validity yet) or manual start point, e.g.  # start_positions = [[2100, 2300]]
     if start_positions_in_orig_cells is None:
@@ -137,10 +138,13 @@ def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_r
     windows_collected = []
     n_valid_windows = 0
     not_valid_windows_collected = []
+    valid_well_ids = []
     # while not enough windows:
     for i, start_pos in enumerate(start_positions_in_orig_cells):
         try:
-            window_shape_in_orig_cells = np.array([box_len/orig_resolution, box_len/orig_resolution]).astype(int) # get window shape in original cells
+            if isinstance(box_len, int):
+                box_len = np.array([box_len, box_len])
+            window_shape_in_orig_cells = (box_len/orig_resolution).astype(int) # get window shape in original cells
             rotation_angle_degree = - sample_median(properties_full["darcy_dir"], start_pos, window_shape_in_orig_cells) # extract median direction in window
             window_rotated_cells = local_to_global(window_shape_in_orig_cells, rotation_angle_degree, start_pos).T # coords of rotated window # TODO wieso .T??
         except Exception as e:
@@ -152,7 +156,9 @@ def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_r
 
         if valid:
             windows_collected.append({"start_pos": start_pos, "rotation_angle": rotation_angle_degree})
-            print("valid", i, start_pos, rotation_angle_degree)
+            # print("valid", i, start_pos, rotation_angle_degree)
+            if well_ids is not None:
+                valid_well_ids.append(well_ids[i])
             n_valid_windows += 1
         else:
             not_valid_windows_collected.append({"start_pos": start_pos, "rotation_angle": rotation_angle_degree})
@@ -160,15 +166,15 @@ def realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_r
 
         if n_valid_windows >= num_dp:
             print(n_valid_windows, " valid windows found within", i+1, "tries")
-            return windows_collected, not_valid_windows_collected
+            return windows_collected, not_valid_windows_collected, box_len, valid_well_ids
 
     logging.warning(n_valid_windows, " valid windows found within", i+1, "tries")
     if n_valid_windows < num_dp:
         logging.error(f"Not enough windows found. Only {n_valid_windows} found.")
 
-    return windows_collected, not_valid_windows_collected
+    return windows_collected, not_valid_windows_collected, box_len, valid_well_ids
 
-def export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, window_dir, export_not_valid:bool=True):
+def export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, window_dir, export_not_valid:bool=True, valid_well_ids:list=None):
     cases = ["valid"]
     if export_not_valid:
         cases.append("not_valid")
@@ -181,12 +187,13 @@ def export_windows_to_csv(windows_collected, not_valid_windows_collected, box_le
             file_path = window_dir / f"windows_not_valid_{box_len}_collected.csv"
 
         with open(file_path, "w", newline='') as csvfile:
-            fieldnames = ["run_id", "start_pos_x", "start_pos_y", "rotation_angle"]
+            fieldnames = ["run_id", "start_pos_x", "start_pos_y", "rotation_angle", "well_ids"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for run_id, window in enumerate(windows):
                 writer.writerow({
                     "run_id": run_id,
+                    "well_ids": valid_well_ids[run_id] if valid_well_ids is not None else "",
                     "start_pos_x": window["start_pos"][0],
                     "start_pos_y": window["start_pos"][1],
                     "rotation_angle": window["rotation_angle"] # TODO *-1?
@@ -271,38 +278,44 @@ def load_windows_from_csv(path_windows_collected="windows/windows_collected.csv"
             })
     return windows_collected
 
-def generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected):
+def generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected, store:bool=True, destination_dir:str=""):
     start_positions_in_orig_cells = []
     boxes_angle = []
 
     for window in windows_collected:
-            start_positions_in_orig_cells.append((window["start_pos"]))
-            boxes_angle.append(window["rotation_angle"] ) 
+        start_positions_in_orig_cells.append((window["start_pos"]))
+        boxes_angle.append(window["rotation_angle"] ) 
 
     # transform windows to new coordinate system
     box_length = box_len /orig_resolution
 
     # prepare box minx, miny, maxx, maxy for every box in list
     collected_corners = []
-    collected_centers = []
     n_boxes = len(start_positions_in_orig_cells)
             
     for i in range(n_boxes):
         # rotate corners around start position
-        rotated_corners = local_to_global([box_length, box_length], boxes_angle[i], start_positions_in_orig_cells[i])
+        rotated_corners = local_to_global([box_length[0], box_length[1]], boxes_angle[i], start_positions_in_orig_cells[i])
         collected_corners.append(np.array([trafo_epsg * (corner[0], corner[1]) for corner in rotated_corners]))
 
-        collected_centers.append(trafo_epsg * (start_positions_in_orig_cells[i][0], start_positions_in_orig_cells[i][1]))
-
     geoms = []
-    for corners, center in zip(collected_corners, collected_centers):
+    box_ids = []
+    for i, corners in enumerate(collected_corners):
+        # Add polygon
         geoms.append(Polygon(corners))
-        geoms.append(Point(center))
+        box_ids.append(i)
+        
+    box_geoms = gpd.GeoDataFrame(
+        {"box_id": box_ids},
+        geometry=geoms,
+        crs=f"epsg:{desti_epsg.split(':')[1]}"
+    )
 
-    box_geoms = gpd.GeoDataFrame(geometry=geoms, crs=f'epsg:{desti_epsg.split(":")[1]}')
+    if store:
+        box_geoms.to_file(f"{destination_dir}/boxes_{box_len}_epgs_{desti_epsg.split(':')[1]}.gpkg", driver='GPKG', mode='w')
 
-    box_geoms.to_file(f"windows/boxes_{box_len}_epgs_{desti_epsg.split(':')[1]}.gpkg", driver='GPKG', mode='w')
     print("boxes extracted for epsg:", desti_epsg)
+    return box_geoms
 
 def make():
 
@@ -326,12 +339,12 @@ def make():
     print(trafo_epsg)
 
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
-    properties_full, orig_resolution = load_properties_after_aggregation(data_path=aggregated_dir) 
+    properties_full, orig_resolution, _ = load_properties_after_aggregation(data_path=aggregated_dir) 
 
-    windows_collected, not_valid_windows_collected = realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp=num_dp)
-    export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, windows_dir, export_not_valid=False)
+    windows_collected, not_valid_windows_collected, box_len2D = realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp=num_dp)
+    export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len2D, windows_dir, export_not_valid=False)
 
-    generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected)
+    generate_box_geometries(box_len2D, desti_epsg, trafo_epsg, orig_resolution, windows_collected, destination_dir=windows_dir)
 
     
 def correct():
@@ -350,7 +363,7 @@ def correct():
     print(trafo_epsg)
 
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
-    properties_full, orig_resolution = load_properties_after_aggregation(data_path=aggregated_dir) 
+    properties_full, orig_resolution, _ = load_properties_after_aggregation(data_path=aggregated_dir) 
 
     windows_collected = load_windows_from_csv(path_windows_collected=windows_dir / f"windows_{box_len}_collected_non_overlapping_aligned_w_cities.csv")
 
@@ -360,9 +373,9 @@ def correct():
     
     check_windows(box_len, properties_full["dtw"], path_windows_collected=windows_dir / f"windows_{box_len}_collected_non_overlapping_aligned_w_cities.csv")
 
-    generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected)
+    generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected, destination_dir=windows_dir)
 
     
 if __name__ == "__main__":
-    # make_new()
+    # make()
     correct()
