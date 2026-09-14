@@ -18,6 +18,7 @@ def get_bcs_values(tok:np.array, gwgl:np.array, bcs_cell_ids: Dict[str, np.ndarr
 def save_bcs(filename: Path, bcs:Dict):
     for name, value in bcs.items():
         with open(filename / f"bc_{name}.txt", "w") as file:
-            file.write(f"LIQUID_PRESSURE {format(value, 'f')} 0. 0.")
+            file.write(f"LIQUID_PRESSURE -0.0025 0. 0.")
+            # file.write(f"LIQUID_PRESSURE {format(value, 'f')} 0. 0.")
             # file.write(f"""! <time> <valueX, valueY, valueZ>\n0. 0. 0. {value}""")
             

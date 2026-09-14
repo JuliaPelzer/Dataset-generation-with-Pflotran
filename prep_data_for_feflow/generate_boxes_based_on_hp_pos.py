@@ -207,6 +207,43 @@ def generate_boxes_with_two_hps(num_dp:int=1005):
     print("")
     print("first 5 wells:\n", wells_epsg_2hp.head())
 
+def get_wells_scale_box(path_boxes:pathlib.Path, path_wells:pathlib.Path, path_destination:pathlib.Path):
+    # get all box geometries from path_boxes
+    boxes = gpd.read_file(path_boxes)
+    boxes = boxes.to_crs("EPSG:25832")
+    # get all well geometries from path_wells
+    wells = gpd.read_file(path_wells)
+    wells = wells.to_crs("EPSG:25832")
+    # for each box, count how many wells are within the box
+    for i, box in boxes.iterrows():        
+        box.geometry = box.geometry.buffer(-5000*0.15) # reduce box.geometry by 15% to avoid wells that are just on the border of the box
+        valid_ids = []
+        wells_in_box = wells[wells.geometry.within(box.geometry)]
+        print(f"Box {i} contains {len(wells_in_box)} wells")
+        for well in wells_in_box.itertuples():
+            # if "nomuc" not in well.global_id: # only for the 4000box
+            valid_ids.append(well.global_id)
+        print(f"Box {i} contains {len(valid_ids)} wells after removing those without 'nomuc' in global_id")
+
+        # rm all wells where the global_id does not appear twice in valid_ids (since each hp has an extraction and injection well)
+        rm_ids = [id for id in valid_ids if valid_ids.count(id) != 2]
+        valid_ids = [id for id in valid_ids if id not in rm_ids]
+        print(f"Box {i} contains {len(valid_ids)} wells after removing those without both hp wells")
+
+        np.random.shuffle(valid_ids)
+        valid_ids = valid_ids[:int(len(valid_ids)*0.5)] # reduce no. of wells to x% (first *0.1, now *0.5 so in total *0.05)
+        valid_wells = wells_in_box[wells_in_box.global_id.isin(valid_ids)]
+        print(f"Box {i} contains {len(valid_ids)} wells")
+        
+        # store
+        valid_wells.to_file(path_destination, driver="GPKG")
+        break # somehow it adds a last row without geometry
+
 if __name__ == "__main__":
-    generate_boxes_with_single_hp(num_dp=1000)
-    generate_boxes_with_two_hps(num_dp=1005)
+    # generate_boxes_with_single_hp(num_dp=1000)
+    # generate_boxes_with_two_hps(num_dp=1005)
+    size = 5000
+    root_dir = pathlib.Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/prep_data_for_feflow/windows_bm")
+    get_wells_scale_box(root_dir / f"boxes_{size}_epgs_31468.gpkg", root_dir / f"wells_in_boxes_{size}.gpkg", root_dir / f"wells_in_boxes_{size}_reducedWellsVBorder.gpkg")
+
+    # TODO potential_l_s bei Schluckbrunnen anpassen, fehlt irgendwie das Minuszeichen

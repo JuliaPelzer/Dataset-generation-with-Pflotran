@@ -342,19 +342,19 @@ def make():
     properties_full, orig_resolution, _ = load_properties_after_aggregation(data_path=aggregated_dir) 
 
     windows_collected, not_valid_windows_collected, box_len2D = realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp=num_dp)
+    
     export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len2D, windows_dir, export_not_valid=False)
 
     generate_box_geometries(box_len2D, desti_epsg, trafo_epsg, orig_resolution, windows_collected, destination_dir=windows_dir)
 
     
-def correct():
+def correct(root_dir: Path, box_len: int, case:str = ""):
     # WHEN MANUALLY CHANGING THE CENTER LOCATIONS, we want to visually check their new location in the png and in QGIS, and regenerate their rotation angle
 
-    box_len = 2500  # in meters
     desti_epsg = "EPSG:31468" #31468 5678
-    aggregated_dir = Path("aggregated")
-    reprojected_dir = Path(f"aggregated_epsg{desti_epsg.split(':')[1]}")
-    windows_dir = Path("windows")
+    aggregated_dir = root_dir / "aggregated"
+    reprojected_dir = root_dir / f"aggregated_epsg{desti_epsg.split(':')[1]}"
+    windows_dir = root_dir / f"windows{case}"
     windows_dir.mkdir(parents=True, exist_ok=True)
 
     # put into different epsg
@@ -365,17 +365,22 @@ def correct():
     # 1. load full maps # properties_full: 1px (=1cell) = 20m (=orig_resolution)
     properties_full, orig_resolution, _ = load_properties_after_aggregation(data_path=aggregated_dir) 
 
-    windows_collected = load_windows_from_csv(path_windows_collected=windows_dir / f"windows_{box_len}_collected_non_overlapping_aligned_w_cities.csv")
+    windows_collected = load_windows_from_csv(path_windows_collected=windows_dir / f"windows_{box_len}_collected.csv") #_non_overlapping_aligned_w_cities
 
     start_positions_in_orig_cells = [window["start_pos"] for window in windows_collected]
     windows_collected, not_valid_windows_collected = realistic_hydrogeological_params_boxes_and_hp_params(properties_full, orig_resolution, box_len, num_dp=len(start_positions_in_orig_cells), start_positions_in_orig_cells=start_positions_in_orig_cells)
+
     export_windows_to_csv(windows_collected, not_valid_windows_collected, box_len, windows_dir, export_not_valid=False)
     
-    check_windows(box_len, properties_full["dtw"], path_windows_collected=windows_dir / f"windows_{box_len}_collected_non_overlapping_aligned_w_cities.csv")
+    check_windows(box_len, properties_full["dtw"], path_windows_collected=windows_dir / f"windows_{box_len}_collected.csv") #_non_overlapping_aligned_w_cities
 
     generate_box_geometries(box_len, desti_epsg, trafo_epsg, orig_resolution, windows_collected, destination_dir=windows_dir)
 
     
 if __name__ == "__main__":
+    root_dir = Path("/home/pelzerja/pelzerja/test_nn/dataset_generation_laptop/Phd_simulation_groundtruth/prep_data_for_feflow/")
+    case = "_bm"
+    box_len = 5000 #2500  # in meters
+
     # make()
-    correct()
+    correct(root_dir, box_len, case)
